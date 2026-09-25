@@ -1,26 +1,181 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --leaf-deep: #1b4332;
+  --leaf: #2e7d46;
+  --leaf-soft: #d8f3dc;
+  --soil: #3e2723;
+  --cream: #f7faf5;
+  --mist: #eef5ee;
+  --ink: #14261a;
+  --muted: #4a6354;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+* {
+  box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  margin: 0;
+  min-height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-display), "Segoe UI", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, #c8e6c9 0%, transparent 55%),
+    linear-gradient(165deg, var(--cream) 0%, var(--mist) 45%, #e3efe6 100%);
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2.5rem 1.25rem 3rem;
+}
+
+.app-header {
+  text-align: center;
+  max-width: 36rem;
+  margin-bottom: 1.5rem;
+}
+
+.brand {
+  margin: 0;
+  font-family: var(--font-brand), Georgia, serif;
+  font-size: clamp(2.4rem, 6vw, 3.4rem);
+  letter-spacing: 0.04em;
+  color: var(--leaf-deep);
+  line-height: 1.05;
+}
+
+.headline {
+  margin: 0.35rem 0 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--soil);
+}
+
+.subhead {
+  margin: 0.55rem 0 0;
+  color: var(--muted);
+  font-size: 0.98rem;
+  line-height: 1.45;
+}
+
+.stage {
+  width: min(100%, 40rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.visualizer-canvas {
+  width: 220px;
+  height: 220px;
+}
+
+.status {
+  margin: 0;
+  min-height: 1.5rem;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.mic-btn {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  min-width: 11rem;
+  padding: 0.9rem 1.6rem;
+  border-radius: 999px;
+  background: var(--leaf);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: transform 0.15s ease, background 0.15s ease, opacity 0.15s ease;
+  user-select: none;
+  touch-action: none;
+}
+
+.mic-btn:hover:not(:disabled) {
+  background: var(--leaf-deep);
+  transform: translateY(-1px);
+}
+
+.mic-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.mic-btn--active {
+  background: #c62828;
+}
+
+.text-fallback {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-top: 0.25rem;
+}
+
+.text-fallback label {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.text-fallback textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 4.5rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid rgba(46, 125, 70, 0.35);
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.75);
+  font: inherit;
+  color: var(--ink);
+}
+
+.panels {
+  width: 100%;
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 0.75rem;
+}
+
+.panel {
+  padding: 0.95rem 1.1rem;
+  border-top: 1px solid rgba(46, 125, 70, 0.25);
+}
+
+.panel h2 {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--leaf);
+}
+
+.panel p {
+  margin: 0;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.meta {
+  margin-top: 0.65rem !important;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+@media (min-width: 720px) {
+  .panels {
+    grid-template-columns: 1fr 1fr;
+  }
 }

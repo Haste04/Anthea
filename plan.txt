@@ -1,0 +1,224 @@
+PROJECT: AI Plant Voice Agent
+GOAL: A hands-free voice assistant that (1) identifies a plant from spoken
+physical traits, (2) diagnoses a disease/issue from spoken symptoms using a
+local rule table, (3) calculates a watering schedule, and (4) looks up real
+care requirements (water/light/soil) via the Perenual API.
+
+============================================================
+0. NON-NEGOTIABLE CONSTRAINTS
+============================================================
+- All API keys (GEMINI_API_KEY, PERENUAL_API_KEY) live server-side only, in
+  environment variables. NEVER expose them to the client bundle.
+- Voice output must be plain text: no markdown, no asterisks, no bullet
+  points, no code formatting. 2-3 sentences max per response.
+- No paid tiers. Every external API call must work on its free tier.
+- Every response to the user must clearly indicate when data is a real
+  lookup vs. an LLM estimate (is_estimate flag, see section 5).
+- Do not use Perenual for trait-based identification. It has no such
+  endpoint. Perenual is only used AFTER the LLM has already guessed a
+  species name, to confirm the match and pull real care data.
+
+============================================================
+1. TECH STACK
+============================================================
+Frontend:        Next.js / React, deployed on Vercel
+Voice input:      Web Speech API (SpeechRecognition) - primary
+                  Fallback: manual "hold to talk" button (mic permission /
+                  browser support can fail; do not rely on STT alone)
+Silence detect:   Web Audio API, RMS amplitude, 1.2s pause threshold
+Voice output:     Web Speech Synthesis API (window.speechSynthesis)
+Visualizer:       HTML5 Canvas, pulses/animates on RMS amplitude and on
+                  playback state
+Backend:          Vercel serverless function (Node.js), same deployment as
+                  frontend - no separate Render service, no CORS boundary
+LLM engine:       Google Gemini API, function-calling enabled (single
+                  engine only - do not add a second LLM provider)
+Disease rules:    Local JSON file, bundled in the repo (see section 6)
+Care data:        Perenual API - species-list (confirm match) +
+                  species/details/[id] (real watering/sunlight/soil data)
+Watering math:    Local function on the backend
+
+============================================================
+2. REPO STRUCTURE
+============================================================
+/app
+  /page.tsx                  - main UI: mic button, transcript, visualizer
+  /components/Visualizer.tsx - canvas waveform/pulse component
+  /components/MicButton.tsx  - push-to-talk fallback control
+/api
+  /assistant.ts               - single serverless endpoint, POST transcript
+                                in, JSON response out
+/lib
+  /gemini.ts                  - Gemini client + tool/function definitions
+  /diagnose.ts                 - loads disease-rules.json, keyword-matches
+                                symptoms, returns {cause, confidence}
+  /perenual.ts                 - species-list lookup + species/details
+                                fetch, with name-fallback logic
+  /watering.ts                  - calculate_watering(base, soilFactor,
+                                climateFactor) formula
+/data
+  /disease-rules.json           - the 12-entry rule table (already drafted)
+.env.local                      - GEMINI_API_KEY, PERENUAL_API_KEY (never
+                                committed; add to .gitignore)
+
+============================================================
+3. STEP-BY-STEP BUILD ORDER
+============================================================
+
+STEP 1 - Scaffold project
+- Create Next.js app (App Router), TypeScript.
+- Set up .env.local with placeholder keys, confirm .gitignore covers it.
+- Deploy an empty shell to Vercel early to confirm the pipeline works
+  before adding logic (avoids discovering deploy issues late).
+
+STEP 2 - Frontend voice capture
+- Implement MicButton: on click, start SpeechRecognition AND start a
+  MediaRecorder/AnalyserNode for RMS measurement in parallel.
+- Live transcript updates in a text element as SpeechRecognition returns
+  interim results.
+- RMS silence detector: sample amplitude on an interval; if amplitude stays
+  below a threshold for 1.2s AND at least one word has been transcribed,
+  trigger submit. This is the ONLY submit trigger - do not also rely on
+  SpeechRecognition's own end-of-speech event (avoids double-submit race).
+- If SpeechRecognition is unsupported (feature-detect on load), hide the
+  auto-listen flow and show only the push-to-talk fallback button, which
+  submits on release instead of on silence.
+
+STEP 3 - Visualizer
+- Canvas component takes a live amplitude value (0-1) as a prop/state and
+  draws a circular pulse that scales with it while listening.
+- During "speaking" state (playback of the response), pulse rhythmically
+  regardless of mic input, driven by a timer, not real audio amplitude.
+
+STEP 4 - Backend endpoint (/api/assistant)
+- Accept POST { transcript: string }.
+- Load GEMINI_API_KEY and PERENUAL_API_KEY from process.env only.
+- Call Gemini with function-calling enabled and three tool definitions:
+    identify_plant(traits: string) -> handled by LLM's own reasoning,
+      no external call - the LLM returns its best-guess common name and
+      scientific name directly, no separate tool implementation needed.
+    diagnose_symptoms(symptoms: string) -> calls lib/diagnose.ts
+    get_care_data(species_common_name, species_scientific_name) ->
+      calls lib/perenual.ts
+    calculate_watering(base_days, soil_type, temp_c) -> calls
+      lib/watering.ts
+- System prompt must instruct: keep the FINAL user-facing text to 2-3
+  plain sentences, no markdown, no lists, no asterisks.
+
+STEP 5 - lib/diagnose.ts
+- Load disease-rules.json.
+- Tokenize the input symptom string (lowercase, strip punctuation).
+- For each rule entry, tokenize the "symptom" field the same way and
+  score overlap (simple set intersection is enough - do not overengineer).
+- Return all entries with overlap > 0, sorted by score descending.
+- If zero matches, return { cause: null, confidence: "none" } so the LLM
+  can say it couldn't identify a specific issue rather than fabricating one.
+
+STEP 6 - lib/perenual.ts
+- Function confirmSpecies(commonName, scientificName):
+    1. Call species-list?q=<commonName>&key=PERENUAL_API_KEY
+    2. If results.length > 0, take the first result's id.
+    3. Else retry species-list?q=<scientificName>
+    4. Else return { matched: false }
+- Function getCareData(id):
+    1. Call species/details/<id>?key=PERENUAL_API_KEY
+    2. Extract watering (string category), watering_general_benchmark
+       (value + unit), sunlight (array), soil (array)
+    3. Return normalized { wateringCategory, baseDays, sunlight, soil }
+- If confirmSpecies returns matched:false, the caller must fall back to
+  LLM-estimated defaults and set is_estimate: true - never silently
+  present a guess as looked-up data.
+
+STEP 7 - lib/watering.ts
+- calculate_watering(baseDays: number, soilType: string, tempC: number)
+- Soil multiplier table (adjust values as needed during testing):
+    sandy: 0.7   (drains fast, water more often -> shorter interval)
+    loamy: 1.0
+    clay:  1.4   (retains water, water less often -> longer interval)
+- Climate/temp multiplier:
+    <15C: 1.3
+    15-25C: 1.0
+    >25C: 0.8
+- interval_days = round(baseDays * soilMultiplier * tempMultiplier)
+- Return the number and the factors used, so the LLM can optionally
+  mention "because of sandy soil" in its phrasing.
+
+STEP 8 - Response assembly
+- Backend aggregates: species guess, diagnosis (or null), care data (or
+  estimate), watering interval.
+- Ask Gemini to produce the final spoken sentence from these structured
+  facts (not from raw tool JSON) - this keeps phrasing natural.
+- Strip any markdown characters from the final text as a safety net
+  (regex strip of *, _, #, backticks, bullet dashes) even though the
+  prompt already asks for plain text.
+- Return JSON: { response_text, species_candidate, watering_days,
+  is_estimate, diagnosis_confidence }
+
+STEP 9 - Frontend playback
+- On response, set visualizer to "speaking" state.
+- window.speechSynthesis.speak(new SpeechSynthesisUtterance(response_text))
+- On utterance end, return visualizer and mic button to idle/ready state.
+
+STEP 10 - Error and edge-case handling (do this before polishing anything)
+- No speech detected before timeout -> spoken prompt asking user to
+  try again, no backend call made.
+- Backend/Gemini call fails or times out -> spoken fallback: "I couldn't
+  process that, please try again," logged to console, no silent hang.
+- Zero diagnosis match -> LLM says it cannot identify a specific issue
+  from the description rather than inventing one.
+- Perenual returns no match -> is_estimate: true path (see step 6/8).
+- Low-confidence diagnosis (single weak keyword match) -> LLM should
+  hedge ("this could suggest...") rather than state it flatly.
+
+STEP 11 - Demo pass
+- Primary demo query: "It's an agricultural plant with square stems,
+  purple flowers, and yellowing lower leaves. How do I water it in
+  sandy soil?" -> expect red deadnettle / overwatering / sandy-adjusted
+  interval.
+- Secondary demo query covering a different rule-table branch, e.g. a
+  wilting-despite-dry-soil or powdery-mildew description, to show the
+  system isn't hardcoded to one path.
+- One deliberate failure-path run (mumble an unclear description) to show
+  the fallback/hedge behavior live.
+
+============================================================
+4. DELIVERABLES CHECKLIST (matches assignment rubric)
+============================================================
+[ ] Talks back (voice output via Speech Synthesis)
+[ ] Detects when user stops speaking (1.2s RMS silence detector)
+[ ] Uses only free tools (Web Speech/Audio APIs, Gemini free tier,
+    Perenual free tier)
+[ ] Keeps API keys out of code (server-side env vars only, verified
+    not present in any client bundle)
+[ ] Live demo ready (primary + secondary + failure-path queries rehearsed)
+[ ] Demo link (Vercel deployment URL)
+[ ] Simple documentation of the work (this plan + the blueprint doc)
+
+============================================================
+5. is_estimate FLAG - WHY IT MATTERS
+============================================================
+Any time care data comes from LLM estimation rather than a confirmed
+Perenual species match, is_estimate must be true and the spoken response
+should say something like "based on typical care for this type of plant"
+instead of presenting the number as a confirmed lookup. This is a
+reliability/honesty safeguard, not optional polish - do not skip it to
+save time.
+
+============================================================
+6. DISEASE RULE TABLE
+============================================================
+Use the 12-entry table already drafted (data/disease-rules.json):
+categories = leaf discoloration, wilting, leaf texture and spots,
+growth issues, root and base issues. Each entry has symptom, cause,
+confidence. Match by keyword-token overlap, not exact string match.
+
+============================================================
+7. OUT OF SCOPE / DO NOT ADD
+============================================================
+- No second LLM provider (Groq) - Gemini only.
+- No separate Render backend - Vercel serverless only.
+- No Perenual trait-search - it doesn't exist, don't build around it.
+- No Whisper integration for v1 - only revisit if live testing shows
+  Web Speech API mishearing botanical terms; if so, add client-side
+  transformers.js Whisper as a post-silence transcription step, not a
+  replacement for the RMS silence detector.

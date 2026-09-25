@@ -1,0 +1,86 @@
+[
+  {
+    "id": 1,
+    "category": "leaf discoloration",
+    "symptom": "yellowing lower leaves yellow leaves bottom",
+    "cause": "overwatering",
+    "confidence": "high"
+  },
+  {
+    "id": 2,
+    "category": "leaf discoloration",
+    "symptom": "yellow leaves pale chlorosis overall yellowing",
+    "cause": "nitrogen deficiency",
+    "confidence": "medium"
+  },
+  {
+    "id": 3,
+    "category": "leaf discoloration",
+    "symptom": "brown leaf tips scorched edges crispy margins",
+    "cause": "underwatering or low humidity",
+    "confidence": "medium"
+  },
+  {
+    "id": 4,
+    "category": "wilting",
+    "symptom": "wilting despite dry soil limp leaves drought",
+    "cause": "underwatering",
+    "confidence": "high"
+  },
+  {
+    "id": 5,
+    "category": "wilting",
+    "symptom": "wilting soggy soil limp despite wet soil",
+    "cause": "root rot from overwatering",
+    "confidence": "high"
+  },
+  {
+    "id": 6,
+    "category": "leaf texture and spots",
+    "symptom": "white powdery coating powdery mildew dusty leaves",
+    "cause": "powdery mildew",
+    "confidence": "high"
+  },
+  {
+    "id": 7,
+    "category": "leaf texture and spots",
+    "symptom": "brown spots leaf spots dark lesions circular spots",
+    "cause": "fungal leaf spot",
+    "confidence": "medium"
+  },
+  {
+    "id": 8,
+    "category": "leaf texture and spots",
+    "symptom": "sticky leaves honeydew black sooty mold aphids",
+    "cause": "sap-sucking pests such as aphids",
+    "confidence": "medium"
+  },
+  {
+    "id": 9,
+    "category": "growth issues",
+    "symptom": "leggy stretched spindly sparse growth etiolation",
+    "cause": "insufficient light",
+    "confidence": "high"
+  },
+  {
+    "id": 10,
+    "category": "growth issues",
+    "symptom": "stunted growth slow growth not growing small leaves",
+    "cause": "nutrient deficiency or root bound pot",
+    "confidence": "medium"
+  },
+  {
+    "id": 11,
+    "category": "root and base issues",
+    "symptom": "mushy stem base soft crown rotting stem foul smell",
+    "cause": "crown or stem rot from excess moisture",
+    "confidence": "high"
+  },
+  {
+    "id": 12,
+    "category": "root and base issues",
+    "symptom": "roots brown mushy foul smelling soil root rot",
+    "cause": "root rot",
+    "confidence": "high"
+  }
+]
