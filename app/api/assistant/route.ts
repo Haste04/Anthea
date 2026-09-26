@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
           is_estimate: true,
           diagnosis_confidence: "none",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -30,15 +30,14 @@ export async function POST(req: NextRequest) {
     console.error("[/api/assistant]", err);
     return NextResponse.json(
       {
-        response_text:
-          "I couldn't process that, please try again.",
+        response_text: "I couldn't process that, please try again.",
         species_candidate: null,
         watering_days: null,
         is_estimate: true,
         diagnosis_confidence: "none",
         error: err instanceof Error ? err.message : "unknown",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

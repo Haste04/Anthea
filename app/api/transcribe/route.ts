@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
+
+// Check https://ai.google.dev/gemini-api/docs/models before deploying —
+// this must match the model constant used in lib/gemini.ts.
+const AUDIO_MODEL = "gemini-3.8-flash";
 
 function getApiKey(): string {
   const key = process.env.GEMINI_API_KEY;
@@ -19,7 +23,7 @@ export async function POST(req: NextRequest) {
     if (!(audio instanceof Blob) || audio.size === 0) {
       return NextResponse.json(
         { transcript: "", error: "No audio provided" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -27,27 +31,29 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(await audio.arrayBuffer());
     const base64 = buffer.toString("base64");
 
-    const genAI = new GoogleGenerativeAI(getApiKey());
-    const model = genAI.getGenerativeModel({ model: "gemini-3.8-flash" });
+    const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
-    const result = await model.generateContent([
-      {
-        inlineData: {
-          mimeType,
-          data: base64,
+    const result = await ai.models.generateContent({
+      model: AUDIO_MODEL,
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              inlineData: {
+                mimeType,
+                data: base64,
+              },
+            },
+            {
+              text: "Transcribe the spoken audio into plain English text only. Do not add quotes, labels, markdown, or commentary. If the audio is silent or unintelligible, return an empty string.",
+            },
+          ],
         },
-      },
-      {
-        text: "Transcribe the spoken audio into plain English text only. Do not add quotes, labels, markdown, or commentary. If the audio is silent or unintelligible, return an empty string.",
-      },
-    ]);
+      ],
+    });
 
-    let transcript = "";
-    try {
-      transcript = (result.response.text() ?? "").trim();
-    } catch {
-      transcript = "";
-    }
+    let transcript = (result.text ?? "").trim();
 
     // Strip accidental quotes wrapping the whole transcript
     if (
@@ -65,7 +71,7 @@ export async function POST(req: NextRequest) {
         transcript: "",
         error: err instanceof Error ? err.message : "Transcription failed",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

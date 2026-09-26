@@ -1,10 +1,10 @@
 import {
-  GoogleGenerativeAI,
-  SchemaType,
+  GoogleGenAI,
+  Type,
   type FunctionDeclaration,
   type Content,
   type Part,
-} from "@google/generative-ai";
+} from "@google/genai";
 import { diagnoseSymptoms } from "@/lib/diagnose";
 import { confirmSpecies, getCareData } from "@/lib/perenual";
 import { calculateWatering } from "@/lib/watering";
@@ -16,6 +16,11 @@ export type AssistantPayload = {
   is_estimate: boolean;
   diagnosis_confidence: string;
 };
+
+// Check https://ai.google.dev/gemini-api/docs/models before deploying —
+// model names and retirement dates change fast. gemini-1.5-flash and then
+// gemini-2.5-flash were both retired for new users during this project.
+const TEXT_MODEL = "gemini-3.8-flash";
 
 const SYSTEM_PROMPT = `You are a hands-free plant voice assistant. The user speaks plant traits, symptoms, and care questions.
 
@@ -40,18 +45,18 @@ const tools: FunctionDeclaration[] = [
     description:
       "Identify a plant from spoken physical traits. Returns best-guess common and scientific names from model reasoning; no external lookup.",
     parameters: {
-      type: SchemaType.OBJECT,
+      type: Type.OBJECT,
       properties: {
         traits: {
-          type: SchemaType.STRING,
+          type: Type.STRING,
           description: "Physical traits described by the user",
         },
         common_name: {
-          type: SchemaType.STRING,
+          type: Type.STRING,
           description: "Best-guess common name",
         },
         scientific_name: {
-          type: SchemaType.STRING,
+          type: Type.STRING,
           description: "Best-guess scientific name",
         },
       },
@@ -63,10 +68,10 @@ const tools: FunctionDeclaration[] = [
     description:
       "Match spoken plant symptoms against a local disease rule table.",
     parameters: {
-      type: SchemaType.OBJECT,
+      type: Type.OBJECT,
       properties: {
         symptoms: {
-          type: SchemaType.STRING,
+          type: Type.STRING,
           description: "Symptom description from the user",
         },
       },
@@ -78,10 +83,10 @@ const tools: FunctionDeclaration[] = [
     description:
       "Confirm a species via Perenual and return real watering, sunlight, and soil data. Sets is_estimate when no match.",
     parameters: {
-      type: SchemaType.OBJECT,
+      type: Type.OBJECT,
       properties: {
-        species_common_name: { type: SchemaType.STRING },
-        species_scientific_name: { type: SchemaType.STRING },
+        species_common_name: { type: Type.STRING },
+        species_scientific_name: { type: Type.STRING },
       },
       required: ["species_common_name", "species_scientific_name"],
     },
@@ -91,14 +96,14 @@ const tools: FunctionDeclaration[] = [
     description:
       "Calculate a watering interval in days from base days, soil type, and temperature Celsius.",
     parameters: {
-      type: SchemaType.OBJECT,
+      type: Type.OBJECT,
       properties: {
-        base_days: { type: SchemaType.NUMBER },
+        base_days: { type: Type.NUMBER },
         soil_type: {
-          type: SchemaType.STRING,
+          type: Type.STRING,
           description: "sandy, loamy, or clay",
         },
-        temp_c: { type: SchemaType.NUMBER },
+        temp_c: { type: Type.NUMBER },
       },
       required: ["base_days", "soil_type", "temp_c"],
     },
@@ -122,22 +127,8 @@ function getApiKey(): string {
   return key;
 }
 
-function getModel() {
-  const genAI = new GoogleGenerativeAI(getApiKey());
-  return genAI.getGenerativeModel({
-    model: "gemini-3.8-flash",
-    systemInstruction: SYSTEM_PROMPT,
-    tools: [{ functionDeclarations: tools }],
-  });
-}
-
-function getSpeechModel() {
-  const genAI = new GoogleGenerativeAI(getApiKey());
-  return genAI.getGenerativeModel({
-    model: "gemini-3.8-flash",
-    systemInstruction:
-      "You write short spoken replies for a plant assistant. Exactly 2-3 plain sentences. No markdown, asterisks, bullets, or lists.",
-  });
+function getClient(): GoogleGenAI {
+  return new GoogleGenAI({ apiKey: getApiKey() });
 }
 
 type Aggregated = {
@@ -153,7 +144,7 @@ type Aggregated = {
 async function runTool(
   name: string,
   args: Record<string, unknown>,
-  agg: Aggregated
+  agg: Aggregated,
 ): Promise<unknown> {
   switch (name) {
     case "identify_plant": {
@@ -196,7 +187,9 @@ async function runTool(
           agg.is_estimate = true;
         }
         agg.species_candidate =
-          confirmed.commonName || confirmed.scientificName || agg.species_candidate;
+          confirmed.commonName ||
+          confirmed.scientificName ||
+          agg.species_candidate;
         agg.care_summary = `watering=${care.wateringCategory ?? "unknown"}, baseDays=${baseDays}, sunlight=${care.sunlight.join(", ") || "unknown"}, soil=${care.soil.join(", ") || "unknown"}`;
         return {
           matched: true,
@@ -226,7 +219,7 @@ async function runTool(
       const result = calculateWatering(
         Number.isFinite(baseDays) ? baseDays : 7,
         soilType,
-        Number.isFinite(tempC) ? tempC : 20
+        Number.isFinite(tempC) ? tempC : 20,
       );
       agg.watering_days = result.intervalDays;
       agg.watering_factors = `soil=${result.soilType} (x${result.soilMultiplier}), temp=${result.tempC}C (x${result.climateMultiplier})`;
@@ -237,8 +230,10 @@ async function runTool(
   }
 }
 
-export async function runAssistant(transcript: string): Promise<AssistantPayload> {
-  const model = getModel();
+export async function runAssistant(
+  transcript: string,
+): Promise<AssistantPayload> {
+  const ai = getClient();
   const agg: Aggregated = {
     species_candidate: null,
     watering_days: null,
@@ -256,40 +251,76 @@ export async function runAssistant(transcript: string): Promise<AssistantPayload
     },
   ];
 
-  let result = await model.generateContent({ contents });
-  let response = result.response;
+  const requestConfig = {
+    systemInstruction: SYSTEM_PROMPT,
+    tools: [{ functionDeclarations: tools }],
+  };
+
+  let response;
+  try {
+    response = await ai.models.generateContent({
+      model: TEXT_MODEL,
+      contents,
+      config: requestConfig,
+    });
+  } catch (error) {
+    console.error("Gemini initial generateContent failed:", error);
+    throw error; // Re-thrown so the route handler returns a clean fallback
+  }
+
   let usedTools = false;
 
   // Function-calling loop (cap rounds to avoid runaway)
   for (let round = 0; round < 6; round++) {
-    const candidate = response.candidates?.[0];
-    const parts = candidate?.content?.parts ?? [];
-    const functionCalls = parts.filter((p) => p.functionCall);
-
-    if (functionCalls.length === 0) break;
+    const calls = response.functionCalls ?? [];
+    if (calls.length === 0) break;
 
     usedTools = true;
-    contents.push({ role: "model", parts });
+    const candidateParts = response.candidates?.[0]?.content?.parts ?? [];
+    contents.push({ role: "model", parts: candidateParts });
 
     const functionResponses: Part[] = [];
-    for (const part of functionCalls) {
-      const fc = part.functionCall!;
-      const args = (fc.args ?? {}) as Record<string, unknown>;
-      const toolResult = await runTool(fc.name, args, agg);
-      functionResponses.push({
-        functionResponse: {
-          name: fc.name,
-          response: toolResult as object,
-        },
-      });
+    for (const call of calls) {
+      const args = (call.args ?? {}) as Record<string, unknown>;
+      try {
+        const toolResult = await runTool(call.name ?? "", args, agg);
+        functionResponses.push({
+          functionResponse: {
+            name: call.name ?? "",
+            response: toolResult as Record<string, unknown>,
+          },
+        });
+      } catch (toolError) {
+        console.error(`Error running tool '${call.name}':`, toolError);
+        functionResponses.push({
+          functionResponse: {
+            name: call.name ?? "",
+            response: {
+              error: `Tool execution failed: ${toolError instanceof Error ? toolError.message : String(toolError)}`,
+            },
+          },
+        });
+      }
     }
 
     contents.push({ role: "user", parts: functionResponses });
-    result = await model.generateContent({ contents });
-    response = result.response;
+    try {
+      response = await ai.models.generateContent({
+        model: TEXT_MODEL,
+        contents,
+        config: requestConfig,
+      });
+    } catch (error) {
+      console.error(
+        "Gemini subsequent generateContent after tool calls failed:",
+        error,
+      );
+      throw error;
+    }
   }
 
   // Produce final spoken reply from structured facts (keeps phrasing natural)
+  let text = "";
   if (usedTools) {
     const facts = [
       `species_candidate: ${agg.species_candidate ?? "unknown"}`,
@@ -301,27 +332,31 @@ export async function runAssistant(transcript: string): Promise<AssistantPayload
       `is_estimate: ${agg.is_estimate}`,
     ].join("\n");
 
-    const spokenModel = getSpeechModel();
-    const spoken = await spokenModel.generateContent({
-      contents: [
-        {
-          role: "user",
-          parts: [
-            {
-              text: `Using ONLY these structured facts, write the final spoken reply (2-3 plain sentences, no markdown, no lists):\n${facts}`,
-            },
-          ],
+    try {
+      const spoken = await ai.models.generateContent({
+        model: TEXT_MODEL,
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text: `Using ONLY these structured facts, write the final spoken reply (2-3 plain sentences, no markdown, no lists):\n${facts}`,
+              },
+            ],
+          },
+        ],
+        config: {
+          systemInstruction:
+            "You write short spoken replies for a plant assistant. Exactly 2-3 plain sentences. No markdown, asterisks, bullets, or lists.",
         },
-      ],
-    });
-    response = spoken.response;
-  }
-
-  let text = "";
-  try {
-    text = response.text() ?? "";
-  } catch {
-    text = "";
+      });
+      text = spoken.text ?? "";
+    } catch (error) {
+      console.error("Gemini final spoken reply generation failed:", error);
+      text = buildFallbackSpeech(agg);
+    }
+  } else {
+    text = response.text ?? "";
   }
 
   if (!text.trim()) {
@@ -349,12 +384,14 @@ function buildFallbackSpeech(agg: Aggregated): string {
       bits.push(`The symptoms point to ${agg.diagnosis_cause}.`);
     }
   } else if (agg.diagnosis_confidence === "none" && !agg.species_candidate) {
-    bits.push("I could not identify a specific plant issue from that description.");
+    bits.push(
+      "I could not identify a specific plant issue from that description.",
+    );
   }
   if (agg.watering_days != null) {
     if (agg.is_estimate) {
       bits.push(
-        `Based on typical care for this type of plant, water about every ${agg.watering_days} days.`
+        `Based on typical care for this type of plant, water about every ${agg.watering_days} days.`,
       );
     } else {
       bits.push(`Water about every ${agg.watering_days} days.`);
