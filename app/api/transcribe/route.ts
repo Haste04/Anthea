@@ -6,7 +6,7 @@ export const maxDuration = 60;
 
 // Check https://ai.google.dev/gemini-api/docs/models before deploying —
 // this must match the model constant used in lib/gemini.ts.
-const AUDIO_MODEL = "gemini-3.8-flash";
+const AUDIO_MODEL = "gemini-3.5-flash-lite";
 
 function getApiKey(): string {
   const key = process.env.GEMINI_API_KEY;

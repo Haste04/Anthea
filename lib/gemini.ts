@@ -18,11 +18,20 @@ export type AssistantPayload = {
 };
 
 // Check https://ai.google.dev/gemini-api/docs/models before deploying —
-// model names and retirement dates change fast. gemini-1.5-flash and then
-// gemini-2.5-flash were both retired for new users during this project.
-const TEXT_MODEL = "gemini-3.8-flash";
+// model availability and quotas here have changed multiple times during
+// this project (1.5-flash, 2.5-flash, and 2.0-line models all retired;
+// 3.8-flash's free tier was only 20 req/day and frequently 503'd from
+// high demand). gemini-3.5-flash-lite is confirmed Stable (not preview)
+// on Google's current model list and positioned as their cost-effective,
+// high-throughput option - re-verify this is still true before deploying.
+const TEXT_MODEL = "gemini-3.5-flash-lite";
 
 const SYSTEM_PROMPT = `You are a hands-free plant voice assistant. The user speaks plant traits, symptoms, and care questions.
+
+Once you have called all the tools you need and received their results, your
+VERY NEXT text response is spoken directly to the user with no further
+processing. That response must be the final answer, not a description of
+what you found.
 
 Rules for your FINAL spoken reply to the user:
 - Exactly 2 to 3 plain sentences. No markdown, no asterisks, no bullet points, no lists, no code formatting.
@@ -129,6 +138,55 @@ function getApiKey(): string {
 
 function getClient(): GoogleGenAI {
   return new GoogleGenAI({ apiKey: getApiKey() });
+}
+
+function isTransientOverload(error: unknown): boolean {
+  const msg = error instanceof Error ? error.message : String(error);
+  return msg.includes('"code":503') || msg.includes("UNAVAILABLE");
+}
+
+function isQuotaExceeded(error: unknown): boolean {
+  const msg = error instanceof Error ? error.message : String(error);
+  return msg.includes('"code":429') || msg.includes("RESOURCE_EXHAUSTED");
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Retries ONLY on transient 503 overload (a couple hundred ms to a few
+// seconds of real recovery time). Never retries on 429 quota-exceeded -
+// that wastes another request against an already-exhausted daily cap
+// for zero chance of success.
+async function generateWithRetry(
+  ai: GoogleGenAI,
+  params: Parameters<GoogleGenAI["models"]["generateContent"]>[0],
+  label: string,
+): ReturnType<GoogleGenAI["models"]["generateContent"]> {
+  const delaysMs = [800, 2000];
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= delaysMs.length; attempt++) {
+    try {
+      return await ai.models.generateContent(params);
+    } catch (error) {
+      lastError = error;
+      if (isQuotaExceeded(error)) {
+        console.error(`${label}: quota exceeded, not retrying`, error);
+        throw error;
+      }
+      if (isTransientOverload(error) && attempt < delaysMs.length) {
+        console.error(
+          `${label}: transient 503, retrying in ${delaysMs[attempt]}ms`,
+          error,
+        );
+        await sleep(delaysMs[attempt]);
+        continue;
+      }
+      console.error(`${label}: failed`, error);
+      throw error;
+    }
+  }
+  throw lastError;
 }
 
 type Aggregated = {
@@ -258,24 +316,20 @@ export async function runAssistant(
 
   let response;
   try {
-    response = await ai.models.generateContent({
-      model: TEXT_MODEL,
-      contents,
-      config: requestConfig,
-    });
+    response = await generateWithRetry(
+      ai,
+      { model: TEXT_MODEL, contents, config: requestConfig },
+      "initial call",
+    );
   } catch (error) {
-    console.error("Gemini initial generateContent failed:", error);
     throw error; // Re-thrown so the route handler returns a clean fallback
   }
-
-  let usedTools = false;
 
   // Function-calling loop (cap rounds to avoid runaway)
   for (let round = 0; round < 6; round++) {
     const calls = response.functionCalls ?? [];
     if (calls.length === 0) break;
 
-    usedTools = true;
     const candidateParts = response.candidates?.[0]?.content?.parts ?? [];
     contents.push({ role: "model", parts: candidateParts });
 
@@ -305,59 +359,23 @@ export async function runAssistant(
 
     contents.push({ role: "user", parts: functionResponses });
     try {
-      response = await ai.models.generateContent({
-        model: TEXT_MODEL,
-        contents,
-        config: requestConfig,
-      });
-    } catch (error) {
-      console.error(
-        "Gemini subsequent generateContent after tool calls failed:",
-        error,
+      response = await generateWithRetry(
+        ai,
+        { model: TEXT_MODEL, contents, config: requestConfig },
+        `tool round ${round + 1} followup`,
       );
+    } catch (error) {
       throw error;
     }
   }
 
-  // Produce final spoken reply from structured facts (keeps phrasing natural)
-  let text = "";
-  if (usedTools) {
-    const facts = [
-      `species_candidate: ${agg.species_candidate ?? "unknown"}`,
-      `diagnosis_cause: ${agg.diagnosis_cause ?? "none"}`,
-      `diagnosis_confidence: ${agg.diagnosis_confidence}`,
-      `care_summary: ${agg.care_summary ?? "none"}`,
-      `watering_days: ${agg.watering_days ?? "unknown"}`,
-      `watering_factors: ${agg.watering_factors ?? "none"}`,
-      `is_estimate: ${agg.is_estimate}`,
-    ].join("\n");
-
-    try {
-      const spoken = await ai.models.generateContent({
-        model: TEXT_MODEL,
-        contents: [
-          {
-            role: "user",
-            parts: [
-              {
-                text: `Using ONLY these structured facts, write the final spoken reply (2-3 plain sentences, no markdown, no lists):\n${facts}`,
-              },
-            ],
-          },
-        ],
-        config: {
-          systemInstruction:
-            "You write short spoken replies for a plant assistant. Exactly 2-3 plain sentences. No markdown, asterisks, bullets, or lists.",
-        },
-      });
-      text = spoken.text ?? "";
-    } catch (error) {
-      console.error("Gemini final spoken reply generation failed:", error);
-      text = buildFallbackSpeech(agg);
-    }
-  } else {
-    text = response.text ?? "";
-  }
+  // The system prompt already instructs the model to produce the final
+  // 2-3 sentence plain-text spoken reply once it has no more tool calls
+  // to make, so the last response's own text IS the final answer - no
+  // separate phrasing call needed. This halves the Gemini requests used
+  // per interaction versus making an extra dedicated "write the reply"
+  // call, which matters a lot on a 20-requests/day free tier.
+  let text = response.text ?? "";
 
   if (!text.trim()) {
     text = buildFallbackSpeech(agg);
