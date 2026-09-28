@@ -7,40 +7,6 @@ import { blobToWav } from "@/lib/wav";
 
 type AgentMode = "idle" | "listening" | "speaking" | "processing";
 
-// #region agent log
-function dbgLog(
-  hypothesisId: string,
-  location: string,
-  message: string,
-  data: Record<string, unknown>,
-  runId = "post-fix"
-) {
-  const payload = {
-    sessionId: "779f22",
-    runId,
-    hypothesisId,
-    location,
-    message,
-    data,
-    timestamp: Date.now(),
-  };
-  const body = JSON.stringify(payload);
-  fetch("/api/debug-log", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body,
-  }).catch(() => {});
-  fetch("http://127.0.0.1:7448/ingest/432769e9-bda4-4f77-a75b-df7412c83e47", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Debug-Session-Id": "779f22",
-    },
-    body,
-  }).catch(() => {});
-}
-// #endregion
-
 const BENIGN_STT_ERRORS = new Set(["aborted", "no-speech"]);
 
 type AssistantResponse = {
@@ -50,6 +16,21 @@ type AssistantResponse = {
   is_estimate: boolean;
   diagnosis_confidence: string;
 };
+
+type ChatMessage = {
+  id: string;
+  role: "user" | "assistant";
+  text: string;
+  meta?: Omit<AssistantResponse, "response_text"> | null;
+  pending?: boolean;
+};
+
+function newId(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
 
 type SpeechRecognitionLike = {
   continuous: boolean;
@@ -102,18 +83,18 @@ function pickRecorderMime(): string {
 
 export default function Home() {
   const [mode, setMode] = useState<AgentMode>("idle");
-  const [transcript, setTranscript] = useState("");
-  const [responseText, setResponseText] = useState("");
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      id: "welcome",
+      role: "assistant",
+      text: "Describe a plant's traits, symptoms, and soil, and I'll help identify it, diagnose issues, and work out a watering schedule.",
+    },
+  ]);
+  const [liveCaption, setLiveCaption] = useState("");
   const [amplitude, setAmplitude] = useState(0);
   const [micSupported, setMicSupported] = useState(true);
-  const [textFallback, setTextFallback] = useState(false);
   const [typedInput, setTypedInput] = useState("");
-  const [statusHint, setStatusHint] = useState(
-    "Tap the button and describe your plant."
-  );
-  const [meta, setMeta] = useState<Omit<AssistantResponse, "response_text"> | null>(
-    null
-  );
+  const [statusHint, setStatusHint] = useState("");
 
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -130,14 +111,19 @@ export default function Home() {
   const submittedRef = useRef(false);
   const noSpeechTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const modeRef = useRef<AgentMode>("idle");
+  const scrollEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     modeRef.current = mode;
   }, [mode]);
 
   useEffect(() => {
-    transcriptRef.current = transcript;
-  }, [transcript]);
+    transcriptRef.current = liveCaption;
+  }, [liveCaption]);
+
+  useEffect(() => {
+    scrollEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages, liveCaption]);
 
   useEffect(() => {
     const ok =
@@ -146,9 +132,19 @@ export default function Home() {
       typeof MediaRecorder !== "undefined";
     setMicSupported(ok);
     if (!ok) {
-      setTextFallback(true);
-      setStatusHint("Microphone recording unavailable. Type your plant description below.");
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: newId(),
+          role: "assistant",
+          text: "Microphone recording isn't available in this browser. You can still type a description below.",
+        },
+      ]);
     }
+  }, []);
+
+  const pushAssistantMessage = useCallback((text: string) => {
+    setMessages((prev) => [...prev, { id: newId(), role: "assistant", text }]);
   }, []);
 
   const stopRecognition = useCallback(() => {
@@ -170,7 +166,9 @@ export default function Home() {
           resolve(null);
           return;
         }
-        resolve(new Blob(chunks, { type: recorderMimeRef.current || "audio/webm" }));
+        resolve(
+          new Blob(chunks, { type: recorderMimeRef.current || "audio/webm" }),
+        );
         return;
       }
       recorder.onstop = () => {
@@ -180,7 +178,9 @@ export default function Home() {
           resolve(null);
           return;
         }
-        resolve(new Blob(chunks, { type: recorderMimeRef.current || "audio/webm" }));
+        resolve(
+          new Blob(chunks, { type: recorderMimeRef.current || "audio/webm" }),
+        );
       };
       try {
         recorder.stop();
@@ -217,7 +217,7 @@ export default function Home() {
   const speakText = useCallback((text: string) => {
     if (typeof window === "undefined" || !window.speechSynthesis) {
       setMode("idle");
-      setStatusHint("Tap the button and describe your plant.");
+      setStatusHint("");
       return;
     }
     window.speechSynthesis.cancel();
@@ -226,11 +226,11 @@ export default function Home() {
     utter.onstart = () => setMode("speaking");
     utter.onend = () => {
       setMode("idle");
-      setStatusHint("Tap the button and describe your plant.");
+      setStatusHint("");
     };
     utter.onerror = () => {
       setMode("idle");
-      setStatusHint("Tap the button and describe your plant.");
+      setStatusHint("");
     };
     setMode("speaking");
     window.speechSynthesis.speak(utter);
@@ -241,15 +241,21 @@ export default function Home() {
       const trimmed = text.trim();
       if (!trimmed) {
         const msg = "I did not hear anything. Please try again.";
-        setResponseText(msg);
+        pushAssistantMessage(msg);
         speakText(msg);
         return;
       }
 
+      const userId = newId();
+      const assistantId = newId();
+      setMessages((prev) => [
+        ...prev,
+        { id: userId, role: "user", text: trimmed },
+        { id: assistantId, role: "assistant", text: "", pending: true },
+      ]);
       setMode("processing");
       setStatusHint("Thinking…");
-      setResponseText("");
-      setMeta(null);
+      setLiveCaption("");
 
       try {
         const res = await fetch("/api/assistant", {
@@ -257,65 +263,72 @@ export default function Home() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ transcript: trimmed }),
         });
-        const data = (await res.json()) as AssistantResponse & { error?: string };
+        const data = (await res.json()) as AssistantResponse & {
+          error?: string;
+        };
         if (!res.ok && !data.response_text) {
           throw new Error(data.error || "Request failed");
         }
         const spoken =
-          data.response_text ||
-          "I couldn't process that, please try again.";
-        setResponseText(spoken);
-        setMeta({
-          species_candidate: data.species_candidate,
-          watering_days: data.watering_days,
-          is_estimate: data.is_estimate,
-          diagnosis_confidence: data.diagnosis_confidence,
-        });
+          data.response_text || "I couldn't process that, please try again.";
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId
+              ? {
+                  ...m,
+                  text: spoken,
+                  pending: false,
+                  meta: {
+                    species_candidate: data.species_candidate,
+                    watering_days: data.watering_days,
+                    is_estimate: data.is_estimate,
+                    diagnosis_confidence: data.diagnosis_confidence,
+                  },
+                }
+              : m,
+          ),
+        );
         speakText(spoken);
       } catch (err) {
-        // #region agent log
-        dbgLog("C", "page.tsx:submit-catch", "assistant fetch failed", {
-          err: err instanceof Error ? err.message : String(err),
-        });
-        // #endregion
+        console.error("assistant fetch failed", err);
         const msg = "I couldn't process that, please try again.";
-        setResponseText(msg);
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId ? { ...m, text: msg, pending: false } : m,
+          ),
+        );
         speakText(msg);
       }
     },
-    [speakText]
+    [pushAssistantMessage, speakText],
   );
 
-  const transcribeWithGemini = useCallback(async (blob: Blob): Promise<string> => {
-    setStatusHint("Transcribing with cloud speech…");
-    let wav: Blob;
-    try {
-      wav = await blobToWav(blob);
-    } catch {
-      wav = blob;
-    }
-    const form = new FormData();
-    form.append("audio", wav, "speech.wav");
-    // #region agent log
-    dbgLog("C", "page.tsx:transcribe", "Sending audio to /api/transcribe", {
-      bytes: wav.size,
-      type: wav.type,
-    });
-    // #endregion
-    const res = await fetch("/api/transcribe", { method: "POST", body: form });
-    const data = (await res.json()) as { transcript?: string; error?: string };
-    // #region agent log
-    dbgLog("C", "page.tsx:transcribe-result", "Cloud STT result", {
-      ok: res.ok,
-      len: (data.transcript ?? "").length,
-      error: data.error ?? null,
-    });
-    // #endregion
-    if (!res.ok) {
-      throw new Error(data.error || "Transcription failed");
-    }
-    return (data.transcript ?? "").trim();
-  }, []);
+  const transcribeWithGemini = useCallback(
+    async (blob: Blob): Promise<string> => {
+      setStatusHint("Transcribing…");
+      let wav: Blob;
+      try {
+        wav = await blobToWav(blob);
+      } catch {
+        wav = blob;
+      }
+      const form = new FormData();
+      form.append("audio", wav, "speech.wav");
+      const res = await fetch("/api/transcribe", {
+        method: "POST",
+        body: form,
+      });
+      const data = (await res.json()) as {
+        transcript?: string;
+        error?: string;
+      };
+      if (!res.ok) {
+        throw new Error(data.error || "Transcription failed");
+      }
+      return (data.transcript ?? "").trim();
+    },
+    [],
+  );
 
   const triggerSubmit = useCallback(async () => {
     if (submittedRef.current) return;
@@ -335,45 +348,37 @@ export default function Home() {
 
     try {
       let text = browserText;
-      if ((!text || preferCloudSttRef.current) && recorded && recorded.size > 0) {
+      if (
+        (!text || preferCloudSttRef.current) &&
+        recorded &&
+        recorded.size > 0
+      ) {
         text = await transcribeWithGemini(recorded);
         if (text) {
-          setTranscript(text);
+          setLiveCaption(text);
           transcriptRef.current = text;
         }
       } else if (!text && recorded && recorded.size > 0) {
         text = await transcribeWithGemini(recorded);
         if (text) {
-          setTranscript(text);
+          setLiveCaption(text);
           transcriptRef.current = text;
         }
       }
 
-      // #region agent log
-      dbgLog("C", "page.tsx:triggerSubmit", "Submitting after listen", {
-        usedCloud: !browserText || preferCloudSttRef.current,
-        len: text.length,
-        hadRecording: !!recorded && recorded.size > 0,
-      });
-      // #endregion
-
       await submitTranscript(text);
     } catch (err) {
-      // #region agent log
-      dbgLog("C", "page.tsx:triggerSubmit-catch", "Submit/transcribe failed", {
-        err: err instanceof Error ? err.message : String(err),
-      });
-      // #endregion
+      console.error("submit/transcribe failed", err);
       const msg =
         err instanceof Error && err.message.includes("GEMINI_API_KEY")
-          ? "Cloud speech needs a Gemini API key in .env.local. Add GEMINI_API_KEY and restart."
+          ? "Cloud speech needs a Gemini API key configured. Try typing your description instead."
           : "I couldn't process that, please try again.";
-      setResponseText(msg);
+      pushAssistantMessage(msg);
       setMode("idle");
-      setStatusHint(msg);
-      setTextFallback(true);
+      setStatusHint("");
     }
   }, [
+    pushAssistantMessage,
     stopAudioMeter,
     stopMediaRecorder,
     stopRecognition,
@@ -381,46 +386,42 @@ export default function Home() {
     transcribeWithGemini,
   ]);
 
-  const startAmplitudeLoop = useCallback(
-    (onSilence: () => void) => {
-      const analyser = analyserRef.current;
-      if (!analyser) return;
-      const data = new Uint8Array(analyser.fftSize);
+  const startAmplitudeLoop = useCallback((onSilence: () => void) => {
+    const analyser = analyserRef.current;
+    if (!analyser) return;
+    const data = new Uint8Array(analyser.fftSize);
 
-      const tick = () => {
-        if (modeRef.current !== "listening") return;
-        analyser.getByteTimeDomainData(data);
-        let sum = 0;
-        for (let i = 0; i < data.length; i++) {
-          const v = (data[i] - 128) / 128;
-          sum += v * v;
+    const tick = () => {
+      if (modeRef.current !== "listening") return;
+      analyser.getByteTimeDomainData(data);
+      let sum = 0;
+      for (let i = 0; i < data.length; i++) {
+        const v = (data[i] - 128) / 128;
+        sum += v * v;
+      }
+      const rms = Math.sqrt(sum / data.length);
+      setAmplitude(Math.min(1, rms * 4));
+
+      if (rms >= RMS_THRESHOLD) {
+        silenceStartedRef.current = null;
+        lastHeardSpeechRef.current = true;
+      } else if (lastHeardSpeechRef.current) {
+        if (silenceStartedRef.current == null) {
+          silenceStartedRef.current = performance.now();
+        } else if (
+          performance.now() - silenceStartedRef.current >=
+          SILENCE_MS
+        ) {
+          onSilence();
+          return;
         }
-        const rms = Math.sqrt(sum / data.length);
-        setAmplitude(Math.min(1, rms * 4));
-
-        // RMS-only speech gate (works without browser STT transcript)
-        if (rms >= RMS_THRESHOLD) {
-          silenceStartedRef.current = null;
-          lastHeardSpeechRef.current = true;
-        } else if (lastHeardSpeechRef.current) {
-          if (silenceStartedRef.current == null) {
-            silenceStartedRef.current = performance.now();
-          } else if (
-            performance.now() - silenceStartedRef.current >=
-            SILENCE_MS
-          ) {
-            onSilence();
-            return;
-          }
-        }
-
-        rafAmpRef.current = requestAnimationFrame(tick);
-      };
+      }
 
       rafAmpRef.current = requestAnimationFrame(tick);
-    },
-    []
-  );
+    };
+
+    rafAmpRef.current = requestAnimationFrame(tick);
+  }, []);
 
   const startMicStream = useCallback(async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -448,44 +449,28 @@ export default function Home() {
 
   const beginListening = useCallback(
     async (opts: { autoSilenceSubmit: boolean }) => {
-      // #region agent log
-      dbgLog("D", "page.tsx:beginListening", "beginListening entered", {
-        autoSilence: opts.autoSilenceSubmit,
-      });
-      // #endregion
       submittedRef.current = false;
       preferCloudSttRef.current = false;
       silenceStartedRef.current = null;
       lastHeardSpeechRef.current = false;
-      setTranscript("");
+      setLiveCaption("");
       transcriptRef.current = "";
-      setResponseText("");
-      setMeta(null);
       setMode("listening");
-      setStatusHint(
-        opts.autoSilenceSubmit
-          ? "Listening… pause when finished."
-          : "Hold and speak… release to send."
-      );
+      setStatusHint(opts.autoSilenceSubmit ? "Listening…" : "Hold and speak…");
 
       try {
         await startMicStream();
       } catch (err) {
-        // #region agent log
-        dbgLog("B", "page.tsx:mic-catch", "getUserMedia failed", {
-          err: err instanceof Error ? err.message : String(err),
-        });
-        // #endregion
+        console.error("getUserMedia failed", err);
         cleanupListening();
         setMode("idle");
-        setTextFallback(true);
-        setStatusHint(
-          "Microphone permission is required. Type your plant description below."
+        setStatusHint("");
+        pushAssistantMessage(
+          "Microphone permission is required for voice input. You can type your plant description below instead.",
         );
         return;
       }
 
-      // Browser STT is optional live captions; cloud STT is the reliable path
       const Ctor = getSpeechRecognitionCtor();
       if (Ctor) {
         const recognition = new Ctor();
@@ -502,22 +487,14 @@ export default function Home() {
             else interim += piece;
           }
           const next = (finalText || interim).trim();
-          setTranscript(next);
+          setLiveCaption(next);
           transcriptRef.current = next;
         };
         recognition.onerror = (event) => {
           const code = event.error;
-          // #region agent log
-          dbgLog("C", "page.tsx:onerror", "SpeechRecognition error event", {
-            error: code,
-          });
-          // #endregion
           if (BENIGN_STT_ERRORS.has(code)) return;
-          // Keep mic + MediaRecorder running; use Gemini transcription on silence
           preferCloudSttRef.current = true;
-          setStatusHint(
-            "Using cloud speech transcription… keep talking, then pause."
-          );
+          setStatusHint("Using cloud speech… keep talking, then pause.");
           try {
             recognition.stop();
           } catch {
@@ -532,15 +509,11 @@ export default function Home() {
           recognition.start();
         } catch {
           preferCloudSttRef.current = true;
-          setStatusHint(
-            "Using cloud speech transcription… keep talking, then pause."
-          );
+          setStatusHint("Using cloud speech… keep talking, then pause.");
         }
       } else {
         preferCloudSttRef.current = true;
-        setStatusHint(
-          "Using cloud speech transcription… keep talking, then pause."
-        );
+        setStatusHint("Using cloud speech… keep talking, then pause.");
       }
 
       if (opts.autoSilenceSubmit) {
@@ -554,8 +527,10 @@ export default function Home() {
             void stopMediaRecorder();
             cleanupListening();
             const msg = "I did not hear anything. Please try again.";
-            setResponseText(msg);
+            pushAssistantMessage(msg);
             speakText(msg);
+            setMode("idle");
+            setStatusHint("");
           } else {
             void triggerSubmit();
           }
@@ -568,28 +543,22 @@ export default function Home() {
     },
     [
       cleanupListening,
+      pushAssistantMessage,
       speakText,
       startAmplitudeLoop,
       startMicStream,
       stopMediaRecorder,
       triggerSubmit,
-    ]
+    ],
   );
 
   const onStartListen = useCallback(() => {
-    // #region agent log
-    dbgLog("D", "page.tsx:onStartListen", "Tap to speak clicked", {
-      mode: modeRef.current,
-    });
-    // #endregion
     if (modeRef.current !== "idle") return;
-    setTextFallback(false);
     void beginListening({ autoSilenceSubmit: true });
   }, [beginListening]);
 
   const onPushStart = useCallback(() => {
     if (modeRef.current !== "idle") return;
-    setTextFallback(false);
     void beginListening({ autoSilenceSubmit: false });
   }, [beginListening]);
 
@@ -606,93 +575,126 @@ export default function Home() {
     };
   }, [cleanupListening, stopMediaRecorder]);
 
+  const composerDisabled = mode === "processing" || mode === "speaking";
+  const statusDotLabel =
+    mode === "listening"
+      ? "Listening"
+      : mode === "processing"
+        ? "Thinking"
+        : mode === "speaking"
+          ? "Speaking"
+          : "Ready";
+
   return (
     <div className="app-shell">
-      <header className="app-header">
-        <p className="brand">Anthea</p>
-        <h1 className="headline">Plant voice assistant</h1>
-        <p className="subhead">
-          Describe traits, symptoms, and soil. I will identify, diagnose, and
-          suggest watering.
-        </p>
+      <header className="chat-header">
+        <span className="brand">Anthea</span>
+        <span className={`status-pill status-pill--${mode}`}>
+          <span className="status-dot" aria-hidden />
+          {statusDotLabel}
+        </span>
       </header>
 
-      <main className="stage">
-        <Visualizer amplitude={amplitude} mode={mode} />
-        <p className="status" aria-live="polite">
-          {statusHint}
-        </p>
+      <main className="chat-scroll" aria-live="polite">
+        {messages.map((m) => (
+          <div key={m.id} className={`msg-row msg-row--${m.role}`}>
+            {m.role === "assistant" && (
+              <div className={`msg-avatar msg-avatar--${mode}`}>
+                <Visualizer amplitude={amplitude} mode={mode} />
+              </div>
+            )}
+            <div className="msg-col">
+              <div className={`msg-bubble msg-bubble--${m.role}`}>
+                {m.pending ? (
+                  <span className="typing-dots" aria-label="Thinking">
+                    <span />
+                    <span />
+                    <span />
+                  </span>
+                ) : (
+                  m.text
+                )}
+              </div>
+              {m.meta && !m.pending && (
+                <p className="msg-meta">
+                  {m.meta.species_candidate
+                    ? `Species: ${m.meta.species_candidate}. `
+                    : ""}
+                  {m.meta.watering_days != null
+                    ? `Watering: every ${m.meta.watering_days} days. `
+                    : ""}
+                  {m.meta.is_estimate
+                    ? "Care data: estimate. "
+                    : "Care data: lookup. "}
+                  Diagnosis confidence: {m.meta.diagnosis_confidence}.
+                </p>
+              )}
+            </div>
+          </div>
+        ))}
 
-        {micSupported && (
-          <MicButton
-            mode={mode}
-            speechSupported
-            onStartListen={onStartListen}
-            onPushStart={onPushStart}
-            onPushEnd={onPushEnd}
-          />
+        {mode === "listening" && (
+          <div className="msg-row msg-row--user msg-row--ghost">
+            <div className="msg-col">
+              <div className="msg-bubble msg-bubble--user msg-bubble--ghost">
+                {liveCaption || "…"}
+              </div>
+            </div>
+          </div>
         )}
 
-        {textFallback && (
-          <form
-            className="text-fallback"
-            onSubmit={(e) => {
+        <div ref={scrollEndRef} />
+      </main>
+
+      {statusHint && <p className="status-hint">{statusHint}</p>}
+
+      <form
+        className="composer"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const text = typedInput.trim();
+          if (!text || composerDisabled) return;
+          setTypedInput("");
+          void submitTranscript(text);
+        }}
+      >
+        {micSupported && (
+          <div className="composer-mic">
+            <MicButton
+              mode={mode}
+              speechSupported
+              onStartListen={onStartListen}
+              onPushStart={onPushStart}
+              onPushEnd={onPushEnd}
+            />
+          </div>
+        )}
+        <textarea
+          className="composer-input"
+          rows={1}
+          value={typedInput}
+          onChange={(e) => setTypedInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
               const text = typedInput.trim();
-              if (!text || mode === "processing" || mode === "speaking") return;
-              setTranscript(text);
-              transcriptRef.current = text;
+              if (!text || composerDisabled) return;
+              setTypedInput("");
               void submitTranscript(text);
-            }}
-          >
-            <label htmlFor="typed-plant">
-              Or type what you would say about the plant
-            </label>
-            <textarea
-              id="typed-plant"
-              rows={3}
-              value={typedInput}
-              onChange={(e) => setTypedInput(e.target.value)}
-              placeholder="Square stems, purple flowers, yellowing lower leaves, sandy soil…"
-              disabled={mode === "processing" || mode === "speaking"}
-            />
-            <button
-              type="submit"
-              className="mic-btn"
-              disabled={
-                !typedInput.trim() ||
-                mode === "processing" ||
-                mode === "speaking"
-              }
-            >
-              Send
-            </button>
-          </form>
-        )}
-
-        <section className="panels" aria-live="polite">
-          <div className="panel">
-            <h2>You said</h2>
-            <p>{transcript || "—"}</p>
-          </div>
-          <div className="panel">
-            <h2>Reply</h2>
-            <p>{responseText || "—"}</p>
-            {meta && (
-              <p className="meta">
-                {meta.species_candidate
-                  ? `Species: ${meta.species_candidate}. `
-                  : ""}
-                {meta.watering_days != null
-                  ? `Watering: every ${meta.watering_days} days. `
-                  : ""}
-                {meta.is_estimate ? "Care data: estimate. " : "Care data: lookup. "}
-                Diagnosis confidence: {meta.diagnosis_confidence}.
-              </p>
-            )}
-          </div>
-        </section>
-      </main>
+            }
+          }}
+          placeholder="Describe your plant, or tap the mic…"
+          disabled={composerDisabled}
+        />
+        <button
+          type="submit"
+          className="composer-send"
+          disabled={!typedInput.trim() || composerDisabled}
+          aria-label="Send"
+        >
+          →
+        </button>
+      </form>
     </div>
   );
 }

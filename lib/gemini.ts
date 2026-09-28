@@ -142,7 +142,11 @@ function getClient(): GoogleGenAI {
 
 function isTransientOverload(error: unknown): boolean {
   const msg = error instanceof Error ? error.message : String(error);
-  return msg.includes('"code":503') || msg.includes("UNAVAILABLE");
+  return (
+    msg.includes('"code":503') ||
+    msg.includes("UNAVAILABLE") ||
+    msg.includes("__ANTHEA_TIMEOUT__")
+  );
 }
 
 function isQuotaExceeded(error: unknown): boolean {
@@ -152,6 +156,37 @@ function isQuotaExceeded(error: unknown): boolean {
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Node's fetch defaults to a 5-minute headers timeout, which is far too
+// long to ever let a user (or a live demo) sit and wait. Race every call
+// against a much shorter budget so a stuck network condition fails fast
+// with a clear, retryable error instead of hanging the whole request.
+// 30s (not 15s) because later tool-calling rounds carry a much larger
+// conversation payload and may genuinely need more processing time on
+// a "lite" model - 15s was cutting off some of those before they finished.
+const REQUEST_TIMEOUT_MS = 30000;
+
+function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(
+        new Error(
+          `__ANTHEA_TIMEOUT__ ${label} timed out after ${REQUEST_TIMEOUT_MS}ms`,
+        ),
+      );
+    }, REQUEST_TIMEOUT_MS);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
 }
 
 // Retries ONLY on transient 503 overload (a couple hundred ms to a few
@@ -167,7 +202,7 @@ async function generateWithRetry(
   let lastError: unknown;
   for (let attempt = 0; attempt <= delaysMs.length; attempt++) {
     try {
-      return await ai.models.generateContent(params);
+      return await withTimeout(ai.models.generateContent(params), label);
     } catch (error) {
       lastError = error;
       if (isQuotaExceeded(error)) {

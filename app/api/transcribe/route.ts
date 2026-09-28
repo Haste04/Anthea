@@ -16,6 +16,30 @@ function getApiKey(): string {
   return key;
 }
 
+// Node's fetch defaults to a 5-minute headers timeout - far too long to
+// let a stuck network condition freeze a voice request. Fail fast instead.
+const REQUEST_TIMEOUT_MS = 15000;
+
+function withTimeout<T>(promise: Promise<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(
+        new Error(`Transcription timed out after ${REQUEST_TIMEOUT_MS}ms`),
+      );
+    }, REQUEST_TIMEOUT_MS);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const form = await req.formData();
@@ -33,25 +57,27 @@ export async function POST(req: NextRequest) {
 
     const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
-    const result = await ai.models.generateContent({
-      model: AUDIO_MODEL,
-      contents: [
-        {
-          role: "user",
-          parts: [
-            {
-              inlineData: {
-                mimeType,
-                data: base64,
+    const result = await withTimeout(
+      ai.models.generateContent({
+        model: AUDIO_MODEL,
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                inlineData: {
+                  mimeType,
+                  data: base64,
+                },
               },
-            },
-            {
-              text: "Transcribe the spoken audio into plain English text only. Do not add quotes, labels, markdown, or commentary. If the audio is silent or unintelligible, return an empty string.",
-            },
-          ],
-        },
-      ],
-    });
+              {
+                text: "Transcribe the spoken audio into plain English text only. Do not add quotes, labels, markdown, or commentary. If the audio is silent or unintelligible, return an empty string.",
+              },
+            ],
+          },
+        ],
+      }),
+    );
 
     let transcript = (result.text ?? "").trim();
 
