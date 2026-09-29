@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
+import {
+  enforceApiLimit,
+  rateLimitResponse,
+  readBodyWithLimit,
+} from "@/lib/api-guard";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -7,6 +12,16 @@ export const maxDuration = 60;
 // Check https://ai.google.dev/gemini-api/docs/models before deploying —
 // this must match the model constant used in lib/gemini.ts.
 const AUDIO_MODEL = "gemini-3.5-flash-lite";
+const MAX_AUDIO_BYTES = 5 * 1024 * 1024;
+const MAX_REQUEST_BYTES = MAX_AUDIO_BYTES + 64 * 1024;
+const ACCEPTED_AUDIO_TYPES = new Set([
+  "audio/mp4",
+  "audio/mpeg",
+  "audio/ogg",
+  "audio/wav",
+  "audio/webm",
+  "audio/x-wav",
+]);
 
 function getApiKey(): string {
   const key = process.env.GEMINI_API_KEY;
@@ -41,17 +56,62 @@ function withTimeout<T>(promise: Promise<T>): Promise<T> {
 }
 
 export async function POST(req: NextRequest) {
-  try {
-    const form = await req.formData();
-    const audio = form.get("audio");
-    if (!(audio instanceof Blob) || audio.size === 0) {
-      return NextResponse.json(
-        { transcript: "", error: "No audio provided" },
-        { status: 400 },
-      );
-    }
+  const rate = await enforceApiLimit(req, "transcribe");
+  if (!rate.allowed) return rateLimitResponse(rate);
 
-    const mimeType = audio.type || "audio/wav";
+  const contentType = req.headers.get("content-type") ?? "";
+  if (!contentType.toLowerCase().startsWith("multipart/form-data;")) {
+    return NextResponse.json(
+      { transcript: "", error: "Expected a multipart audio upload." },
+      { status: 415 },
+    );
+  }
+
+  const bytes = await readBodyWithLimit(req, MAX_REQUEST_BYTES);
+  if (!bytes) {
+    return NextResponse.json(
+      { transcript: "", error: "Audio upload exceeds the 5 MB limit." },
+      { status: 413 },
+    );
+  }
+
+  let form: FormData;
+  try {
+    const bodyBuffer = new ArrayBuffer(bytes.byteLength);
+    new Uint8Array(bodyBuffer).set(bytes);
+    form = await new Response(bodyBuffer, {
+      headers: { "content-type": contentType },
+    }).formData();
+  } catch {
+    return NextResponse.json(
+      { transcript: "", error: "Invalid multipart request body." },
+      { status: 400 },
+    );
+  }
+
+  const audio = form.get("audio");
+  if (!(audio instanceof Blob) || audio.size === 0) {
+    return NextResponse.json(
+      { transcript: "", error: "No audio provided." },
+      { status: 400 },
+    );
+  }
+  if (audio.size > MAX_AUDIO_BYTES) {
+    return NextResponse.json(
+      { transcript: "", error: "Audio upload exceeds the 5 MB limit." },
+      { status: 413 },
+    );
+  }
+
+  const mimeType = (audio.type || "audio/wav").toLowerCase().split(";")[0];
+  if (!ACCEPTED_AUDIO_TYPES.has(mimeType)) {
+    return NextResponse.json(
+      { transcript: "", error: "Unsupported audio type." },
+      { status: 415 },
+    );
+  }
+
+  try {
     const buffer = Buffer.from(await audio.arrayBuffer());
     const base64 = buffer.toString("base64");
 
@@ -95,7 +155,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         transcript: "",
-        error: err instanceof Error ? err.message : "Transcription failed",
+        error: "Transcription failed.",
       },
       { status: 500 },
     );

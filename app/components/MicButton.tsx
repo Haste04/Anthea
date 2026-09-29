@@ -6,6 +6,8 @@ type MicButtonProps = {
   onStartListen: () => void;
   onPushStart: () => void;
   onPushEnd: () => void;
+  onStopListen: () => void;
+  recordingReady?: boolean;
   disabled?: boolean;
 };
 
@@ -15,6 +17,8 @@ export default function MicButton({
   onStartListen,
   onPushStart,
   onPushEnd,
+  onStopListen,
+  recordingReady = true,
   disabled,
 }: MicButtonProps) {
   const busy = mode === "processing" || mode === "speaking";
@@ -41,7 +45,7 @@ export default function MicButton({
         }}
         aria-label="Hold to talk"
       >
-        {listening ? "Release to send" : "Hold to talk"}
+        {listening ? "Release to review" : "Hold to talk"}
       </button>
     );
   }
@@ -50,9 +54,11 @@ export default function MicButton({
     <button
       type="button"
       className={`mic-btn ${listening ? "mic-btn--active" : ""}`}
-      disabled={disabled || busy || listening}
-      onClick={onStartListen}
-      aria-label={listening ? "Listening" : "Start listening"}
+      disabled={disabled || busy || (listening && !recordingReady)}
+      onClick={listening ? onStopListen : onStartListen}
+      aria-label={listening ? "Stop recording and review transcript" : "Start recording"}
+      aria-pressed={listening}
+      title={listening ? "Stop recording and review transcript" : "Start recording"}
     >
       {listening ? "Listening…" : busy ? "Please wait…" : "Tap to speak"}
     </button>

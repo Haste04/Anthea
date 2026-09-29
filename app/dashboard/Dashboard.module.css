@@ -1,0 +1,142 @@
+.shell {
+  width: min(100%, 80rem);
+  max-width: 80rem;
+  height: 100dvh;
+  margin-inline: auto;
+  padding: 0 clamp(1rem, 2.5vw, 2rem) 1.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.shell .header {
+  max-width: none;
+  min-height: 76px;
+  padding: 1rem 0;
+  flex-shrink: 0;
+}
+
+.brandCaption { color: var(--muted); font-size: 0.8rem; padding-left: 0.8rem; border-left: 1px solid var(--border); }
+.workspace { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 1.25rem; flex: 1; min-height: 0; }
+.chatArea { min-width: 0; min-height: 0; display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 1.5rem; background: rgb(247 250 245 / 90%); overflow: hidden; }
+.chatHeading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.1rem 1.5rem; border-bottom: 1px solid var(--border); background: rgb(255 255 255 / 70%); flex-shrink: 0; }
+.chatHeading h1 { margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--leaf-deep); }
+.chatHeading p { margin: 0.15rem 0 0; font-size: 0.82rem; color: var(--muted); }
+.chatHeading > span { font-size: 0.75rem; color: var(--muted); padding: 0.3rem 0.65rem; border: 1px solid var(--border); border-radius: 999px; white-space: nowrap; }
+.chatArea .scroll { padding: 1.5rem; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #b8cdbb transparent; }
+.chatArea .welcome { margin: auto; padding: 1.5rem 0; max-width: 36rem; text-align: left; gap: 0; }
+.welcomeCopy { max-width: none; }
+.questionTitle { margin: 0; color: var(--leaf-deep); font-family: var(--font-brand), Georgia, serif; font-size: clamp(1.8rem, 2.5vw, 2.5rem); letter-spacing: -0.03em; line-height: 1.15; text-wrap: balance; }
+.welcomeCopy .description { margin: 0.8rem 0 1.5rem; max-width: 31rem; font-size: 1rem; line-height: 1.6; color: var(--muted); }
+.welcomeCopy .starters { gap: 0.7rem; }
+.starterLabel { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 0.75rem; padding: 0.25rem 0.4rem; background: white; border-radius: 0.35rem; }
+.inputDock { background: rgb(255 255 255 / 85%); flex-shrink: 0; padding-top: 0.5rem; border-top: 1px solid var(--border); }
+.inputDock :global(.new-response) { display: block; margin-inline: auto; }
+.inputDock .composer { border-top: 0; max-width: none; padding: 0.7rem 1.25rem 0.8rem; }
+.composerHelp { color: var(--muted); font-size: 0.75rem; text-align: center; margin: 0; padding: 0 1rem 0.8rem; }
+.companion { min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; display: flex; flex-direction: column; gap: 1rem; }
+.companion > section { flex-shrink: 0; }
+.companionGarden { border: 1px solid var(--border); border-radius: 1.5rem; text-align: center; padding: 1.25rem 1rem 1rem; background: linear-gradient(rgb(247 250 245 / 82%), rgb(247 250 245 / 93%)), url("/images/welcome-garden.webp") center / cover; display: flex; flex-direction: column; align-items: center; }
+.eyebrow { margin: 0; font-size: 0.67rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--leaf); font-weight: 700; }
+.companion .companionMascot { --cactea-size: 180px; margin-block: 0.3rem; }
+.companionGarden h2 { margin: 0; font-family: var(--font-brand), Georgia, serif; font-size: 1.75rem; line-height: 1.15; color: var(--leaf-deep); }
+.companionSubtitle { font-size: 0.82rem; color: var(--muted); margin: 0.35rem 0 1rem; }
+.companionStatus p { margin: 0.6rem 0 0; font-size: 0.8rem; color: var(--muted); line-height: 1.4; }
+.plantCard { background: white; border: 1px solid var(--border); border-radius: 1.25rem; padding: 1.1rem; }
+.cardHeading { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; }
+.cardHeading h2 { font-size: 1rem; color: var(--leaf-deep); margin: 0; white-space: nowrap; }
+.sourceBadge { font-size: 0.65rem; color: var(--leaf-deep); background: var(--mist); border-radius: 0.35rem; padding: 0.25rem 0.4rem; text-align: center; }
+.summaryCaption { font-size: 0.74rem; color: var(--muted); line-height: 1.45; margin: 0.5rem 0 0.75rem; }
+.plantFacts { margin: 0; }
+.plantFacts > div { padding: 0.8rem 0; border-top: 1px solid #e8eee7; }
+.plantFacts > div:last-child { padding-bottom: 0; }
+.plantFacts dt { font-size: 0.74rem; color: var(--muted); margin-bottom: 0.3rem; }
+.plantFacts dd { margin: 0; font-size: 0.92rem; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
+.plantFacts p { color: var(--muted); font-size: 0.76rem; line-height: 1.5; margin: 0.45rem 0 0; }
+.plantEmpty { border: 1px dashed var(--border); border-radius: 0.8rem; padding: 0.8rem; margin-top: 1rem; background: var(--cream); }
+.plantEmpty p { color: var(--leaf-deep); font-weight: 600; margin: 0 0 0.45rem; font-size: 0.9rem; }
+.plantEmpty span { display: block; color: var(--muted); font-size: 0.82rem; line-height: 1.55; }
+.companionTip { display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.25rem 0.7rem 0.8rem; }
+.companionTip p { color: var(--muted); font-size: 0.8rem; line-height: 1.55; margin: 0; }
+.tipIcon { color: var(--leaf); font-size: 1.25rem; line-height: 1.2; }
+.newPlantButton { border: 1px solid var(--border); border-radius: 999px; padding: 0.55rem 0.85rem; background: var(--cream); color: var(--leaf-deep); font: inherit; font-size: 0.82rem; font-weight: 600; white-space: nowrap; cursor: pointer; }
+.messageSource { align-self: flex-start; border-radius: 0.35rem; background: #eef5ee; padding: 0.2rem 0.45rem; color: var(--muted); font-size: 0.7rem; }
+.nextCheck { background: #edf6e9; border: 1px solid #d1e4c8; border-radius: 0.8rem; padding: 0.8rem; margin-bottom: 0.8rem; }
+.nextCheck h3 { font-size: 0.8rem; color: var(--leaf-deep); margin: 0 0 0.4rem; }
+.nextCheck p { margin: 0; font-size: 0.85rem; line-height: 1.5; color: var(--ink); overflow-wrap: anywhere; }
+.nextCheck button { color: var(--leaf-deep); background: none; border: 0; font: inherit; font-size: 0.82rem; padding: 0.25rem 0; text-align: left; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.careDetails { margin-top: 0.8rem; border-top: 1px solid #e8eee7; padding-top: 0.75rem; }
+.careDetails summary { cursor: pointer; font-size: 0.8rem; color: var(--leaf-deep); font-weight: 600; }
+.careDetails .plantFacts { margin-top: 0.65rem; }
+.transcriptReview { margin: 0.4rem 1.25rem 1rem; border: 1px solid var(--border); border-radius: 1rem; padding: 1rem; background: var(--cream); }
+.reviewHeading { display: flex; justify-content: space-between; gap: 1rem; align-items: center; margin-bottom: 0.6rem; }
+.reviewHeading h2 { color: var(--leaf-deep); font-size: 0.95rem; margin: 0; }
+.reviewHeading span { color: var(--muted); font-size: 0.75rem; white-space: nowrap; }
+.transcriptReview textarea { width: 100%; resize: vertical; min-height: 80px; max-height: 160px; padding: 0.75rem; border: 1px solid var(--border); border-radius: 0.7rem; font: inherit; line-height: 1.45; background: white; color: var(--ink); }
+.reviewActions, .dialogActions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 0.65rem; margin-top: 0.75rem; }
+.reviewActions button, .dialogActions button { border: 1px solid var(--border); border-radius: 0.65rem; background: white; color: var(--leaf-deep); padding: 0.6rem 0.85rem; font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+.reviewActions .sendTranscript, .dialogActions .sendTranscript { background: var(--leaf); border-color: var(--leaf); color: white; }
+.reviewActions button:disabled, .nextCheck button:disabled { opacity: 0.5; cursor: not-allowed; }
+.reviewLimit { color: #875020; font-size: 0.8rem; margin: 0.5rem 0; }
+.resetDialog { margin: auto; width: min(90vw, 30rem); border: 1px solid var(--border); border-radius: 1.25rem; padding: 1.5rem; background: var(--cream); color: var(--ink); box-shadow: 0 20px 80px rgb(20 38 26 / 20%); }
+.resetDialog::backdrop { background: rgb(20 38 26 / 45%); }
+.resetDialog h2 { margin: 0 0 0.75rem; font-family: var(--font-brand), Georgia, serif; font-size: 1.5rem; line-height: 1.2; }
+.resetDialog p { color: var(--muted); line-height: 1.6; font-size: 0.95rem; }
+.newPlantButton:focus-visible, .nextCheck button:focus-visible, .careDetails summary:focus-visible, .transcriptReview textarea:focus-visible, .reviewActions button:focus-visible, .dialogActions button:focus-visible { outline: 2px solid var(--leaf); outline-offset: 3px; }
+
+@media (min-width: 851px) and (max-height: 800px) {
+  .shell { padding-bottom: 1rem; }
+  .companionGarden { padding-block: 0.8rem; }
+  .companion .companionMascot { --cactea-size: 130px; }
+  .companionSubtitle { margin-bottom: 0.6rem; }
+  .companionTip { display: none; }
+  .plantCard { padding: 0.9rem; }
+  .chatArea .welcome { padding-block: 0.6rem; }
+}
+
+@media (min-width: 1100px) {
+  .workspace { grid-template-columns: minmax(0, 1fr) 310px; }
+}
+
+/* Keep smaller windows usable; the primary layout is designed for desktop. */
+@media (max-width: 850px) {
+  .shell { height: auto; min-height: 100dvh; padding-inline: 0.75rem; }
+  .workspace { grid-template-columns: minmax(0, 1fr); }
+  .chatArea { height: calc(100dvh - 110px); min-height: 400px; }
+  .companion { overflow: visible; }
+  .brandCaption { display: none; }
+}
+
+/* Botanical workspace: the scene belongs to the app, with open space around Cactea. */
+.shell { width:100%; max-width:1600px; height:100dvh; padding:28px clamp(20px,3vw,48px) 22px; margin:0 auto; }
+.workspace { grid-template-columns:minmax(0,1fr) 280px; gap:22px; }
+.chatArea { border:0; border-radius:0; background:transparent; overflow:visible; }
+.chatArea .scroll { padding:22px 4px 22px 0; }
+.chatArea .welcome { padding:clamp(20px,7vh,70px) 12px 25px; max-width:520px; }
+.welcomeCopy .description { color:#647360; font-size:16px; }
+.questionTitle { font-size:clamp(26px,2.6vw,37px); }
+.inputDock { background:transparent; border-top:0; padding-top:4px; }
+.inputDock .composer { border:1px solid #d8dfd0; background:#ffffffed; border-radius:35px; padding:8px 10px 8px 14px; gap:8px; box-shadow:0 5px 18px #294b2b05; }
+.inputDock :global(.composer-input) { background:transparent; border:0; box-shadow:none; padding:10px 4px; font-size:15px; }
+.inputDock :global(.composer-mic) { order:2; }
+.inputDock :global(.composer-send) { order:3; background:#194d38; border-radius:50%; width:44px; height:44px; flex-shrink:0; }
+.inputDock :global(.status-hint) { padding:0 12px; margin:5px 0; min-height:0; }
+.inputDock :global(.status-hint:empty) { display:none; }
+.composerHelp { padding:8px 0 0; font-size:11px; color:#77826f; }
+.companion { justify-content:center; gap:20px; padding-top:70px; padding-inline:2px; }
+.companionGarden { border:0; background:none; padding:0; position:relative; }
+.companionGarden .eyebrow,.companionGarden h2,.companionSubtitle { display:none; }
+.companion .companionMascot { --cactea-size:310px; margin:50px -18px -10px; order:2; }
+.companionStatus { background:#fbfcf6ed; border:1px solid #dde5d5; border-radius:25px; padding:18px 23px; position:relative; max-width:235px; order:1; box-shadow:0 6px 25px #34482d08; }
+.companionStatus::after { content:''; position:absolute; bottom:-10px; right:45px; width:18px; height:18px; background:#fbfcf6; border-right:1px solid #dde5d5; border-bottom:1px solid #dde5d5; transform:rotate(45deg); }
+.companionStatus :global(.status-pill) { background:transparent; border:0; padding:0; color:#254c35; font-size:16px; }
+.companionStatus p { color:#58704c; font-size:14px; margin-top:5px; }
+.plantCard { background:#ffffffdf; border-color:#dbe4d3; padding:17px; border-radius:18px; }
+.plantEmpty { border:0; background:none; padding:0; font-size:13px; }
+.companionTip { display:none; }
+.chatMenu { position:relative; }.chatMenu summary { cursor:pointer; list-style:none; padding:5px 9px; letter-spacing:2px; }.chatMenu>div { position:absolute; right:0; top:30px; z-index:10; display:flex; flex-direction:column; background:#fafcf6; border:1px solid #d8e3cf; border-radius:12px; padding:8px; min-width:150px; box-shadow:0 8px 30px #28442c15; }.chatMenu>div button { text-align:left; padding:9px 12px; border-radius:6px; }.chatMenu>div button:hover { background:#e9f0df; }
+.scroll :global(.msg-row) { gap:12px; margin-bottom:22px; }.scroll :global(.msg-bubble) { padding:15px 18px; font-size:16px; line-height:1.5; border-radius:18px; white-space:pre-wrap; }.scroll :global(.msg-bubble--assistant) { background:#fffffff0; border:1px solid #dde3d8; color:#304038; box-shadow:0 3px 10px #20372003; }.scroll :global(.msg-bubble--user) { background:#21543d; color:#fff; border-radius:18px 18px 5px 18px; }.scroll :global(.msg-col) { max-width:86%; }.scroll :global(.message-actions) { margin:3px 0 0; }.messageSource { font-size:10px; }
+@media(min-width:1400px) { .workspace { grid-template-columns:minmax(0,1fr) 320px; gap:30px; }.companion .companionMascot { --cactea-size:365px; }.shell { padding-top:35px; } }
+@media(min-width:801px) and (max-width:1100px) { .workspace { grid-template-columns:minmax(0,1fr); }.companion { display:none; } }
+@media(min-width:801px) and (max-height:800px) { .companion { padding-top:15px; }.companion .companionMascot { --cactea-size:250px; margin-top:25px; }.plantCard { padding:14px; }.companionStatus { padding:12px 18px; }.chatArea .welcome { padding-top:18px; } }
+@media(max-width:800px) { .shell { height:calc(100dvh - 60px); min-height:0; padding:14px 16px 12px; }.workspace { display:flex; flex-direction:column; gap:0; }.chatArea { height:auto; min-height:0; flex:1; }.companion { display:none; }.chatArea .scroll { padding:16px 0; }.chatArea .welcome { padding:25px 5px; }.scroll :global(.msg-bubble) { font-size:15px; padding:13px 15px; }.scroll :global(.msg-col) { max-width:88%; }.scroll :global(.msg-row) { gap:7px; }.inputDock .composer { padding:6px; }.composerHelp { font-size:10px; }.transcriptReview { margin:0 0 10px; }.reviewHeading { flex-wrap:wrap; gap:5px; } }
+.mobileMascot { display:none; } @media(max-width:1100px) { .mobileMascot { display:block; flex-shrink:0; margin-left:auto; --cactea-size:64px; } }

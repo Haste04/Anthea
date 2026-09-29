@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Fraunces, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
+import "./workspace.css";
+import { WorkspaceProvider } from "./components/workspace/WorkspaceProvider";
+import WorkspaceShell from "./components/workspace/WorkspaceShell";
 
 const brand = Fraunces({
   variable: "--font-brand",
@@ -26,7 +29,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${brand.variable} ${display.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col"><WorkspaceProvider><WorkspaceShell>{children}</WorkspaceShell></WorkspaceProvider></body>
     </html>
   );
 }

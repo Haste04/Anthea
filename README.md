@@ -10,7 +10,7 @@ Hands-free voice assistant that identifies a plant from spoken traits, diagnoses
 - Web Speech API (live captions) + Web Audio RMS silence detection (1.2s pause auto-submits)
 - Cloud speech-to-text fallback via Gemini (`POST /api/transcribe`) when browser `SpeechRecognition` is unsupported or errors (this includes Brave with Shields on, which blocks the browser's built-in STT — Brave users should either disable Shields for this site or rely on the cloud fallback / text input)
 - Web Speech Synthesis for spoken replies
-- Google Gemini (`@google/genai` SDK, function calling) — model is set in **one place**: the `TEXT_MODEL` constant in `lib/gemini.ts`, and must match `AUDIO_MODEL` in `app/api/transcribe/route.ts`
+- Google Gemini (`@google/genai` SDK, function calling) — assistant models can be set with `GEMINI_TEXT_MODEL` and `GEMINI_FALLBACK_MODEL`. Cloud transcription uses its own `AUDIO_MODEL` in `app/api/transcribe/route.ts`.
 - Perenual API for confirmed care data (watering, sunlight, soil), used only _after_ the LLM already has a species guess — Perenual has no trait-search endpoint
 - Local `data/disease-rules.json` (12 rules, keyword-overlap matched, not exact string match)
 
@@ -20,19 +20,20 @@ Hands-free voice assistant that identifies a plant from spoken traits, diagnoses
 
 **Current setting: `gemini-3.5-flash-lite`** — confirmed Stable (not preview) on Google's official model list as of this writing, with a 500 requests/day free-tier quota (vs. 20 for 3.8-flash).
 
-If the assistant starts failing with every request returning the same generic fallback message, **the model name is retired again** is the first thing to check, not a code bug. To confirm:
+If the assistant starts failing, check the server log for the provider's actual error before changing the model. To confirm:
 
 1. Check `https://ai.google.dev/gemini-api/docs/models` for the current Stable list.
-2. Test one isolated request via PowerShell/curl (see "Debugging" below) — the JSON response will contain the real Google API error, e.g. `404 not found` (retired) or `429 RESOURCE_EXHAUSTED` (quota) or `503 UNAVAILABLE` (temporary overload, already retried once automatically — see below).
-3. Update the model string in **both** `lib/gemini.ts` (`TEXT_MODEL`) and `app/api/transcribe/route.ts` (`AUDIO_MODEL`) — they must stay in sync.
+2. Test one isolated request via PowerShell/curl (see "Debugging" below), then inspect the server log for `404` (model unavailable), `429 RESOURCE_EXHAUSTED` (quota), or `503 UNAVAILABLE` (temporary overload). Public responses use safe messages instead of exposing raw provider errors.
+3. Set `GEMINI_TEXT_MODEL` if you need a different assistant model. It must support function calling. Transcription requires audio support and is configured separately.
 
-The code already retries automatically once on transient `503` overload errors (short backoff, not user-visible). It does **not** retry on `429` quota errors, since retrying an exhausted quota just wastes another request for no chance of success — that class of error surfaces to the user as the generic fallback message immediately.
+The assistant makes up to three attempts on its primary model with short backoff. If all attempts end in `503` overload, it makes one attempt with `GEMINI_FALLBACK_MODEL` (default: `gemini-3.1-flash-lite`), keeping the same question, history, and tools. Set the fallback variable to an empty value to disable it. Quota, authentication, and invalid-request errors do not trigger fallback. If both models are overloaded, the route returns `503` with `Retry-After: 30`, and the dashboard asks the user to wait and retry.
 
 ## Setup
 
 1. Copy `.env.example` to `.env.local` and set:
    - `GEMINI_API_KEY` (required for the assistant **and** cloud mic transcription)
    - `PERENUAL_API_KEY`
+   - `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` for production API rate limiting. Local development uses a process-local limiter when these are omitted; production API requests fail closed with `503` until both values are configured.
 2. **Do not commit real key values into `.env.example`** — it's a template meant to be safe to commit, with placeholder text only. If you ever see a real-looking key in `.env.example`, treat it as compromised and rotate it immediately in Google AI Studio / Perenual's dashboard.
 3. Install and run:
 
@@ -42,6 +43,8 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+The paid `/api/assistant` and `/api/transcribe` endpoints are limited to 10 requests per IP per minute. Assistant transcripts are capped at 4,000 characters; audio uploads are capped at 5 MB and restricted to supported audio MIME types. Production uses the shared Upstash Redis limiter so limits apply across serverless instances.
 
 Voice input uses the mic with RMS silence detection. If the browser `SpeechRecognition` service fails (common `network` error, or Brave Shields blocking it), audio is recorded locally and transcribed via Gemini (`POST /api/transcribe`), then sent to the assistant. There's also a manual text-input fallback shown automatically if the mic is unsupported.
 

@@ -1,0 +1,218 @@
+.mascot {
+  --body-width: 76%;
+  --arm-width: 30%;
+  --arms-top: 38%;
+  --left-arm-left: 0%;
+  --right-arm-left: 70%;
+  --left-eye-width: 14%;
+  --left-eye-left: 31%;
+  --right-eye-width: 14%;
+  --right-eye-left: 53%;
+  --eyes-top: 40%;
+  --mouth-width: 28%;
+  --mouth-left: 36%;
+  --mouth-top: 43%;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  position: relative;
+  display: block;
+  width: var(--cactea-size);
+  aspect-ratio: 1;
+  flex: none;
+  overflow: visible;
+  isolation: isolate;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.sm { --cactea-size: 4rem; }
+.md { --cactea-size: 7.5rem; }
+.lg { --cactea-size: clamp(11.25rem, 29vw, 20rem); }
+.hero { --cactea-size: clamp(12rem, 35vw, 25rem); }
+
+/* Limbs share one canvas. The ground shadow stays planted during a hop. */
+.rig {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  transform-origin: 50% 85%;
+  transition: transform 240ms var(--ease-out);
+}
+.mascot::after {
+  content: "";
+  position: absolute;
+  left: 29%;
+  bottom: 9%;
+  width: 42%;
+  height: 4%;
+  border-radius: 50%;
+  background: rgb(27 67 50 / 12%);
+  pointer-events: none;
+  z-index: 0;
+}
+.layer { position: absolute; display: block; pointer-events: none; }
+.layer > img {
+  display: block;
+  width: 100%;
+  height: auto;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+.leftArm, .rightArm {
+  top: var(--arms-top);
+  width: var(--arm-width);
+  z-index: 1;
+  transition: transform 240ms var(--ease-out);
+}
+.leftArm { left: var(--left-arm-left); transform-origin: 78% 58%; }
+.rightArm { left: var(--right-arm-left); transform-origin: 22% 58%; }
+.body {
+  top: calc((100% - var(--body-width)) / 2);
+  left: calc((100% - var(--body-width)) / 2);
+  width: var(--body-width);
+  z-index: 2;
+}
+.leftEye, .rightEye, .mouth { z-index: 3; }
+.leftEye { top: var(--eyes-top); left: var(--left-eye-left); width: var(--left-eye-width); }
+.rightEye { top: var(--eyes-top); left: var(--right-eye-left); width: var(--right-eye-width); }
+.mouth { top: var(--mouth-top); left: var(--mouth-left); width: var(--mouth-width); }
+.leftEye, .rightEye { transition: transform 240ms var(--ease-out); }
+
+.closedEye, .worriedBrow, .openMouth, .roundMouth {
+  position: absolute;
+  inset: 0;
+  display: block;
+  opacity: 0;
+}
+.layer svg { display: block; width: 100%; height: 100%; }
+.rightEye .worriedBrow { transform: scaleX(-1); }
+
+/* A brief drawn eyelid replaces the eye, instead of squashing the eyeball. */
+.leftEye > img, .rightEye > img { animation: eyes-open 7000ms steps(1, end) infinite; }
+.closedEye { animation: eyes-closed 7000ms steps(1, end) infinite; }
+
+/* Short idle gestures have long still holds between them. */
+.mascot[data-state="idle"] .rig { animation: idle-bounce 16000ms var(--ease-out) infinite; }
+.mascot[data-state="idle"] .rightArm { animation: idle-wave 16000ms var(--ease-out) infinite; }
+.mascot[data-state="wave"] .rightArm { animation: greeting-wave 700ms var(--ease-out); }
+
+/* Enter the listening/thinking pose once, then hold it. */
+.mascot[data-state="listening"] .rig { transform: translateY(-1%) rotate(-2deg) scale(1.02); }
+.mascot[data-state="listening"] .leftEye,
+.mascot[data-state="listening"] .rightEye { transform: scale(1.08); }
+.mascot[data-state="listening"] .rightArm { transform: rotate(-8deg); }
+.mascot[data-state="thinking"] .rig { transform: rotate(-4deg); }
+.mascot[data-state="thinking"] .leftEye,
+.mascot[data-state="thinking"] .rightEye { transform: translate(7%, -12%); }
+.mascot[data-state="thinking"] .rightArm { transform: rotate(-15deg); }
+.mascot[data-state="thinking"] .mouth { transform: scale(0.85); }
+
+/* Speaking uses three drawings. These gestures are not phoneme lip sync. */
+.mascot[data-state="speaking"] .mouth > img { animation: speech-smile 1200ms steps(1, end) infinite; }
+.mascot[data-state="speaking"] .openMouth { animation: speech-open 1200ms steps(1, end) infinite; }
+.mascot[data-state="speaking"] .roundMouth { animation: speech-round 1200ms steps(1, end) infinite; }
+.mascot[data-state="speaking"] .rightArm { animation: speaking-gesture 2400ms var(--ease-out) infinite; }
+
+/* Squash, lift, land, settle. Match the dashboard's feedback timers. */
+.mascot[data-state="success"] .rig { animation: happy-hop 720ms var(--ease-out); }
+.mascot[data-state="success"] .leftArm { animation: celebrate-left 720ms var(--ease-out); }
+.mascot[data-state="success"] .rightArm { animation: celebrate-right 720ms var(--ease-out); }
+.mascot[data-state="success"] .leftEye > img,
+.mascot[data-state="success"] .rightEye > img,
+.mascot[data-state="success"] .mouth > img { animation: none; opacity: 0; }
+.mascot[data-state="success"] .closedEye { animation: none; opacity: 1; }
+.mascot[data-state="success"] .openMouth { opacity: 1; }
+.mascot[data-state="error"] .rig { animation: questioning-tilt 900ms var(--ease-out); }
+.mascot[data-state="error"] .leftArm { transform: rotate(-5deg); }
+.mascot[data-state="error"] .rightArm { transform: rotate(5deg); }
+.mascot[data-state="error"] .worriedBrow { opacity: 1; }
+.mascot[data-state="error"] .mouth > img { opacity: 0; }
+.mascot[data-state="error"] .roundMouth { opacity: 1; transform: scale(0.7); }
+
+@keyframes eyes-open {
+  0%, 67%, 100% { opacity: 1; }
+  65% { opacity: 0; }
+}
+@keyframes eyes-closed {
+  0%, 67%, 100% { opacity: 0; }
+  65% { opacity: 1; }
+}
+@keyframes idle-bounce {
+  0%, 54%, 61%, 100% { transform: translateY(0) scale(1); }
+  55% { transform: translateY(0) scale(1.025, 0.975); }
+  57% { transform: translateY(-2%) scale(0.98, 1.02); }
+  59% { transform: translateY(0) scale(1.02, 0.98); }
+}
+@keyframes idle-wave {
+  0%, 15%, 22%, 100% { transform: rotate(0deg); }
+  17%, 20% { transform: rotate(-14deg); }
+  18.5% { transform: rotate(3deg); }
+}
+@keyframes greeting-wave {
+  0%, 100% { transform: rotate(0deg); }
+  25%, 70% { transform: rotate(-18deg); }
+  45% { transform: rotate(4deg); }
+}
+@keyframes speaking-gesture {
+  0%, 65%, 100% { transform: rotate(0deg); }
+  20%, 45% { transform: rotate(-9deg); }
+}
+@keyframes speech-smile {
+  0%, 72%, 100% { opacity: 1; }
+  12% { opacity: 0; }
+}
+@keyframes speech-open {
+  0%, 38%, 72%, 100% { opacity: 0; }
+  12%, 55% { opacity: 1; }
+}
+@keyframes speech-round {
+  0%, 55%, 100% { opacity: 0; }
+  38% { opacity: 1; }
+}
+@keyframes happy-hop {
+  0%, 100% { transform: translateY(0) scale(1); }
+  15% { transform: translateY(0) scale(1.06, 0.94); }
+  40% { transform: translateY(-6%) scale(0.96, 1.04); }
+  65% { transform: translateY(0) scale(1.04, 0.96); }
+  85% { transform: translateY(-0.5%) scale(1); }
+}
+@keyframes celebrate-left {
+  0%, 100% { transform: rotate(0deg); }
+  40% { transform: rotate(18deg); }
+  75% { transform: rotate(6deg); }
+}
+@keyframes celebrate-right {
+  0%, 100% { transform: rotate(0deg); }
+  40% { transform: rotate(-18deg); }
+  75% { transform: rotate(-6deg); }
+}
+@keyframes questioning-tilt {
+  0%, 100% { transform: rotate(0deg); }
+  30%, 65% { transform: rotate(4deg); }
+}
+
+/* Keep the expressions and static poses when the user reduces motion. */
+@media (prefers-reduced-motion: reduce) {
+  .mascot[data-state] .rig,
+  .mascot[data-state] .leftArm,
+  .mascot[data-state] .rightArm,
+  .mascot[data-state] .leftEye > img,
+  .mascot[data-state] .rightEye > img,
+  .mascot[data-state] .closedEye,
+  .mascot[data-state] .mouth > img,
+  .mascot[data-state] .openMouth,
+  .mascot[data-state] .roundMouth { animation: none; }
+  .rig, .leftArm, .rightArm, .leftEye, .rightEye { transition: none; }
+  .mascot[data-state="speaking"] .mouth > img { opacity: 0; }
+  .mascot[data-state="speaking"] .openMouth { opacity: 1; }
+}
+.debug { outline: 1px dashed rgb(20 38 26 / 45%); outline-offset: 2px; }
+.debug .leftArm { outline: 1px solid rgb(33 150 243 / 85%); }
+.debug .rightArm { outline: 1px solid rgb(156 39 176 / 85%); }
+.debug .body { outline: 1px solid rgb(76 175 80 / 85%); }
+.debug .leftEye { outline: 1px solid rgb(255 152 0 / 85%); }
+.debug .rightEye { outline: 1px solid rgb(244 67 54 / 85%); }
+.debug .mouth { outline: 1px solid rgb(0 188 212 / 85%); }
+@media (max-width: 700px) {
+  .lg { --cactea-size: clamp(12rem, 43vw, 20rem); }
+  .hero { --cactea-size: clamp(11.25rem, 58vw, 17rem); }
+}

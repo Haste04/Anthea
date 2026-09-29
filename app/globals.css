@@ -35,18 +35,33 @@ body {
 
 .app-shell {
   height: 100dvh;
-  max-width: 40rem;
+  width: 100%;
+  max-width: 72rem;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
 }
 
 .chat-header {
+  width: 100%;
+  max-width: 70rem;
+  margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.4rem 1.25rem 0.9rem;
+  padding: 1.1rem clamp(1rem, 4vw, 2.5rem) 0.75rem;
   flex: none;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.header-brand .header-cactea {
+  --cactea-size: 2.65rem;
 }
 
 .brand {
@@ -93,18 +108,106 @@ body {
 
 .chat-scroll {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  padding: 0.5rem 1.1rem 0.75rem;
+  padding: 0.5rem clamp(0.75rem, 3vw, 1.5rem) 0.75rem;
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
   scroll-behavior: smooth;
 }
 
+.welcome-panel {
+  width: 100%;
+  max-width: 66rem;
+  min-height: 100%;
+  margin: 0 auto;
+  padding: clamp(1rem, 4vh, 2.75rem) clamp(0.5rem, 3vw, 2rem);
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(15rem, 0.95fr);
+  align-items: center;
+  justify-items: center;
+  gap: clamp(1rem, 5vw, 4rem);
+}
+
+.welcome-copy {
+  width: 100%;
+  max-width: 34rem;
+}
+
+.welcome-eyebrow {
+  margin: 0 0 0.6rem;
+  color: var(--leaf);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.welcome-copy h1 {
+  margin: 0;
+  color: var(--leaf-deep);
+  font-family: var(--font-brand), Georgia, serif;
+  font-size: clamp(2.35rem, 5.4vw, 4.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+}
+
+.welcome-question {
+  margin: 0.8rem 0 0;
+  color: var(--ink);
+  font-size: clamp(1.15rem, 2.2vw, 1.55rem);
+  line-height: 1.35;
+  font-weight: 600;
+}
+
+.welcome-description {
+  max-width: 31rem;
+  margin: 0.65rem 0 0;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.welcome-cta {
+  margin-top: 1.4rem;
+  min-height: 2.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 1.05rem;
+  border: 1px solid var(--leaf-deep);
+  border-radius: 999px;
+  background: var(--leaf-deep);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.16s ease, border-color 0.16s ease;
+}
+
+.welcome-cta:hover {
+  background: var(--leaf);
+  border-color: var(--leaf);
+}
+
+.welcome-cta:focus-visible {
+  outline: 2px solid var(--leaf);
+  outline-offset: 3px;
+}
+
+.welcome-cta span {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
 .msg-row {
   display: flex;
   align-items: flex-start;
   gap: 0.6rem;
+  width: 100%;
+  max-width: 46rem;
+  align-self: center;
 }
 
 .msg-row--user {
@@ -236,6 +339,9 @@ body {
 
 .composer {
   flex: none;
+  width: 100%;
+  max-width: 54rem;
+  margin: 0 auto;
   display: flex;
   align-items: flex-end;
   gap: 0.5rem;
@@ -379,5 +485,354 @@ body {
 
   .composer {
     padding: 0.55rem 0.7rem calc(0.8rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (max-width: 700px) {
+  .welcome-panel {
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+    gap: 0.85rem;
+    padding: 1rem 0.5rem 1.5rem;
+  }
+
+  .welcome-copy {
+    max-width: 32rem;
+    text-align: center;
+  }
+
+  .welcome-eyebrow {
+    margin-bottom: 0.45rem;
+  }
+
+  .welcome-copy h1 {
+    font-size: clamp(2.1rem, 9vw, 3.25rem);
+  }
+
+  .welcome-question {
+    margin-top: 0.55rem;
+  }
+
+  .welcome-description {
+    margin: 0.45rem auto 0;
+    font-size: 0.95rem;
+  }
+
+  .welcome-cta {
+    margin-top: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-cta {
+    transition: none;
+  }
+}
+
+/* Public landing page */
+.landing-page {
+  width: min(100%, 72rem);
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 4vw, 3rem);
+}
+
+.landing-header,
+.landing-nav,
+.landing-footer,
+.dashboard-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+}
+
+.landing-header {
+  padding-block: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.landing-brand,
+.dashboard-home,
+.landing-page .welcome-cta {
+  text-decoration: none;
+}
+
+.landing-nav a,
+.landing-footer a,
+.dashboard-back {
+  color: var(--leaf-deep);
+  text-underline-offset: 4px;
+  font-weight: 600;
+}
+
+.landing-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.landing-nav .landing-nav-cta {
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  gap: 0.65rem;
+  text-decoration: none;
+}
+
+.landing-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(1.5rem, 4vw, 4rem);
+  padding-block: clamp(2.5rem, 7vw, 6rem);
+}
+
+.landing-hero h1 {
+  font-family: var(--font-brand), Georgia, serif;
+  color: var(--leaf-deep);
+  font-size: clamp(2.7rem, 5.2vw, 4.4rem);
+  line-height: 1.08;
+  letter-spacing: -0.045em;
+  margin: 0.8rem 0 1.3rem;
+  text-wrap: balance;
+}
+
+.landing-intro {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: var(--muted);
+  max-width: 32rem;
+}
+
+.landing-actions {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.landing-actions .welcome-cta {
+  margin-top: 0.6rem;
+}
+
+.landing-action-note,
+.landing-mascot figcaption {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.landing-mascot {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: center;
+}
+
+.landing-mascot > [role="img"] {
+  max-width: 100%;
+}
+
+.landing-features {
+  padding-block: 3rem 4rem;
+  border-top: 1px solid var(--border);
+}
+
+.landing-page h2 {
+  font-family: var(--font-brand), Georgia, serif;
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+  color: var(--leaf-deep);
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  margin: 0.5rem 0 1rem;
+}
+
+.landing-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
+  margin-top: 2rem;
+}
+
+.landing-feature {
+  border: 1px solid var(--border);
+  border-radius: 1.25rem;
+  padding: clamp(1.25rem, 2.5vw, 2rem);
+  background: rgb(255 255 255 / 50%);
+}
+
+.landing-feature-number {
+  font-family: var(--font-brand), Georgia, serif;
+  color: var(--leaf);
+  font-size: 1.4rem;
+}
+
+.landing-feature h3 {
+  font-size: 1.15rem;
+  margin: 1rem 0 0.6rem;
+}
+
+.landing-feature p,
+.landing-how p {
+  color: var(--muted);
+  line-height: 1.65;
+  margin-bottom: 0;
+}
+
+.landing-how {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: center;
+  gap: clamp(2rem, 6vw, 5rem);
+  padding-block: 2rem 5rem;
+  scroll-margin-top: 2rem;
+}
+
+.landing-example {
+  border-left: 3px solid var(--leaf);
+  background: rgb(255 255 255 / 45%);
+  padding: 1.75rem;
+  border-radius: 0 1rem 1rem 0;
+}
+
+.landing-example blockquote {
+  margin: 1rem 0;
+  font-family: var(--font-brand), Georgia, serif;
+  font-size: clamp(1.2rem, 2vw, 1.5rem);
+  line-height: 1.5;
+}
+
+.landing-footer {
+  border-top: 1px solid var(--border);
+  padding-block: 1.5rem;
+  flex-wrap: wrap;
+  color: var(--muted);
+}
+
+.landing-footer p {
+  margin: 0;
+}
+
+.landing-page a:focus-visible,
+.dashboard-home:focus-visible,
+.dashboard-back:focus-visible {
+  outline: 2px solid var(--leaf);
+  outline-offset: 4px;
+}
+
+.skip-link {
+  position: absolute;
+  top: 0.5rem;
+  left: 1rem;
+  transform: translateY(-200%);
+  padding: 0.75rem 1rem;
+  background: var(--cream);
+  color: var(--leaf-deep);
+  z-index: 10;
+}
+
+.skip-link:focus {
+  transform: none;
+}
+
+/* Chat has its own compact empty state, separate from the landing hero. */
+.dashboard-welcome {
+  width: 100%;
+  max-width: 40rem;
+  margin: auto;
+  padding: 2rem 1rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 1rem;
+}
+
+.dashboard-welcome .welcome-copy h1 {
+  font-size: clamp(1.8rem, 4vw, 2.75rem);
+}
+
+.dashboard-welcome .welcome-description {
+  margin-inline: auto;
+}
+
+.dashboard-back {
+  font-size: 0.9rem;
+}
+
+.dashboard-header-actions { flex-wrap: wrap; }
+.dashboard-preferences { display: grid; gap: 0.75rem; margin-top: 1rem; }
+.dashboard-starter { border: 1px solid var(--border); border-radius: 1rem; padding: 0.9rem 1rem; background: white; color: var(--leaf-deep); font: inherit; cursor: pointer; }
+.dashboard-clear { border: 0; background: none; color: var(--muted); font: inherit; font-size: 0.85rem; padding: 0.65rem; text-decoration: underline; cursor: pointer; }
+.dashboard-starter:focus-visible, .dashboard-clear:focus-visible { outline: 2px solid var(--leaf); outline-offset: 3px; }
+
+.conversation-log { display: flex; flex-direction: column; gap: 1rem; }
+.conversation-log:empty { display: none; }
+.read-aloud-toggle { display: inline-flex; align-items: center; gap: 0.45rem; color: var(--muted); font-size: 0.9rem; cursor: pointer; }
+.read-aloud-toggle input { accent-color: var(--leaf); width: 1rem; height: 1rem; }
+.starter-heading { margin: 0; color: var(--muted); font-size: 0.85rem; }
+.dashboard-starter { display: flex; align-items: center; justify-content: space-between; gap: 1rem; text-align: left; }
+.dashboard-starter:hover { background: var(--mist); }
+.dashboard-starter--primary { background: #e8f4e4; border-color: var(--leaf); font-weight: 600; }
+.conversation-controls { display: flex; justify-content: center; gap: 0.75rem; padding: 0.4rem 1rem; }
+.conversation-controls:empty { display: none; }
+.conversation-controls button, .new-response { font: inherit; color: var(--leaf-deep); border: 1px solid var(--border); background: white; border-radius: 999px; padding: 0.6rem 1rem; cursor: pointer; }
+.conversation-controls .control-primary { background: var(--leaf); color: white; border-color: var(--leaf); }
+.conversation-controls button:disabled { opacity: 0.5; cursor: wait; }
+.conversation-controls button:focus-visible, .new-response:focus-visible, .message-actions button:focus-visible, .read-aloud-toggle input:focus-visible { outline: 2px solid var(--leaf); outline-offset: 3px; }
+.new-response { align-self: center; margin-bottom: 0.5rem; }
+.message-actions { display: flex; gap: 0.75rem; }
+.message-actions button { border: none; background: transparent; color: var(--leaf); font: inherit; font-size: 0.82rem; text-decoration: underline; text-underline-offset: 3px; padding: 0.4rem 0.25rem; cursor: pointer; }
+.message-actions button:disabled { opacity: 0.5; cursor: not-allowed; }
+.msg-bubble--error { border-color: #b78153; background: #fff9f1; }
+.composer-input { min-width: 0; }
+.composer-send { width: 2.75rem; height: 2.75rem; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { .chat-scroll { scroll-behavior: auto; } }
+
+.app-shell .chat-header {
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+@media (max-width: 700px) {
+  .landing-hero,
+  .landing-how,
+  .landing-feature-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .landing-hero {
+    padding-block: 2rem 3rem;
+    text-align: center;
+  }
+
+  .landing-intro {
+    margin-inline: auto;
+  }
+
+  .landing-actions {
+    align-items: center;
+  }
+
+  .landing-nav {
+    gap: 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .landing-nav .landing-nav-cta {
+    padding-inline: 0.75rem;
+  }
+
+  .landing-header,
+  .dashboard-header-actions {
+    gap: 0.65rem;
+  }
+
+  .landing-footer {
+    justify-content: center;
+    text-align: center;
   }
 }
