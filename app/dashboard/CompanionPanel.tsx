@@ -17,13 +17,14 @@ type CompanionPanelProps = {
   conversationNumber: number;
   onAskNext: () => void;
   actionsDisabled: boolean;
+  transcribing?: boolean;
 };
 
-const statusCopy: Record<AgentMode, { label: string; detail: string }> = {
-  idle: { label: "Ready to help", detail: "One question, one leaf at a time." },
-  listening: { label: "Listening to you", detail: "Pause when finished, then review your words." },
-  processing: { label: "Thinking it through", detail: "I’m working on your plant question." },
-  speaking: { label: "Speaking", detail: "You can keep typing while you listen." },
+const statusCopy: Record<AgentMode, string> = {
+  idle: "Let’s help your plants grow.",
+  listening: "Go ahead. I’m listening.",
+  processing: "Let’s work it out.",
+  speaking: "Here’s what I’d try.",
 };
 
 const confidenceCopy: Record<string, string> = {
@@ -33,7 +34,7 @@ const confidenceCopy: Record<string, string> = {
   none: "Not enough evidence for a specific diagnosis",
 };
 
-export default function CompanionPanel({ mode, state, summary, conversationNumber, onAskNext, actionsDisabled }: CompanionPanelProps) {
+export default function CompanionPanel({ mode, state, summary, conversationNumber, onAskNext, actionsDisabled, transcribing }: CompanionPanelProps) {
   const status = statusCopy[mode];
   const interval = summary?.watering_days;
   const hasInterval = typeof interval === "number" && Number.isFinite(interval) && interval > 0;
@@ -45,17 +46,13 @@ export default function CompanionPanel({ mode, state, summary, conversationNumbe
         <Cactea state={state} size="lg" className={styles.companionMascot} />
         <h2 id="companion-title">Cactea</h2>
         <p className={styles.companionSubtitle}>Anthea’s AI voice assistant</p>
-        <div className={styles.companionStatus} role="status">
-          <span className={`status-pill status-pill--${mode}`}><span className="status-dot" aria-hidden="true" />{status.label}</span>
-          <p>{status.detail}</p>
+        <div className={styles.companionStatus}>
+          <p>{transcribing ? "Let me catch your words." : status}</p>
         </div>
       </section>
 
-      <section className={styles.plantCard} aria-labelledby="plant-summary-title">
-        <div className={styles.cardHeading}>
-          <h2 id="plant-summary-title">Your plant</h2>
-          {summary && <span className={styles.sourceBadge}>{summary.is_estimate ? "Estimated guidance" : "Latest guidance"}</span>}
-        </div>
+      <details className={styles.plantCard}>
+        <summary>Plant summary{summary?.species_candidate && <span>{summary.species_candidate}</span>}</summary>
         {summary ? <>
           <p className={styles.summaryCaption}>Plant conversation {conversationNumber} · {mode === "processing" ? "Previous reply while I think." : "Latest completed reply."}</p>
           <div className={styles.nextCheck}>
@@ -73,7 +70,7 @@ export default function CompanionPanel({ mode, state, summary, conversationNumbe
             <dl className={styles.plantFacts}>
             <div>
               <dt>Watering guidance</dt>
-              <dd>{hasInterval ? `Suggested interval: ${interval} ${interval === 1 ? "day" : "days"}` : "Tell me about its soil and watering habits."}
+              <dd>{hasInterval ? `${summary.is_estimate ? "Estimated" : "Suggested"} interval: ${interval} ${interval === 1 ? "day" : "days"}` : "Tell me about its soil and watering habits."}
                 {hasInterval && <p>Check soil moisture before watering; your plant’s conditions can change its needs.</p>}
               </dd>
             </div>
@@ -87,12 +84,7 @@ export default function CompanionPanel({ mode, state, summary, conversationNumbe
           <p>Plant conversation {conversationNumber}</p>
           <span>Describe its leaves, light, and watering habits. Useful details from my reply will appear here.</span>
         </div>}
-      </section>
-
-      <section className={styles.companionTip} aria-label="Plant description tip">
-        <span className={styles.tipIcon} aria-hidden="true">✦</span>
-        <p><strong>A useful detail</strong><br />When did you first notice the change? A little context helps me guide you.</p>
-      </section>
+      </details>
     </aside>
   );
 }
