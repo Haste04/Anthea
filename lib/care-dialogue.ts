@@ -8,6 +8,28 @@ export const CARE_QUESTIONS = {
 
 const wateringTime = /\b(?:today|yesterday|ago|daily|weekly|every|twice|once|last night|last week|last month|monday|tuesday|wednesday|thursday|friday|saturday|sunday|january|february|march|april|may|june|july|august|september|october|november|december)\b|\b\d{4}-\d{2}-\d{2}\b|\b\d{1,2}[/-]\d{1,2}\b/i;
 const uncertain = /\b(?:not sure|unsure|don.t know|don.t remember|can.t tell|no idea)\b/i;
+function careQuestionTopic(text: string): keyof typeof CARE_QUESTIONS | null {
+  return (Object.keys(CARE_QUESTIONS) as (keyof typeof CARE_QUESTIONS)[]).find(key => text.includes(CARE_QUESTIONS[key]))
+    ?? (/\blast time\b.{0,100}\bsoil\b.{0,100}\b(?:dried out|still|changed|become damp)\b/i.test(text) ? 'soil' : null);
+}
+
+function recalledSoilCondition(plantContext: string): string | null {
+  const priorUserTurns = [...plantContext.matchAll(/Earlier conversation \([^)]*\) — user: ([\s\S]*?)(?=\nCactea:)/g)].map(match => match[1]);
+  const savedNotes = plantContext.match(/User care notes: ([^\n]*)/)?.[1];
+  for (const observation of [...priorUserTurns, ...(savedNotes ? [savedNotes] : [])]) {
+    const condition = /\bsoil\b.{0,40}\b(?:felt|feels|was|is|seems?|stays?)?\s*(wet|damp|moist|dry|soggy)\b|\b(wet|damp|moist|dry|soggy)\b.{0,35}\bsoil\b/i.exec(observation);
+    const value = condition?.[1] ?? condition?.[2];
+    if (value) return value.toLowerCase();
+  }
+  return null;
+}
+
+function rememberedSoilQuestion(condition: string): string {
+  if (condition === 'wet' || condition === 'damp' || condition === 'soggy') return `Last time, you mentioned the soil felt ${condition}. Has it dried out since then?`;
+  if (condition === 'dry') return 'Last time, you mentioned the soil felt dry. Is it still dry, or has it become damp?';
+  return `Last time, you mentioned the soil felt ${condition}. Does it still feel that way?`;
+}
+
 function plantSubject(text: string): string | null {
   const name = text.match(/\bmy\s+([a-z][a-z -]{0,50}?)(?=(?:['’]s)?\s+(?:has|have|is|are|feels?|needs?|looks?|gets?|receives?|leaves|leaf|soil|pot)\b|['’]s\b|[.!?]|$)/i)?.[1]?.trim().toLowerCase();
   return name && !/^(?:plant|plants|soil|leaves|leaf|pot|finger|guess|answer|question|yellow)(?:\s|$)/.test(name) ? name : null;
@@ -18,13 +40,13 @@ function plantSubject(text: string): string | null {
 export function yellowLeafFollowUp(transcript: string, history: Turn[], plantContext?: string): string | null {
   const yellowLeaves = (text: string) => /\byellow(?:ing)?\b/i.test(text) && /\b(?:leaves|leaf)\b/i.test(text);
   const last = history.at(-1);
-  const currentQuestion = last?.role === 'assistant' ? (Object.keys(CARE_QUESTIONS) as (keyof typeof CARE_QUESTIONS)[]).find(key => last.text.includes(CARE_QUESTIONS[key])) : undefined;
+  const currentQuestion = last?.role === 'assistant' ? careQuestionTopic(last.text) ?? undefined : undefined;
   const previousSubject = [...history].reverse().map(turn => turn.role === 'user' ? plantSubject(turn.text) : null).find(Boolean);
   const currentSubject = plantSubject(transcript);
   const changedPlant = Boolean(previousSubject && currentSubject && previousSubject !== currentSubject);
   const newSymptom = yellowLeaves(transcript);
   const questionOrSwitch = /\?|^\s*(?:how|why|what|can|could|now|another|different)\b/i.test(transcript);
-  const answersCurrentQuestion = uncertain.test(transcript) || (currentQuestion === 'soil' ? /\b(?:wet|dry|damp|moist|soggy)\b/i.test(transcript) : currentQuestion === 'watering' ? wateringTime.test(transcript) || /\b(?:water|watered|watering|never)\b/i.test(transcript) : currentQuestion === 'light' ? /\b(?:light|sun|sunlight|shade|shaded|sunny|bright|dim|window|indoors|outside|outdoors)\b/i.test(transcript) : false);
+  const answersCurrentQuestion = uncertain.test(transcript) || (currentQuestion === 'soil' ? /\b(?:wet|dry|damp|moist|soggy|dried out|has dried|become damp)\b/i.test(transcript) : currentQuestion === 'watering' ? wateringTime.test(transcript) || /\b(?:water|watered|watering|never)\b/i.test(transcript) : currentQuestion === 'light' ? /\b(?:light|sun|sunlight|shade|shaded|sunny|bright|dim|window|indoors|outside|outdoors)\b/i.test(transcript) : false);
   if (!newSymptom && (!currentQuestion || !answersCurrentQuestion || questionOrSwitch || changedPlant)) return null;
   const all = [...history, { role: 'user' as const, text: transcript }];
   // A newly described plant starts a fresh triage instead of inheriting facts.
@@ -34,7 +56,6 @@ export function yellowLeafFollowUp(transcript: string, history: Turn[], plantCon
   }
   if (changedPlant && newSymptom) start = all.length - 1;
   const relevant = all.slice(Math.max(0, start));
-  if (plantContext && !changedPlant && !/\b(?:another|different|new) plant\b/i.test(transcript)) relevant.unshift({ role: 'user', text: plantContext });
   const known = { soil: false, watering: false, light: false };
   for (let i = 0; i < relevant.length; i++) {
     const turn = relevant[i];
@@ -43,14 +64,22 @@ export function yellowLeafFollowUp(transcript: string, history: Turn[], plantCon
     // "I don't know" counts as an attempted answer; avoid an endless loop.
     if (previous?.role === 'assistant' && !/\?|^\s*(?:how|why|what)\b/i.test(turn.text)) {
       for (const key of Object.keys(known) as (keyof typeof known)[]) {
-        if (previous.text.includes(CARE_QUESTIONS[key])) known[key] = true;
+        if (careQuestionTopic(previous.text) === key) known[key] = true;
       }
     }
     if (/\bsoil\b.{0,65}\b(?:wet|dry|damp|moist|soggy)\b|\b(?:wet|dry|damp|moist|soggy)\b.{0,30}\bsoil\b/i.test(turn.text)) known.soil = true;
     if (/\bwater(?:ed|ing)?\b/i.test(turn.text) && (wateringTime.test(turn.text) || uncertain.test(turn.text))) known.watering = true;
     if (/\b(?:bright|indirect|direct|low|dim|morning|afternoon)\b.{0,30}\b(?:light|sun|sunlight)\b|\b(?:shade|shaded|sunny|full sun)\b/i.test(turn.text)) known.light = true;
   }
-  for (const key of Object.keys(known) as (keyof typeof known)[]) if (!known[key]) return CARE_QUESTIONS[key];
+  for (const key of Object.keys(known) as (keyof typeof known)[]) {
+    if (!known[key]) {
+      if (key === 'soil' && plantContext && !changedPlant && !/\b(?:another|different|new) plant\b/i.test(transcript)) {
+        const remembered = recalledSoilCondition(plantContext);
+        if (remembered) return rememberedSoilQuestion(remembered);
+      }
+      return CARE_QUESTIONS[key];
+    }
+  }
   return null;
 }
 

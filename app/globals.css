@@ -1,16 +1,39 @@
 @import "tailwindcss";
 
 :root {
-  --leaf-deep: #1b4332;
-  --leaf: #2e7d46;
-  --leaf-soft: #d8f3dc;
-  --soil: #3e2723;
-  --cream: #f7faf5;
-  --mist: #eef5ee;
-  --ink: #14261a;
-  --muted: #4a6354;
-  --border: rgba(46, 125, 70, 0.25);
-  --amber: #c98a3b;
+  --lw-forest: #133020;
+  --lw-green: #046241;
+  --lw-amber: #ffb347;
+  --lw-cream: #f5eedb;
+  --background: var(--lw-cream);
+  --surface: #ffffff;
+  --surface-soft: #fbf8ef;
+  --surface-glass: rgb(255 255 255 / 88%);
+  --text-primary: var(--lw-forest);
+  --text-secondary: #3e5948;
+  --text-muted: #516858;
+  --border: #c5d4c7;
+  --border-soft: #dce5dc;
+  --primary: var(--lw-green);
+  --primary-hover: #034f35;
+  --primary-active: #023d2a;
+  --selected: #e8f1e9;
+  --selected-strong: #d9e9dc;
+  --accent: var(--lw-amber);
+  --accent-soft: #fff2db;
+  --accent-text: #65420b;
+  --danger: #8d463a;
+  --shadow-soft: rgb(19 48 32 / 9%);
+  /* Existing component names inherit the Lifewood system. */
+  --leaf-deep: var(--text-primary);
+  --leaf: var(--primary);
+  --leaf-soft: var(--selected);
+  --soil: var(--text-primary);
+  --cream: var(--background);
+  --mist: var(--surface-soft);
+  --ink: var(--text-primary);
+  --muted: var(--text-muted);
+  --amber: var(--accent);
 }
 
 * {
@@ -26,9 +49,7 @@ body {
 body {
   font-family: var(--font-display), "Segoe UI", sans-serif;
   color: var(--ink);
-  background:
-    radial-gradient(ellipse 80% 50% at 50% -10%, #c8e6c9 0%, transparent 55%),
-    linear-gradient(165deg, var(--cream) 0%, var(--mist) 45%, #e3efe6 100%);
+  background: var(--background);
 }
 
 /* Chat shell */
@@ -79,7 +100,7 @@ body {
   gap: 6px;
   font-size: 0.8rem;
   color: var(--muted);
-  background: rgba(255, 255, 255, 0.7);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
   border: 1px solid var(--border);
   border-radius: 999px;
   padding: 0.3rem 0.75rem;
@@ -179,7 +200,7 @@ body {
   border: 1px solid var(--leaf-deep);
   border-radius: 999px;
   background: var(--leaf-deep);
-  color: #fff;
+  color: var(--surface);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
@@ -238,7 +259,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--border);
   margin-top: 2px;
 }
@@ -257,7 +278,7 @@ body {
 }
 
 .msg-bubble--assistant {
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--surface-glass);
   color: var(--ink);
   border: 1px solid var(--border);
   border-radius: 18px 18px 18px 4px;
@@ -358,7 +379,7 @@ body {
   padding: 0.7rem 0.9rem;
   border-radius: 20px;
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--surface-glass);
   color: var(--ink);
   max-height: 7.5rem;
 }
@@ -383,7 +404,7 @@ body {
   border-radius: 50%;
   border: none;
   background: var(--leaf-deep);
-  color: #fff;
+  color: var(--surface);
   font-size: 1.05rem;
   cursor: pointer;
   display: flex;
@@ -431,7 +452,7 @@ body {
   height: 2.75rem;
   border-radius: 50%;
   background: var(--leaf);
-  color: #fff;
+  color: var(--surface);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -455,7 +476,7 @@ body {
 }
 
 .composer-mic .mic-btn--active {
-  background: #c62828;
+  background: var(--danger);
 }
 
 .composer-mic .mic-btn--active::before {
@@ -487,6 +508,24 @@ body {
     padding: 0.55rem 0.7rem calc(0.8rem + env(safe-area-inset-bottom, 0px));
   }
 }
+
+/* Lifewood states shared by the landing page and legacy chat controls. */
+.welcome-cta { background: var(--primary); border-color: var(--primary); color: var(--surface); }
+.welcome-cta:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+.welcome-cta:active { background: var(--primary-active); border-color: var(--primary-active); }
+.status-pill { background: var(--surface); color: var(--text-primary); border-color: var(--border); }
+.status-pill .status-dot { background: var(--primary); }
+.status-pill--processing .status-dot { background: var(--accent); }
+.status-pill--speaking .status-dot { background: var(--lw-forest); }
+.msg-bubble--assistant { background: var(--surface); border-color: var(--border); color: var(--text-primary); }
+.msg-bubble--user { background: var(--primary); color: var(--surface); }
+.composer-input { background: var(--surface); border-color: var(--border); color: var(--text-primary); }
+.composer-input::placeholder { color: var(--text-muted); opacity: 1; }
+.composer-send, .composer-mic .mic-btn { background: var(--primary); color: var(--surface); }
+.composer-send:hover:not(:disabled), .composer-mic .mic-btn:hover:not(:disabled) { background: var(--primary-hover); }
+.composer-mic .mic-btn--active { background: var(--primary); box-shadow: 0 0 0 3px var(--accent); }
+.dashboard-starter--primary { background: var(--selected); border-color: var(--primary); }
+.landing-nav a:hover, .landing-footer a:hover, .dashboard-back:hover { color: var(--primary-hover); }
 
 @media (max-width: 700px) {
   .welcome-panel {
@@ -660,7 +699,7 @@ body {
   border: 1px solid var(--border);
   border-radius: 1.25rem;
   padding: clamp(1.25rem, 2.5vw, 2rem);
-  background: rgb(255 255 255 / 50%);
+  background: color-mix(in srgb, var(--surface) 50%, transparent);
 }
 
 .landing-feature-number {
@@ -692,7 +731,7 @@ body {
 
 .landing-example {
   border-left: 3px solid var(--leaf);
-  background: rgb(255 255 255 / 45%);
+  background: color-mix(in srgb, var(--surface) 45%, transparent);
   padding: 1.75rem;
   border-radius: 0 1rem 1rem 0;
 }
@@ -775,7 +814,7 @@ body {
 .starter-heading { margin: 0; color: var(--muted); font-size: 0.85rem; }
 .dashboard-starter { display: flex; align-items: center; justify-content: space-between; gap: 1rem; text-align: left; }
 .dashboard-starter:hover { background: var(--mist); }
-.dashboard-starter--primary { background: #e8f4e4; border-color: var(--leaf); font-weight: 600; }
+.dashboard-starter--primary { background: var(--selected); border-color: var(--primary); font-weight: 600; }
 .conversation-controls { display: flex; justify-content: center; gap: 0.75rem; padding: 0.4rem 1rem; }
 .conversation-controls:empty { display: none; }
 .conversation-controls button, .new-response { font: inherit; color: var(--leaf-deep); border: 1px solid var(--border); background: white; border-radius: 999px; padding: 0.6rem 1rem; cursor: pointer; }
@@ -786,7 +825,7 @@ body {
 .message-actions { display: flex; gap: 0.75rem; }
 .message-actions button { border: none; background: transparent; color: var(--leaf); font: inherit; font-size: 0.82rem; text-decoration: underline; text-underline-offset: 3px; padding: 0.4rem 0.25rem; cursor: pointer; }
 .message-actions button:disabled { opacity: 0.5; cursor: not-allowed; }
-.msg-bubble--error { border-color: #b78153; background: #fff9f1; }
+.msg-bubble--error { border-color: var(--danger); background: var(--surface-soft); }
 .composer-input { min-width: 0; }
 .composer-send { width: 2.75rem; height: 2.75rem; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -835,4 +874,87 @@ body {
     justify-content: center;
     text-align: center;
   }
+}
+
+/* Audio Visualizer & Mascot Aura */
+
+.cactea-aura-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  isolation: isolate;
+}
+
+.cactea-aura-ring {
+  position: absolute;
+  inset: -8%;
+  border-radius: 50%;
+  background: radial-gradient(circle, transparent 43%, color-mix(in srgb, var(--primary) 12%, transparent) 61%, color-mix(in srgb, var(--primary) 26%, transparent) 72%, transparent 84%);
+  opacity: 0.28;
+  transform: scale(1);
+  transition: opacity 180ms cubic-bezier(0.23, 1, 0.32, 1), transform 180ms cubic-bezier(0.23, 1, 0.32, 1);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.cactea-aura-active .cactea-aura-ring { opacity: var(--aura-opacity, 0.55); transform: scale(var(--aura-scale, 1.02)); }
+.cactea-aura-speaking .cactea-aura-ring { animation: cactea-round-pulse 1800ms cubic-bezier(0.77, 0, 0.175, 1) infinite; }
+
+@keyframes cactea-round-pulse {
+  0%, 100% { opacity: 0.38; transform: scale(1.01); }
+  50% { opacity: 0.64; transform: scale(1.09); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cactea-aura-ring { transition: none; }
+  .cactea-aura-speaking .cactea-aura-ring { animation: none; opacity: 0.48; transform: none; }
+}
+
+.audio-waveform-canvas {
+  vertical-align: middle;
+  display: inline-block;
+  margin-right: 0.5rem;
+}
+
+/* The public entry gives the conversation one clear starting point. */
+.voice-home-hero {
+  min-height: min(44rem, calc(100dvh - 7rem));
+  padding-block: clamp(2rem, 6vw, 5rem);
+}
+.voice-home-hero h1 { max-width: 11ch; font-size: clamp(3rem, 6vw, 5.4rem); }
+.voice-home-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem 1.25rem; margin-top: 1.8rem; }
+.voice-home-actions .welcome-cta { margin: 0; }
+.voice-home-talk { min-height: 3.6rem; padding-inline: 1.45rem; font-size: 1.06rem; box-shadow: 0 7px 18px var(--shadow-soft); }
+.voice-home-talk svg { flex: none; }
+.voice-home-talk:disabled, .voice-home-type:disabled { opacity: 0.6; cursor: wait; }
+.voice-home-type { border: 0; background: transparent; color: var(--primary); font: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 4px; padding: 0.65rem 0.2rem; cursor: pointer; }
+.voice-home-type:hover { color: var(--primary-hover); }
+.voice-home-type:focus-visible, .voice-home-return-card:focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; }
+.voice-home-instruction { max-width: 31rem; color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; margin: 0.8rem 0 0; }
+.voice-home-example { max-width: 32rem; margin-top: 2rem; padding: 1rem 1.2rem; border-left: 3px solid var(--accent); background: var(--surface-soft); border-radius: 0 0.9rem 0.9rem 0; }
+.voice-home-example span { color: var(--primary); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.voice-home-example p { margin: 0.4rem 0 0; color: var(--text-primary); line-height: 1.45; }
+.voice-home-mascot-stage { width: min(100%, 28rem); aspect-ratio: 1; display: grid; place-items: center; border-radius: 50%; background: color-mix(in srgb, var(--selected) 78%, var(--background)); }
+.voice-home-mascot figcaption { color: var(--text-secondary); }
+.voice-home-return { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem; padding-block: 1.25rem 3rem; }
+.voice-home-return-card { display: flex; align-items: center; gap: 0.9rem; width: 100%; min-width: 0; padding: 1rem 1.15rem; border: 1px solid var(--border); border-radius: 1rem; background: var(--surface); color: var(--text-primary); font: inherit; text-align: left; text-decoration: none; cursor: pointer; box-shadow: 0 4px 16px var(--shadow-soft); }
+.voice-home-return-card:hover { border-color: var(--primary); background: var(--surface-soft); }
+.voice-home-return-icon { display: grid; place-items: center; flex: none; width: 2.5rem; height: 2.5rem; border-radius: 50%; background: var(--selected); color: var(--primary); }
+.voice-home-return-card > span:nth-child(2) { display: grid; min-width: 0; gap: 0.1rem; }
+.voice-home-return-card small { color: var(--text-muted); font-size: 0.77rem; }
+.voice-home-return-card strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.97rem; }
+.voice-home-return-arrow { margin-left: auto; color: var(--primary); font-size: 1.25rem; }
+.voice-home-how { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; border-top: 1px solid var(--border); padding-block: clamp(2.5rem, 5vw, 4rem); scroll-margin-top: 1rem; }
+.voice-home-how h2 { max-width: 17ch; }
+.voice-home-steps { display: grid; gap: 0.6rem; }
+.voice-home-steps p { display: flex; align-items: baseline; gap: 1rem; margin: 0; padding: 0.8rem 0; border-bottom: 1px solid var(--border-soft); color: var(--text-secondary); }
+.voice-home-steps span { color: var(--primary); font-weight: 700; }
+@media (max-width: 700px) {
+  .voice-home-hero { min-height: 0; }
+  .voice-home-hero h1 { margin-inline: auto; }
+  .voice-home-actions { justify-content: center; }
+  .voice-home-instruction, .voice-home-example { margin-inline: auto; }
+  .voice-home-return, .voice-home-how { grid-template-columns: 1fr; }
+  .voice-home-mascot-stage { width: min(72vw, 20rem); }
 }

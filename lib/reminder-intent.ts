@@ -1,5 +1,5 @@
 export type ReminderDraft = { title: string; due: string; timeRequested: boolean };
-export type ReminderProposal = ReminderDraft & { id: string; status: 'pending' | 'saved' | 'cancelled' };
+export type ReminderProposal = ReminderDraft & { id: string; status: 'pending' | 'saved' | 'cancelled'; plantId?: string };
 
 function dateString(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;

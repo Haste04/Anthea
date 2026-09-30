@@ -5,7 +5,7 @@ import ts from 'typescript';
 
 const source = await readFile(new URL('../lib/voice-feedback.ts', import.meta.url), 'utf8');
 const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext } }).outputText;
-const { microphoneProblem, voiceHeading } = await import(`data:text/javascript;base64,${Buffer.from(js).toString('base64')}`);
+const { microphoneProblem, voiceHeading, captureCaptionPresentation } = await import(`data:text/javascript;base64,${Buffer.from(js).toString('base64')}`);
 
 test('microphone errors explain the correct recovery', () => {
   assert.match(microphoneProblem({ name: 'NotAllowedError' }), /permissions beside the address bar/);
@@ -23,4 +23,19 @@ test('review, transcription, reply generation, and actual playback are distinct'
   assert.equal(voiceHeading('processing', false, false, false, false), 'Cactea is thinking');
   assert.equal(voiceHeading('idle', false, false, false, true), 'Preparing the spoken reply');
   assert.equal(voiceHeading('speaking', false, false, false, false), 'Cactea is replying aloud');
+});
+
+test('recording copy distinguishes live captions from deferred transcription', () => {
+  assert.deepEqual(captureCaptionPresentation(false, ''), {
+    label: 'Recording audio',
+    text: 'Keep speaking. Your words will appear after you review the recording.',
+  });
+  assert.deepEqual(captureCaptionPresentation(true, ''), {
+    label: 'What I hear',
+    text: 'Start speaking. Your words will appear here.',
+  });
+  assert.deepEqual(captureCaptionPresentation(false, 'Yellow leaves'), {
+    label: 'Recording audio',
+    text: 'Yellow leaves',
+  });
 });

@@ -17,3 +17,14 @@ export function voiceHeading(mode: string, ready: boolean, reviewing: boolean, t
   if (reviewing) return 'Review what Cactea heard';
   return 'Ready for your voice question';
 }
+
+export function captureCaptionPresentation(liveAvailable: boolean, caption: string): { label: string; text: string } {
+  const words = caption.trim();
+  if (liveAvailable) {
+    return { label: 'What I hear', text: words || 'Start speaking. Your words will appear here.' };
+  }
+  return {
+    label: 'Recording audio',
+    text: words || 'Keep speaking. Your words will appear after you review the recording.',
+  };
+}

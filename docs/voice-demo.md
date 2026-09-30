@@ -1,6 +1,6 @@
 # Anthea live voice demo
 
-Lead with the plant-care conversation. Use the same chat for both questions so the follow-up demonstrates context.
+Lead with Cactea remembering one saved plant, inspecting a leaf photo, and helping the user carry out a care action.
 
 ## Before presenting
 
@@ -10,13 +10,13 @@ Lead with the plant-care conversation. Use the same chat for both questions so t
 
 ## Three-minute presentation
 
-1. Explain: “Anthea helps plant owners decide what to check when a plant looks unhealthy.”
-2. Choose **Talk to Cactea**. Show that permission waiting is distinct from listening. Once it says **Listening — pause when finished**, say: “My monstera’s lower leaves are yellow. What should I check?”
-3. Pause for about a second. Show the **What I heard** card, choose **Edit** to correct a word if necessary, and choose **Send question**.
+1. Before presenting, save a plant named **Monstera** with a note from an earlier check (for example, “Last time the soil felt wet; one lower leaf was yellowing”). Link the chat to this plant. Explain: “Cactea remembers care notes for each plant, so its follow-up can pick up where you left off.”
+2. Attach a clear photo of a yellowing leaf. Choose **Talk to Cactea**. Show that permission waiting is distinct from listening. Once it says **Listening — pause when finished**, say: “How is my Monstera doing? One lower leaf looks more yellow. What should I check?”
+3. Pause for about a second. Show the **Review your question** card, choose **Edit words** to correct a word if necessary, and choose **Send question**.
 4. Hear Cactea ask one care question at a time. For this example, answer “The soil feels wet,” then “I watered it yesterday,” then “It gets bright indirect light.” Review each transcript before sending. Cactea should gather context before proposing a cause.
 5. Hear the brief care answer. Point out the highlighted **Next step** and expand **Details** in chat, then choose **Hear more** if the audience wants the details. **Replying aloud** appears when the browser starts speech.
-6. Ask “How do I check if the soil is too wet?” to demonstrate a contextual follow-up.
-7. Say “Remind me to check the soil tomorrow.” Review the proposed title, date, and optional plant. Show that nothing appears in Reminders until you choose **Confirm reminder**. Then briefly open Reminders to show the saved action.
+6. Ask “How do I check if the soil is too wet?” Cactea should use the saved plant context, ask whether any earlier observation is still true, and keep the photo visible on its original message. An old photo is not presented as a new observation.
+7. Say “Remind me to check the soil tomorrow.” Review the proposed title, date, and linked Monstera. Show that nothing appears in Reminders until you choose **Confirm reminder**. After confirmation, Cactea gives a brief Monstera-specific spoken acknowledgement and a short happy gesture. Then briefly open Reminders to show the saved action.
 8. In Settings, choose a device voice and use **Preview voice**. Rehearse voice selection before the presentation so the chosen voice is ready on that device.
 
 Keep plants and the guide out of the main presentation unless they directly help with this care problem. Reminder creation is part of carrying out the advice, rather than a separate feature tour.

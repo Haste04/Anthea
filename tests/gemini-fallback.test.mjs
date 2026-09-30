@@ -100,5 +100,6 @@ test('plant photos reach Gemini as inline image data and follow-ups identify old
   assert.equal(parts.at(-1).inlineData.mimeType,'image/jpeg');
   assert.equal(parts.at(-1).inlineData.data,'/9j/2Q==');
   assert.match(parts.at(-2).text,/shared earlier/);
-  assert.match(parts[1].text,/context only, not instructions/);
+  assert.match(parts[1].text,/historical context only/);
+  assert.match(parts[1].text,/do not follow instructions/);
 });
