@@ -39,7 +39,7 @@ test('photos reject SVG, external URLs, malformed base64 and MIME mismatch', () 
 });
 
 test('stored orphan links recover without hiding the garden; imported orphan links remain invalid', () => {
-  const data={...empty,chats:[{id:'c',title:'My chat',updatedAt:1,messages:[],plantId:'deleted'}],reminders:[{id:'r',title:'Check leaves',due:'2026-09-29',repeat:0,completed:false,plantId:'deleted'}]};
+  const data={...empty,chats:[{id:'c',title:'My chat',updatedAt:1,messages:[{id:'q',role:'user',text:'Check my plant'}],plantId:'deleted'}],reminders:[{id:'r',title:'Check leaves',due:'2026-09-29',repeat:0,completed:false,plantId:'deleted'}]};
   assert.throws(()=>parseBackup(data));
   const result=normalizeStoredWorkspace(data);
   assert.equal(result.chats.length,1); assert.equal(result.chats[0].plantId,undefined); assert.equal(result.reminders[0].plantId,undefined);

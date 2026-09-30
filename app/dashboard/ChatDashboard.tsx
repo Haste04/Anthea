@@ -3,11 +3,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Cactea from "@/app/components/cactea/Cactea";
+import CacteaAudioAura from "@/app/components/cactea/CacteaAudioAura";
+import AudioWaveformCanvas from "@/app/components/workspace/AudioWaveformCanvas";
 import Icon from "@/app/components/workspace/Icon";
 import { useWorkspace } from "@/app/components/workspace/WorkspaceProvider";
 import { type Chat, type Message as ChatMessage } from "@/lib/workspace-data";
 import { preparePhoto } from "@/lib/prepare-photo";
-import { microphoneProblem, voiceHeading } from "@/lib/voice-feedback";
+import { captureCaptionPresentation, microphoneProblem, voiceHeading } from "@/lib/voice-feedback";
 import CompanionPanel from "./CompanionPanel";
 import styles from "./Dashboard.module.css";
 import { resolveCacteaState, type AgentMode, type CacteaFeedback } from "@/lib/cactea-state";
@@ -18,12 +20,26 @@ import { AssistantRequestError, readApiResponse, requestErrorMessage } from "@/l
 import useSpeechPlayback from "./useSpeechPlayback";
 import { buildConversationHistory } from "@/lib/conversation";
 import { briefSpeech } from '@/lib/care-dialogue';
-import { parseReminderCommand, validReminderDraft } from '@/lib/reminder-intent';
-import ReminderProposalCard from './ReminderProposalCard';
 import AssistantAnswer from './AssistantAnswer';
+import { buildPlantMemory, resolveConversationPlant } from '@/lib/plant-memory';
+import { LiveTranscription } from '@/lib/live-transcription';
+import { heardSixSeven } from '@/lib/six-seven';
 import Link from 'next/link';
+import { landingPrompts } from '@/lib/landing-prompts';
 
 const BENIGN_STT_ERRORS = new Set(["aborted", "no-speech"]);
+const starterTitles: Record<keyof typeof starterQuestions, string> = {
+  identify: "Identify a plant",
+  symptoms: "Something looks wrong",
+  care: "Plan everyday care",
+  explore: "Learn the basics",
+};
+const starterDescriptions: Record<keyof typeof starterQuestions, string> = {
+  identify: "Start with what you can see.",
+  symptoms: "Find the first thing to check.",
+  care: "Make a routine that fits.",
+  explore: "Ask anything about plant care.",
+};
 
 type AssistantResponse = {
   response_text: string;
@@ -103,6 +119,7 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
   const chatRef = useRef(chat);
   useEffect(() => { chatRef.current = chat; }, [chat]);
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const plantSelectorRef = useRef<HTMLSelectElement>(null);
   const [photo, setPhoto] = useState<string | undefined>();
   const [photoBusy, setPhotoBusy] = useState(false);
   const profile = usePlantProfile();
@@ -121,6 +138,7 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
   const [typedInput, setTypedInput] = useState("");
   const [statusHint, setStatusHint] = useState("");
   const [mascotFeedback, setMascotFeedback] = useState<CacteaFeedback>(null);
+  const [sixSevenActive, setSixSevenActive] = useState(false);
   const [recordingReady, setRecordingReady] = useState(false);
   const [hasNewMessages, setHasNewMessages] = useState(false);
   const [reviewTranscript, setReviewTranscript] = useState<string | null>(null);
@@ -130,12 +148,14 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
   const [canRetryTranscription, setCanRetryTranscription] = useState(false);
   const retainedRecordingRef = useRef<Blob | null>(null);
   const previousReviewRef = useRef<string | null>(null);
-  const confirmedReminderIdsRef = useRef(new Set<string>());
-  const conversationNumber = workspace.chats.findIndex(c => c.id === chat.id) + 1;
+  const conversationNumber = workspace.chats.findIndex(c => c.id === chat.id) + 1 || workspace.chats.length + 1;
 
   // Meter samples are consumed by the canvas; they do not render chat content.
   const amplitudeRef = useRef(0);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const liveTranscriptionRef = useRef<LiveTranscription | null>(null);
+  const [liveTranscriptionReady, setLiveTranscriptionReady] = useState(false);
+  const [browserRecognitionReady, setBrowserRecognitionReady] = useState(false);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -153,7 +173,10 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
   const scrollEndRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sixSevenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sixSevenPlayedRef = useRef(false);
   const recordingSessionRef = useRef(0);
+  const landingVoiceStartedRef = useRef(false);
   const requestRef = useRef<AbortController | null>(null);
   const transcriptionRef = useRef<AbortController | null>(null);
   const requestBusyRef = useRef(false);
@@ -166,6 +189,20 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
   const reviewingTranscript = reviewTranscript !== null;
 
   useEffect(() => { messagesRef.current = messages; }, [messages]);
+
+  const linkCurrentChat = useCallback((plantId?: string) => {
+    const currentChat = chatRef.current;
+    const previousPlantId = currentChat.plantId ?? null;
+    const taggedMessages = messagesRef.current.map(message => message.plantId === undefined
+      ? { ...message, plantId: previousPlantId }
+      : message);
+    const updated = { ...currentChat, plantId, messages: taggedMessages, updatedAt: Date.now() };
+    chatRef.current = updated;
+    messagesRef.current = taggedMessages;
+    savedMessagesRef.current = taggedMessages;
+    setMessages(taggedMessages);
+    save('chats', updated);
+  }, [save]);
   useEffect(() => {
     if (reviewingTranscript) {
       if (editingTranscript) transcriptReviewRef.current?.focus();
@@ -204,9 +241,21 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
     }, feedback === "success" ? 720 : 900);
   }, []);
 
+  const triggerSixSeven = useCallback((transcript: string) => {
+    if (sixSevenPlayedRef.current || !heardSixSeven(transcript)) return;
+    sixSevenPlayedRef.current = true;
+    if (sixSevenTimerRef.current) clearTimeout(sixSevenTimerRef.current);
+    setSixSevenActive(true);
+    sixSevenTimerRef.current = setTimeout(() => {
+      setSixSevenActive(false);
+      sixSevenTimerRef.current = null;
+    }, 1400);
+  }, []);
+
   useEffect(() => {
     return () => {
       if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+      if (sixSevenTimerRef.current) clearTimeout(sixSevenTimerRef.current);
     };
   }, []);
 
@@ -222,6 +271,7 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
       /* ignore */
     }
     recognitionRef.current = null;
+    setBrowserRecognitionReady(false);
   }, []);
 
   const stopMediaRecorder = useCallback((): Promise<Blob | null> => {
@@ -278,12 +328,15 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
       noSpeechTimerRef.current = null;
     }
     stopRecognition();
+    liveTranscriptionRef.current?.abort();
+    liveTranscriptionRef.current = null;
+    setLiveTranscriptionReady(false);
     stopAudioMeter();
     silenceStartedRef.current = null;
     lastHeardSpeechRef.current = false;
   }, [stopAudioMeter, stopRecognition]);
 
-  const onSpeechStart = useCallback(() => { setMascotFeedback(null); changeMode("speaking"); }, [changeMode]);
+  const onSpeechStart = useCallback(() => { changeMode("speaking"); }, [changeMode]);
   const onSpeechFinish = useCallback(() => {
     if (modeRef.current === "speaking") changeMode("idle");
   }, [changeMode]);
@@ -302,19 +355,27 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
         return;
       }
       stopSpeech();
-      const reminderDraft = !retryId ? parseReminderCommand(trimmed) : null;
-      if (reminderDraft) {
-        const assistantId = newId();
-        const answer = reminderDraft.due ? 'I’ve prepared your reminder. Review the date and confirm below to save it.' : 'I’ve prepared your reminder. Choose a due date and confirm below to save it.';
-        setMessages(previous => [...previous,
-          { id: newId(), role: 'user', text: trimmed, photo, createdAt: Date.now() },
-          { id: assistantId, role: 'assistant', text: answer, spokenText: answer, createdAt: Date.now(), reminderProposal: { ...reminderDraft, id: newId(), status: 'pending' } },
-        ]);
-        setPhoto(undefined);
+      const retryMessage = retryId ? messagesRef.current.find(message => message.id === retryId) : undefined;
+      const retryPlantId = retryMessage?.plantId;
+      const plantResolution = retryPlantId === null
+        ? { kind: 'none' as const, plant: null, ambiguousNames: [] as string[] }
+        : resolveConversationPlant(
+          workspace.plants,
+          retryPlantId !== undefined ? retryPlantId : chatRef.current.plantId,
+          trimmed,
+        );
+      if (plantResolution.kind === 'ambiguous') {
+        setTypedInput(trimmed);
         changeMode('idle');
-        setStatusHint('Reminder proposal ready. Nothing has been saved yet.');
-        if (readReadAloud()) speakText(answer, assistantId);
+        setStatusHint(`Which plant do you mean: ${plantResolution.ambiguousNames.join(', ')}? Choose it in the plant selector, then send your question again.`);
+        requestAnimationFrame(() => plantSelectorRef.current?.focus());
         return;
+      }
+      const linkedPlant = plantResolution.plant;
+      const switchedPlant = plantResolution.kind === 'named' && linkedPlant?.id !== chatRef.current.plantId;
+      if (switchedPlant && linkedPlant) {
+        linkCurrentChat(linkedPlant.id);
+        setStatusHint(`Following ${linkedPlant.name} in this conversation.`);
       }
       requestBusyRef.current = true;
       const controller = new AbortController();
@@ -324,14 +385,21 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
       const assistantId = retryId ?? newId();
       const history = buildConversationHistory(messagesRef.current, retryId);
       const retryIndex = retryId ? messagesRef.current.findIndex(m => m.id === retryId) : -1;
-      const attachedPhoto = retryId ? messagesRef.current[retryIndex - 1]?.photo : photo;
-      const contextPhoto = attachedPhoto ?? [...messagesRef.current.slice(0, retryId ? retryIndex : undefined)].reverse().find(m => m.role === 'user' && m.photo)?.photo;
-      const linkedPlant = workspace.plants.find(p => p.id === chatRef.current.plantId);
-      const plantContext = linkedPlant ? `Saved plant: ${linkedPlant.name}; species as recorded by user: ${linkedPlant.species || 'unknown'}; location: ${linkedPlant.location || 'unknown'}. Care notes: ${linkedPlant.notes.slice(0, 2000)}` : undefined;
+      const retryPhoto = retryId ? messagesRef.current[retryIndex - 1] : undefined;
+      const attachedPhoto = retryId && (retryPhoto?.plantId === undefined ? chatRef.current.plantId ?? null : retryPhoto.plantId) === (linkedPlant?.id ?? null)
+        ? retryPhoto?.photo
+        : retryId ? undefined : photo;
+      const targetPlantId = linkedPlant?.id ?? null;
+      const priorPhoto = [...messagesRef.current.slice(0, retryId ? retryIndex : undefined)].reverse().find(message =>
+        message.role === 'user' && message.photo &&
+        (message.plantId === undefined ? chatRef.current.plantId ?? null : message.plantId) === targetPlantId,
+      )?.photo;
+      const contextPhoto = attachedPhoto ?? priorPhoto;
+      const plantContext = linkedPlant ? buildPlantMemory(linkedPlant, workspace.chats, chatRef.current.id) : undefined;
       setMessages((prev) => retryId ? prev.map((m) => m.id === retryId ? { ...m, text: "", pending: true, error: false, meta: null } : m) : [
         ...prev,
-        { id: userId, role: "user", text: trimmed, photo: attachedPhoto, createdAt: Date.now() },
-        { id: assistantId, role: "assistant", text: "", pending: true, createdAt: Date.now() },
+        { id: userId, role: "user", text: trimmed, photo: attachedPhoto, createdAt: Date.now(), plantId: targetPlantId },
+        { id: assistantId, role: "assistant", text: "", pending: true, createdAt: Date.now(), plantId: targetPlantId },
       ]);
       if (!retryId) setPhoto(undefined);
       changeMode("processing");
@@ -376,7 +444,6 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
         if (!followConversationRef.current) setHasNewMessages(true);
         changeMode("idle");
         setStatusHint("");
-        showMascotFeedback("success");
         if (readReadAloud()) speakText(spoken, assistantId);
       } catch (err) {
         if (controller.signal.aborted) return;
@@ -398,7 +465,7 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
         }
       }
     },
-    [changeMode, showMascotFeedback, speakText, stopSpeech, photo, workspace.plants],
+    [changeMode, linkCurrentChat, showMascotFeedback, speakText, stopSpeech, photo, workspace.plants, workspace.chats],
   );
 
   const transcribeWithGemini = useCallback(
@@ -435,6 +502,8 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
     setRecordingReady(false);
     setStatusHint("Finishing recording…");
 
+    const live = liveTranscriptionRef.current;
+    const liveTextPromise = live?.finish();
     const recorded = await stopMediaRecorder() || retainedRecordingRef.current;
     retainedRecordingRef.current = recorded;
     if (session !== recordingSessionRef.current) return;
@@ -444,6 +513,9 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
       clearTimeout(noSpeechTimerRef.current);
       noSpeechTimerRef.current = null;
     }
+    const liveText = (await liveTextPromise)?.trim() || "";
+    if (liveTranscriptionRef.current === live) liveTranscriptionRef.current = null;
+    setLiveTranscriptionReady(false);
     stopAudioMeter();
     silenceStartedRef.current = null;
 
@@ -452,9 +524,9 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
     transcriptionRef.current = controller;
 
     try {
-      let text = browserText;
+      let text = liveText || browserText;
       if (
-        (!text || preferCloudSttRef.current) &&
+        (!text || (!liveText && preferCloudSttRef.current)) &&
         recorded &&
         recorded.size > 0
       ) {
@@ -469,6 +541,7 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
       changeMode("idle");
       setLiveCaption("");
       if (text.trim()) {
+        triggerSixSeven(text);
         setReviewTranscript(text.trim());
         previousReviewRef.current = null;
         retainedRecordingRef.current = null;
@@ -496,6 +569,7 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
     stopMediaRecorder,
     stopRecognition,
     showMascotFeedback,
+    triggerSixSeven,
     transcribeWithGemini,
   ]);
 
@@ -570,6 +644,10 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
   const beginListening = useCallback(
     async (opts: { autoSilenceSubmit: boolean }) => {
       const session = ++recordingSessionRef.current;
+      sixSevenPlayedRef.current = false;
+      if (sixSevenTimerRef.current) clearTimeout(sixSevenTimerRef.current);
+      sixSevenTimerRef.current = null;
+      setSixSevenActive(false);
       setMicIssue(null);
       setCanRetryTranscription(false);
       retainedRecordingRef.current = null;
@@ -582,6 +660,8 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
       setMascotFeedback(null);
       setLiveCaption("");
       transcriptRef.current = "";
+      setLiveTranscriptionReady(false);
+      setBrowserRecognitionReady(false);
       changeMode("listening");
       setRecordingReady(false);
       setStatusHint("Waiting for microphone access…");
@@ -615,6 +695,29 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
         setMicIssue("Recording stopped unexpectedly. Review any captured words, or retry your microphone. Your typed draft is still here.");
         void finishRecording();
       };
+      if (streamRef.current && audioCtxRef.current) {
+        const live = new LiveTranscription(streamRef.current, audioCtxRef.current, {
+          onCaption: (text) => {
+            if (session !== recordingSessionRef.current || submittedRef.current) return;
+            transcriptRef.current = text;
+            setLiveCaption(text);
+            triggerSixSeven(text);
+          },
+          onReady: () => {
+            if (session !== recordingSessionRef.current || submittedRef.current) return;
+            setLiveTranscriptionReady(true);
+            setStatusHint("Live transcription is on. Pause when finished to review your words.");
+            stopRecognition();
+          },
+          onFailure: () => {
+            if (session !== recordingSessionRef.current || submittedRef.current) return;
+            if (!recognitionRef.current) preferCloudSttRef.current = true;
+            setLiveTranscriptionReady(false);
+            setStatusHint("Live transcription is unavailable. Your recording will still be transcribed for review.");
+          },
+        });
+        liveTranscriptionRef.current = live;
+      }
       const Ctor = getSpeechRecognitionCtor();
       if (Ctor) {
         const recognition = new Ctor();
@@ -622,7 +725,8 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
         recognition.interimResults = true;
         recognition.lang = "en-US";
         recognition.onresult = (event) => {
-          if (preferCloudSttRef.current || session !== recordingSessionRef.current) return;
+          if (liveTranscriptionRef.current?.active || preferCloudSttRef.current || session !== recordingSessionRef.current) return;
+          setBrowserRecognitionReady(true);
           let interim = "";
           let finalText = "";
           for (let i = 0; i < event.results.length; i++) {
@@ -633,11 +737,13 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
           const next = `${finalText} ${interim}`.trim();
           setLiveCaption(next);
           transcriptRef.current = next;
+          triggerSixSeven(next);
         };
         recognition.onerror = (event) => {
           const code = event.error;
           if (BENIGN_STT_ERRORS.has(code)) return;
           preferCloudSttRef.current = true;
+          setBrowserRecognitionReady(false);
           setStatusHint("Transcribing with cloud speech—keep talking, then pause to review.");
           try {
             recognition.stop();
@@ -646,13 +752,15 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
           }
         };
         recognition.onend = () => {
-          /* Silence or the review button finishes the recording. */
+          if (session === recordingSessionRef.current && !submittedRef.current) setBrowserRecognitionReady(false);
         };
         recognitionRef.current = recognition;
         try {
           recognition.start();
+          setBrowserRecognitionReady(true);
         } catch {
           preferCloudSttRef.current = true;
+          setBrowserRecognitionReady(false);
           setStatusHint("Using cloud speech—keep talking, then pause to review.");
         }
       } else {
@@ -690,9 +798,11 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
       cleanupListening,
       changeMode,
       showMascotFeedback,
+      triggerSixSeven,
       startAmplitudeLoop,
       startMicStream,
       stopMediaRecorder,
+      stopRecognition,
       finishRecording,
     ],
   );
@@ -703,7 +813,36 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
     void beginListening({ autoSilenceSubmit: true });
   }, [beginListening, stopSpeech]);
 
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const starter = url.searchParams.get('starter');
+    if (messages.length || !starter || !Object.hasOwn(landingPrompts, starter)) return;
+    const timer = window.setTimeout(() => {
+      setTypedInput(landingPrompts[starter as keyof typeof landingPrompts]);
+      url.searchParams.delete('starter');
+      window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
+      textareaRef.current?.focus();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [messages.length]);
+
+  useEffect(() => {
+    if (landingVoiceStartedRef.current || messages.length > 0 || new URLSearchParams(window.location.search).get("startVoice") !== "1") return;
+    // Defer until the chat is mounted; cancelling the timer also handles Strict Mode's effect replay.
+    const timer = window.setTimeout(() => {
+      landingVoiceStartedRef.current = true;
+      const url = new URL(window.location.href);
+      url.searchParams.delete("startVoice");
+      window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+      onStartListen();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [messages.length, onStartListen]);
+
   const cancelRecording = useCallback(() => {
+    if (sixSevenTimerRef.current) clearTimeout(sixSevenTimerRef.current);
+    sixSevenTimerRef.current = null;
+    setSixSevenActive(false);
     recordingSessionRef.current += 1;
     submittedRef.current = true;
     void stopMediaRecorder();
@@ -731,7 +870,8 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
 
   const showWelcome = messages.length === 0;
   const visibleMode = mode === "listening" && !recordingReady ? "idle" : mode;
-  const cacteaState = resolveCacteaState(visibleMode, mascotFeedback);
+  const captionPresentation = captureCaptionPresentation(liveTranscriptionReady || browserRecognitionReady, liveCaption);
+  const cacteaState = sixSevenActive ? "sixSeven" : resolveCacteaState(visibleMode, mascotFeedback);
   const latestPlantSummary = useMemo(() => {
     for (let index = messages.length - 1; index >= 0; index--) {
       const message = messages[index];
@@ -790,34 +930,26 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
     void submitTranscript(text);
   };
 
-  const confirmReminder = (message: ChatMessage, draft: { title: string; due: string }, plantId?: string) => {
-    const proposal = message.reminderProposal;
-    if (!proposal || proposal.status !== 'pending' || composerDisabled || !validReminderDraft(draft) || confirmedReminderIdsRef.current.has(proposal.id) || workspace.reminders.some(r => r.id === proposal.id)) return;
-    confirmedReminderIdsRef.current.add(proposal.id);
-    save('reminders', { id: proposal.id, title: draft.title, due: draft.due, repeat: 0, completed: false, ...(plantId && workspace.plants.some(p => p.id === plantId) ? { plantId } : {}) });
-    const answer = `Your reminder is saved for ${new Date(`${draft.due}T12:00:00`).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}. You can find it in Reminders.`;
-    setMessages(previous => previous.map(m => m.id === message.id ? { ...m, text: answer, spokenText: answer, reminderProposal: { ...proposal, ...draft, status: 'saved' } } : m));
-    setStatusHint('Reminder saved. You can find it in Reminders.');
-    if (readReadAloud()) speakText(answer, message.id);
-  };
-  const cancelReminder = (message: ChatMessage) => {
-    const proposal = message.reminderProposal;
-    if (!proposal || composerDisabled || confirmedReminderIdsRef.current.has(proposal.id) || workspace.reminders.some(r => r.id === proposal.id)) return;
-    stopSpeech();
-    const answer = 'Reminder cancelled. Nothing was saved.';
-    setMessages(previous => previous.map(m => m.id === message.id ? { ...m, text: answer, spokenText: answer, reminderProposal: { ...proposal, status: 'cancelled' } } : m));
-    setStatusHint(answer);
-    if (readReadAloud()) speakText(answer, message.id);
-  };
   return (
     <div className={`app-shell ${styles.shell}`}>
       <main className={styles.workspace}>
       <section className={styles.chatArea} aria-labelledby="chat-title">
-        <div className="ws-greeting"><Icon name="leaf" size={34}/><div><h1 id="chat-title">Hi, I’m Cactea!</h1><p>Ask me anything about your plants. Let’s help them grow.</p></div><Cactea state={cacteaState} size="sm" className={styles.mobileMascot}/></div>
-        <div className="ws-chat-toolbar">
-          <select aria-label="Link conversation to a plant" value={chat.plantId ?? ''} disabled={mode !== 'idle'} onChange={e => save('chats',{...chat,plantId:e.target.value || undefined})}><option value="">General plant conversation</option>{workspace.plants.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
-          <details className={styles.voiceSettings}><summary>Voice settings</summary><div><label><input type="checkbox" checked={readAloud} onChange={e => {saveReadAloud(e.target.checked); if (!e.target.checked) stopSpeech();}}/>Read replies aloud</label><Link className={styles.voicePreferencesLink} href="/settings#voice-settings-title">Choose or preview a voice →</Link></div></details>
-          <details className={styles.chatMenu}><summary aria-label="Conversation options">•••</summary><div><button onClick={() => {const title = window.prompt('Conversation name',chat.title); if (title?.trim()) save('chats',{...chat,title:title.trim().slice(0,120)});}}>Rename chat</button><button onClick={() => { if (messages.length || typedInput.trim() || photo || reviewingTranscript || mode !== 'idle') newPlantDialogRef.current?.showModal(); else startNewPlantConversation(); }}>New chat</button><button onClick={() => {if (window.confirm('Delete this saved conversation?')) remove('chats',chat.id);}}>Delete chat</button></div></details>
+        <div className="ws-greeting"><Icon name="leaf" size={34}/><div><h1 id="chat-title">Hi, I’m Cactea!</h1><p>Ask me anything about your plants. Let’s help them grow.</p></div><CacteaAudioAura state={cacteaState} size="sm" volumeRef={amplitudeRef} className={styles.mobileMascot}/></div>
+        <div className={styles.toolbar}>
+          <div className={styles.toolbarInner}>
+            <div className={styles.toolbarIdentity}>
+              <span className={styles.toolbarChatIcon}><Icon name="chat" size={19}/></span>
+              <div><span className={styles.toolbarEyebrow}>Current conversation</span><strong title={chat.title}>{chat.title}</strong></div>
+            </div>
+            <div className={styles.toolbarControls}>
+              <label className={styles.plantContext}>
+                <Icon name="leaf" size={17}/><span className={styles.plantContextLabel}>Plant</span>
+                <select ref={plantSelectorRef} aria-label="Link conversation to a plant" value={chat.plantId ?? ''} disabled={mode !== 'idle'} onChange={e => linkCurrentChat(e.target.value || undefined)}><option value="">General care</option>{workspace.plants.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
+              </label>
+              <details className={styles.voiceSettings}><summary aria-label="Voice settings"><Icon name="microphone" size={17}/><span>Voice settings</span></summary><div><label><input type="checkbox" checked={readAloud} onChange={e => {saveReadAloud(e.target.checked); if (!e.target.checked) stopSpeech();}}/>Read replies aloud</label><Link className={styles.voicePreferencesLink} href="/settings#voice-settings-title">Choose or preview a voice →</Link></div></details>
+              <details className={styles.chatMenu}><summary aria-label="Conversation actions">⋯</summary><div><button type="button" onClick={() => {const title = window.prompt('Conversation name',chat.title); if (title?.trim()) save('chats',{...chat,title:title.trim().slice(0,120)});}}>Rename chat</button><button type="button" onClick={() => { if (messages.length || typedInput.trim() || photo || reviewingTranscript || mode !== 'idle') newPlantDialogRef.current?.showModal(); else startNewPlantConversation(); }}>New chat</button><button type="button" onClick={() => {if (window.confirm('Delete this saved conversation?')) remove('chats',chat.id);}}>Delete chat</button></div></details>
+            </div>
+          </div>
         </div>
       <section className={`chat-scroll ${styles.scroll}`} aria-label="Chat messages" ref={chatScrollRef} onScroll={() => {
         const element = chatScrollRef.current;
@@ -828,20 +960,31 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
       }}>
         {showWelcome && (
           <section className={`dashboard-welcome ${styles.welcome}`} aria-labelledby="welcome-title">
-            <div className={`welcome-copy ${styles.welcomeCopy}`}>
-              <p className="welcome-eyebrow">Your voice plant-care companion</p>
-              <h2 id="welcome-title" className={styles.questionTitle}>What&apos;s happening with your plant?</h2>
-              <p className={`welcome-description ${styles.description}`}>
-                Tell me what you&apos;ve noticed. I&apos;ll listen, then help you figure out what your plant needs.
-              </p>
-              <details className={styles.demoGuide}><summary>Try the voice demo</summary><ol><li>Enable Read replies aloud in Voice settings and allow microphone access.</li><li>Say: “My monstera’s lower leaves are yellow. What should I check?” Pause for about a second.</li><li>Review or edit the transcript, then choose Send question.</li><li>Listen to the answer. Choose Talk to Cactea again and ask: “How do I check if the soil is too wet?”</li></ol><p>Stay in this conversation. Add a plant or reminder only if it helps carry out the advice.</p></details>
+            <div className={styles.welcomeGrid}>
+              <div className={`welcome-copy ${styles.welcomeCopy}`}>
+                <p className={styles.welcomeKicker}><Icon name="leaf" size={17} /> Start with what you notice</p>
+                <h2 id="welcome-title" className={styles.questionTitle}>Let&apos;s look at<br />your plant.</h2>
+                <p className={`welcome-description ${styles.description}`}>Tell Cactea what you see. Together, you&apos;ll find one useful next step.</p>
+                <div className={styles.welcomeActions}>
+                  {micSupported && <button type="button" className={styles.welcomeTalk} disabled={composerDisabled} onClick={onStartListen}><Icon name="microphone" size={20} /><span>Talk to Cactea</span><span aria-hidden="true">→</span></button>}
+                  <button type="button" className={styles.welcomeType} disabled={composerDisabled} onClick={() => textareaRef.current?.focus()}>Type a question <span aria-hidden="true">→</span></button>
+                </div>
+                {micSupported && <p className={styles.welcomeReassurance}>You&apos;ll review your words before anything is sent.</p>}
+                <details className={styles.demoGuide}><summary>How voice questions work</summary><ol><li>Allow microphone access, then describe what you see.</li><li>Pause when you&apos;re done and review the transcript.</li><li>Edit it if needed, then send your question.</li></ol></details>
+              </div>
               <div className={`dashboard-preferences ${styles.starters}`}>
-                <p className="starter-heading">{profile ? "Or choose a starting prompt" : "Need a prompt to get started?"}</p>
-                {starterGoals.map((goal, index) => <button type="button" key={goal} disabled={composerDisabled} className={`dashboard-starter ${index === 0 ? "dashboard-starter--primary" : ""}`} onClick={() => chooseStarter(starterQuestions[goal])}><span>{index === 0 && profile && <span className={styles.starterLabel}>For you</span>}{starterQuestions[goal]}</span><span aria-hidden="true">↗</span></button>)}
-                {profile && <button type="button" className="dashboard-clear" onClick={() => {
+                <div className={styles.starterHeader}><div><span>Need a place to begin?</span><h3>Try one of these</h3></div>{profile && <button type="button" className={styles.resetSuggestions} onClick={() => {
                   const cleared = savePlantProfile(null);
                   setStatusHint(cleared ? "Saved preferences cleared." : "Preferences cleared for this visit. Browser storage is unavailable.");
-                }}>Clear saved preferences</button>}
+                }}>Reset</button>}</div>
+                <div className={styles.starterList}>
+                  {starterGoals.map((goal, index) => <button type="button" key={goal} disabled={composerDisabled} className={styles.starterChoice} onClick={() => chooseStarter(starterQuestions[goal])}>
+                    <span className={styles.starterNumber}>{String(index + 1).padStart(2, "0")}</span>
+                    <span className={styles.starterText}><strong>{starterTitles[goal]}</strong><small>{starterDescriptions[goal]}</small></span>
+                    <span className={styles.starterArrow} aria-hidden="true">↗</span>
+                  </button>)}
+                </div>
+                <p className={styles.starterNote}>Choose one to edit it in the chat box.</p>
               </div>
             </div>
           </section>
@@ -855,7 +998,7 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
             )}
             <div className="msg-col">
               <span className="sr-only">{m.role === "assistant" ? "Anthea" : "You"}:</span>
-              {!m.reminderProposal && <div className={`msg-bubble msg-bubble--${m.role} ${m.error ? "msg-bubble--error" : ""}`}>
+              <div className={`msg-bubble msg-bubble--${m.role} ${m.error ? "msg-bubble--error" : ""}`}>
                 {m.photo && <img className="ws-chat-photo" src={m.photo} alt="Plant photo shared in this conversation"/>}
                 {m.pending ? (
                   <span className="typing-dots" aria-label="Thinking">
@@ -864,12 +1007,11 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
                     <span />
                   </span>
                 ) : (
-                  m.role === "assistant" && !m.error ? <AssistantAnswer text={m.text} brief={m.spokenText || briefSpeech(m.text)} nextStep={m.meta?.next_check} speaking={speakingMessageId === m.id} disabled={composerDisabled} onBrief={() => speakText(m.spokenText || briefSpeech(m.text), m.id)} onMore={() => speakText(m.text, m.id)} onStop={stopSpeech}/> : m.text
+                  m.reminderProposal?.status === 'pending' ? 'This older reminder draft can no longer be completed.' : m.role === "assistant" && !m.error ? <AssistantAnswer text={m.text} brief={m.spokenText || briefSpeech(m.text)} nextStep={m.meta?.next_check} speaking={speakingMessageId === m.id} disabled={composerDisabled} onBrief={() => speakText(m.spokenText || briefSpeech(m.text), m.id)} onMore={() => speakText(m.text, m.id)} onStop={stopSpeech}/> : m.text
                 )}
-              </div>}
+              </div>
               {m.createdAt && <time className="ws-time" dateTime={new Date(m.createdAt).toISOString()}>{new Date(m.createdAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</time>}
               {m.role === "assistant" && !m.pending && m.retryText && <div className="message-actions"><button type="button" disabled={composerDisabled} onClick={() => void submitTranscript(m.retryText!, m.id)}>Retry question</button></div>}
-              {m.reminderProposal && <ReminderProposalCard proposal={m.reminderProposal} savedReminder={workspace.reminders.find(r => r.id === m.reminderProposal?.id)} plants={workspace.plants} initialPlantId={chat.plantId} disabled={composerDisabled} onConfirm={(draft, plantId) => confirmReminder(m, draft, plantId)} onCancel={() => cancelReminder(m)} />}
               {m.meta && !m.pending && (
                 <span className={styles.messageSource}>{m.meta.is_estimate ? "Estimated guidance" : "AI plant-care guidance"}</span>
               )}
@@ -883,17 +1025,17 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
 
       <div className={styles.inputDock}>
       {hasNewMessages && <button type="button" className="new-response" onClick={scrollToLatest}>New response ↓</button>}
-      <section className={styles.voiceDock} aria-label="Voice conversation">
-        <div className={styles.voiceStatus} role="status"><strong>{mode === "listening" && recordingReady ? "Listening — pause when finished" : voiceHeading(mode, recordingReady, reviewingTranscript, transcribing, playbackPending)}</strong><span>{mode === "listening" ? recordingReady ? "Your microphone is on." : "Allow Microphone in the browser prompt." : mode === "speaking" ? "Stop audio or talk again to ask a follow-up." : reviewingTranscript ? "Check your words before sending." : mode === "processing" || playbackPending ? "Your question stays in this conversation." : !micSupported ? "Microphone unavailable. Type your question below." : micIssue ? "Your draft is kept. Choose a recovery option below." : statusHint || (readAloud ? "Ask a plant question aloud." : "Enable spoken replies in Voice settings.")}</span></div>
-        {micSupported && !reviewingTranscript && <button type="button" className={styles.voiceStart} disabled={mode === "processing" || photoBusy || (mode === "listening" && !recordingReady)} onClick={() => mode === "listening" ? void finishRecording() : onStartListen()}>
-          <span className={styles.voiceIcon}><Icon name="microphone" size={24}/></span><span className={styles.voiceCopy}><strong>{mode === "listening" ? recordingReady ? "Review recording" : "Allow microphone…" : mode === "processing" ? "Please wait…" : messages.length ? "Talk to Cactea again" : "Talk to Cactea"}</strong></span>
-        </button>}
-        {(mode === "listening" || speakingMessageId) && <div className={styles.voiceSecondary}>
-          {mode === "listening" && <button type="button" onClick={cancelRecording}>Cancel recording</button>}
-          {speakingMessageId && <button type="button" onClick={stopSpeech}>Stop audio</button>}
+      {!reviewingTranscript && <section className={styles.voiceDock} data-listening={mode === "listening" && recordingReady} aria-label="Voice conversation">
+        <div className={styles.voiceStatus} role="status"><strong>{mode === "listening" && recordingReady ? "Cactea is listening" : voiceHeading(mode, recordingReady, reviewingTranscript, transcribing, playbackPending)}</strong><span>{mode === "listening" ? recordingReady ? "Pause when finished. You’ll review your words before sending." : "Allow Microphone in the browser prompt." : mode === "speaking" ? "Stop audio or talk again to ask a follow-up." : reviewingTranscript ? "Check your words before sending." : mode === "processing" || playbackPending ? "Your question stays in this conversation." : !micSupported ? "Microphone unavailable. Type your question below." : micIssue ? "Your draft is kept. Choose a recovery option below." : statusHint || (readAloud ? "Ask a plant question aloud." : "Enable spoken replies in Voice settings.")}</span></div>
+        {micSupported && !reviewingTranscript && <div className={styles.voiceActions}>
+          {mode === "listening" && <button type="button" className={styles.cancelRecording} aria-label="Cancel recording" onClick={cancelRecording}><span aria-hidden="true">×</span> Cancel</button>}
+          <button type="button" className={styles.voiceStart} data-listening={mode === "listening"} disabled={mode === "processing" || photoBusy || (mode === "listening" && !recordingReady)} onClick={() => mode === "listening" ? void finishRecording() : onStartListen()}>
+            <span className={styles.voiceIcon}><Icon name="microphone" size={24}/></span><span className={styles.voiceCopy}><strong>{mode === "listening" ? recordingReady ? "Review recording" : "Allow microphone…" : mode === "processing" ? "Please wait…" : messages.length ? "Talk to Cactea again" : "Talk to Cactea"}</strong></span>
+          </button>
         </div>}
-        {mode === "listening" && recordingReady && liveCaption && <p className={styles.liveCaption}><span>Hearing</span>{liveCaption}</p>}
-      </section>
+        {speakingMessageId && <div className={styles.voiceSecondary}><button type="button" onClick={stopSpeech}>Stop audio</button></div>}
+        {mode === "listening" && recordingReady && <div className={styles.liveCaption}><span className={styles.waveformFrame}><AudioWaveformCanvas analyserRef={analyserRef} isListening={true} width={148} height={60} /></span><div className={styles.liveCaptionCopy}><span role="status">{captionPresentation.label}</span><p>{captionPresentation.text}</p></div></div>}
+      </section>}
       {(micIssue || canRetryTranscription) && <section className={styles.micRecovery} aria-label="Voice recovery"><p role="alert">{micIssue || "Your recording has been kept for another transcription attempt. Any captured words are available to edit."}</p><div>
         {canRetryTranscription && <button type="button" disabled={mode !== "idle"} onClick={() => { previousReviewRef.current = reviewTranscript; submittedRef.current = false; void finishRecording(); }}>Retry transcription</button>}
         {micSupported && <button type="button" disabled={mode !== "idle"} onClick={() => { previousReviewRef.current = reviewTranscript; setReviewTranscript(null); setEditingTranscript(false); onStartListen(); }}>Retry microphone</button>}
@@ -901,15 +1043,21 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
       </div></section>}
 
       {reviewingTranscript ? <section ref={transcriptCardRef} tabIndex={-1} className={styles.transcriptReview} aria-labelledby="transcript-review-title">
-        <div className={styles.reviewHeading}><h2 id="transcript-review-title">What I heard</h2>{editingTranscript && <span>{reviewTranscript.length.toLocaleString()} / 4,000</span>}</div>
+        <div className={styles.reviewHeading}>
+          <span className={styles.reviewMark} aria-hidden="true"><Icon name="microphone" size={19}/></span>
+          <div><span className={styles.reviewEyebrow}>Voice draft · Nothing sent yet</span><h2 id="transcript-review-title">Review your question</h2></div>
+          {editingTranscript && <span className={styles.reviewCount}>{reviewTranscript.length.toLocaleString()} / 4,000</span>}
+        </div>
         {editingTranscript ? <><label className="sr-only" htmlFor="transcript-review">Edit your recorded question</label>
         <textarea id="transcript-review" ref={transcriptReviewRef} value={reviewTranscript} disabled={mode !== "idle"} onChange={(event) => setReviewTranscript(event.target.value)} maxLength={4000} rows={2} /></> : <p className={styles.heardTranscript}>{reviewTranscript || "No words captured. Edit your question or record again."}</p>}
         {reviewTranscript.length > 4000 && <p className={styles.reviewLimit}>Please shorten your question to 4,000 characters before sending.</p>}
         <div className={styles.reviewActions}>
-          <button type="button" aria-expanded={editingTranscript} disabled={mode !== "idle"} onClick={() => setEditingTranscript(value => !value)}>{editingTranscript ? "Done editing" : "Edit"}</button>
-          <button type="button" disabled={mode !== "idle"} onClick={() => { previousReviewRef.current = null; retainedRecordingRef.current = null; setCanRetryTranscription(false); setMicIssue(null); setReviewTranscript(null); setEditingTranscript(false); setLiveCaption(""); transcriptRef.current = ""; setStatusHint("Transcript discarded. Nothing was sent."); requestAnimationFrame(() => textareaRef.current?.focus()); }}>Discard</button>
-          <button type="button" disabled={mode !== "idle"} onClick={() => { previousReviewRef.current = reviewTranscript; setReviewTranscript(null); setEditingTranscript(false); onStartListen(); }}>Record again</button>
-          <button type="button" className={styles.sendTranscript} disabled={mode !== "idle" || !reviewTranscript.trim() || reviewTranscript.length > 4000} onClick={sendReviewedTranscript}>Send question →</button>
+          <div className={styles.reviewAlternatives}>
+            <button type="button" aria-expanded={editingTranscript} disabled={mode !== "idle"} onClick={() => setEditingTranscript(value => !value)}>{editingTranscript ? "Done editing" : "Edit words"}</button>
+            <button type="button" disabled={mode !== "idle"} onClick={() => { previousReviewRef.current = reviewTranscript; setReviewTranscript(null); setEditingTranscript(false); onStartListen(); }}>Record again</button>
+            <button type="button" className={styles.reviewDiscard} disabled={mode !== "idle"} onClick={() => { previousReviewRef.current = null; retainedRecordingRef.current = null; setCanRetryTranscription(false); setMicIssue(null); setReviewTranscript(null); setEditingTranscript(false); setLiveCaption(""); transcriptRef.current = ""; setStatusHint("Transcript discarded. Nothing was sent."); requestAnimationFrame(() => textareaRef.current?.focus()); }}>Discard</button>
+          </div>
+          <button type="button" className={styles.sendTranscript} disabled={mode !== "idle" || !reviewTranscript.trim() || reviewTranscript.length > 4000} onClick={sendReviewedTranscript}>Send question <span aria-hidden="true">→</span></button>
         </div>
       </section> : <>
 
@@ -953,7 +1101,7 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
       </>}
       </div>
       </section>
-      <CompanionPanel mode={visibleMode} state={cacteaState} transcribing={transcribing} summary={latestPlantSummary} conversationNumber={conversationNumber} onAskNext={() => chooseStarter("What should I check next for this plant?")} actionsDisabled={composerDisabled} />
+      <CompanionPanel mode={visibleMode} state={cacteaState} transcribing={transcribing} summary={latestPlantSummary} conversationNumber={conversationNumber} onAskNext={() => chooseStarter("What should I check next for this plant?")} onChooseSuggestion={chooseStarter} actionsDisabled={composerDisabled} volumeRef={amplitudeRef} />
       </main>
       <dialog ref={newPlantDialogRef} className={styles.resetDialog} aria-labelledby="new-plant-title" aria-describedby="new-plant-description">
         <h2 id="new-plant-title">Start a new plant conversation?</h2>

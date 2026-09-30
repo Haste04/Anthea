@@ -103,7 +103,7 @@ export default function WelcomeFlow() {
 
       <main className={styles.main}>
         <div className={`${styles.content} ${question ? styles.questionContent : styles.introContent}`}>
-          <div className={styles.mascot}><Cactea state={speaking ? "speaking" : "idle"} size={question ? "md" : "lg"} /></div>
+          <div className={styles.mascot}><Cactea state={speaking ? "speaking" : "idle"} size={question ? "md" : "lg"} interactive /></div>
           <div className={styles.message}>
             <p className={styles.eyebrow}>{step === 0 ? "Your new growing companion" : step === 4 ? "A great place to start" : "Let’s get to know you"}</p>
             <h1 ref={headingRef} tabIndex={-1} id="welcome-heading">

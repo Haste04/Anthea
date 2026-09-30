@@ -8,6 +8,14 @@ export function startVisualizer(
   const ctx = canvas.getContext("2d");
   if (!ctx) return () => {};
 
+  const styles = getComputedStyle(canvas);
+  const color = (name: string) => styles.getPropertyValue(name).trim();
+  const green = color('--primary');
+  const forest = color('--lw-forest');
+  const amber = color('--accent');
+  const softGreen = color('--selected-strong');
+  const paleGreen = color('--selected');
+
   const size = 240;
   canvas.width = size;
   canvas.height = size;
@@ -33,24 +41,26 @@ export function startVisualizer(
     for (let i = 3; i >= 1; i--) {
       ctx.beginPath();
       ctx.arc(cx, cy, radius + i * 18 * pulse, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(46, 125, 70, ${0.08 * pulse})`;
+      ctx.strokeStyle = green;
+      ctx.globalAlpha = 0.08 * pulse;
       ctx.lineWidth = 2;
       ctx.stroke();
+      ctx.globalAlpha = 1;
     }
 
     const gradient = ctx.createRadialGradient(cx, cy, 8, cx, cy, radius);
     if (mode === "speaking") {
-      gradient.addColorStop(0, "#81c784");
-      gradient.addColorStop(1, "#2e7d46");
+      gradient.addColorStop(0, softGreen);
+      gradient.addColorStop(1, forest);
     } else if (mode === "listening") {
-      gradient.addColorStop(0, "#a5d6a7");
-      gradient.addColorStop(1, "#388e3c");
+      gradient.addColorStop(0, amber);
+      gradient.addColorStop(1, green);
     } else if (mode === "processing") {
-      gradient.addColorStop(0, "#c8e6c9");
-      gradient.addColorStop(1, "#66bb6a");
+      gradient.addColorStop(0, paleGreen);
+      gradient.addColorStop(1, green);
     } else {
-      gradient.addColorStop(0, "#e8f5e9");
-      gradient.addColorStop(1, "#81c784");
+      gradient.addColorStop(0, paleGreen);
+      gradient.addColorStop(1, softGreen);
     }
 
     ctx.beginPath();

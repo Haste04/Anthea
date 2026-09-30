@@ -23,6 +23,7 @@ function browserHarness(t, { reduced = false, hidden = false } = {}) {
   let time = 0;
   const previousWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
   const previousDocument = Object.getOwnPropertyDescriptor(globalThis, "document");
+  const previousComputedStyle = Object.getOwnPropertyDescriptor(globalThis, "getComputedStyle");
   Object.defineProperty(globalThis, "window", {
     configurable: true,
     value: {
@@ -35,12 +36,26 @@ function browserHarness(t, { reduced = false, hidden = false } = {}) {
     },
   });
   Object.defineProperty(globalThis, "document", { configurable: true, value: doc });
+  Object.defineProperty(globalThis, "getComputedStyle", {
+    configurable: true,
+    value: () => ({
+      getPropertyValue: (name) => ({
+        "--primary": "#046241",
+        "--lw-forest": "#133020",
+        "--accent": "#ffb347",
+        "--selected-strong": "#d9e9dc",
+        "--selected": "#e8f1e9",
+      })[name] ?? "",
+    }),
+  });
   t.after(() => {
     cleanups.forEach((cleanup) => cleanup());
     if (previousWindow) Object.defineProperty(globalThis, "window", previousWindow);
     else delete globalThis.window;
     if (previousDocument) Object.defineProperty(globalThis, "document", previousDocument);
     else delete globalThis.document;
+    if (previousComputedStyle) Object.defineProperty(globalThis, "getComputedStyle", previousComputedStyle);
+    else delete globalThis.getComputedStyle;
   });
 
   return {
