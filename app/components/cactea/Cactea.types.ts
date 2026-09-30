@@ -8,4 +8,5 @@ export type CacteaProps = {
   size?: CacteaSize;
   className?: string;
   ariaLabel?: string;
+  interactive?: boolean;
 };

@@ -1,10 +1,10 @@
-# Anthea — AI Plant Voice Agent
+﻿# Anthea 🌿
 
-Hands-free voice assistant that identifies a plant from spoken traits, diagnoses issues from a local rule table, calculates a watering schedule, and looks up care data via the Perenual API.
+### Talk through plant care with Cactea.
 
-**Status: working end-to-end.** Voice in → transcript → plant identification → symptom diagnosis → watering calculation → care data lookup → spoken reply, all confirmed working as of this README's last update. See "Known issues" below for the one open item worth checking before a live demo.
+Yellow leaves? Unsure when to water? Anthea helps you turn what you notice into a practical next step. Speak to Cactea, check what it heard, and listen to a short answer—with the fuller explanation ready in chat.
 
-## Stack
+**Voice first. Typing always available. No sign-in required.**
 
 - Next.js (App Router) + TypeScript, single deployment (frontend + serverless API routes together — no separate backend service)
 - Web Speech API (live captions) + Web Audio RMS silence detection (1.2s pause auto-submits)
@@ -14,21 +14,30 @@ Hands-free voice assistant that identifies a plant from spoken traits, diagnoses
 - Perenual API for confirmed care data (watering, sunlight, soil), used only _after_ the LLM already has a species guess — Perenual has no trait-search endpoint
 - Local `data/disease-rules.json` (12 rules, keyword-overlap matched, not exact string match)
 
-## ⚠️ On the Gemini model name — read this before debugging anything else
+## Meet your plant-care companion
 
-**Gemini model names and availability change frequently**, sometimes within days. During this project alone, `gemini-1.5-flash`, `gemini-2.5-flash`, and the entire `gemini-2.0-*` line were all retired or blocked for new users while we were actively building. `gemini-3.8-flash` worked but only had a 20-requests/day free quota and hit frequent "high demand" 503 errors.
+Cactea keeps the conversation approachable: visible listening, thinking, and speaking states; one question at a time; and advice you can act on.
 
-**Current setting: `gemini-3.5-flash-lite`** — confirmed Stable (not preview) on Google's official model list as of this writing, with a 500 requests/day free-tier quota (vs. 20 for 3.8-flash).
+| What you want to do | How Anthea helps |
+| --- | --- |
+| Ask without typing | Start with **Talk to Cactea**, speak naturally, then pause to review your words. |
+| Correct a misheard question | Use the compact **What I heard** card to edit, record again, or send. |
+| Understand a plant problem | For yellow leaves, Cactea asks about missing soil moisture, watering, and light details before suggesting a cause. |
+| Get the useful part quickly | Read the main advice and highlighted **Next step**. Open **Details** or choose **Hear more** for the full explanation. |
+| Show what you see | Attach a plant photo and ask a question about it. |
+| Follow through on advice | Say “Remind me to check the soil tomorrow,” review the care action, and choose **Confirm reminder**. |
+| Keep your garden organized | Save plants, link conversations and reminders, revisit chats, and browse the introductory plant guide. |
+| Make the voice your own | Turn spoken replies on or off, select an available device voice, and preview it in Settings. |
 
-If the assistant starts failing, check the server log for the provider's actual error before changing the model. To confirm:
+### Your first conversation
 
 1. Check `https://ai.google.dev/gemini-api/docs/models` for the current Stable list.
 2. Test one isolated request via PowerShell/curl (see "Debugging" below), then inspect the server log for `404` (model unavailable), `429 RESOURCE_EXHAUSTED` (quota), or `503 UNAVAILABLE` (temporary overload). Public responses use safe messages instead of exposing raw provider errors.
 3. Set `GEMINI_TEXT_MODEL` if you need a different assistant model. It must support function calling. Transcription does not go through Gemini — it runs on the local Whisper model in `lib/whisper.ts`.
 
-The assistant makes up to three attempts on its primary model with short backoff. If all attempts end in `503` overload, it makes one attempt with `GEMINI_FALLBACK_MODEL` (default: `gemini-3.1-flash-lite`), keeping the same question, history, and tools. Set the fallback variable to an empty value to disable it. Quota, authentication, and invalid-request errors do not trigger fallback. If both models are overloaded, the route returns `503` with `Retry-After: 30`, and the dashboard asks the user to wait and retry.
+Prefer a keyboard? Type your question or use a starting prompt. If microphone access or transcription fails, the chat offers retry and typing options while preserving your draft or captured words.
 
-## Setup
+### Your data and expectations
 
 1. Copy `.env.example` to `.env.local` and set:
    - `GEMINI_API_KEY` (required for the assistant; mic transcription runs locally on Whisper and needs no key)
@@ -38,11 +47,18 @@ The assistant makes up to three attempts on its primary model with short backoff
 3. Install and run:
 
 ```bash
+git clone https://github.com/Haste04/Anthea.git
+cd Anthea
 npm install
-npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Copy `.env.example` to `.env.local` and replace the placeholders. In PowerShell:
+
+```powershell
+Copy-Item .env.example .env.local
+```
+
+For local development without Redis, leave both Upstash variables empty rather than keeping the template’s placeholder values.
 
 The `/api/assistant` and `/api/transcribe` endpoints are limited to 10 requests per IP per minute. Assistant transcripts are capped at 4,000 characters; audio uploads are capped at 5 MB and restricted to supported audio MIME types. Production uses the shared Upstash Redis limiter so limits apply across serverless instances.
 
@@ -50,71 +66,88 @@ Voice input uses the mic with RMS silence detection. If the browser `SpeechRecog
 
 The Whisper model (~75 MB int8) is downloaded from Hugging Face on the first transcription request and cached — in `.cache/whisper/` locally (git-ignored) and in `/tmp` on Vercel (per-instance, so a cold function re-downloads it). The model id and quantization live in `lib/whisper.ts`. Silent recordings are detected by RMS before the model runs, so an empty room returns `{"transcript": ""}` instead of a hallucinated sentence.
 
-## API
+### Configuration
 
-`POST /api/assistant`
+| Variable | Purpose |
+| --- | --- |
+| `GEMINI_API_KEY` | Server-side key for assistant replies and cloud transcription. |
+| `PERENUAL_API_KEY` | Server-side key for species confirmation and care lookups. |
+| `GEMINI_TEXT_MODEL` | Assistant model; defaults to the value shown in `.env.example`. Requires function calling. |
+| `GEMINI_FALLBACK_MODEL` | Fallback after repeated provider overload. Set empty to disable. |
+| `UPSTASH_REDIS_REST_URL` | Shared production rate limiter connection. |
+| `UPSTASH_REDIS_REST_TOKEN` | Shared production rate limiter credential. |
 
-```json
-{
-  "transcript": "square stems, purple flowers, yellowing lower leaves, sandy soil"
-}
+Keep real keys in `.env.local` or your host’s secret environment settings. Do not commit them or expose them through `NEXT_PUBLIC_` variables. Cloud transcription has a separate `AUDIO_MODEL` constant in `app/api/transcribe/route.ts`; changing the text model does not change that setting. Provider model availability and quotas depend on your account and can change.
+
+### How it works
+
+```text
+Talk → microphone capture + silence detection → transcript review
+                                                    ↓ Send question
+Type or attach a photo ──────────────────────→ assistant API
+                                                    ↓
+                                  care context + tools + AI response
+                                                    ↓
+                                  main advice + next step + details
+                                                    ↓
+                                  brief spoken reply → follow-up
+
+“Remind me…” → local proposal → explicit confirmation → saved reminder
 ```
 
-Response:
+- **Interface:** Next.js App Router, React, TypeScript, CSS, and Cactea’s state-driven mascot.
+- **Listening:** browser speech recognition for live captions, recorded audio for Gemini transcription fallback, and Web Audio silence detection. A pause opens review; it does not automatically send the question.
+- **Reasoning:** deterministic yellow-leaf follow-ups gather missing context; Gemini can call species, symptom-rule, watering, and care-data tools.
+- **Speaking:** browser speech synthesis uses the selected device voice. Detailed and short spoken answers are kept separately; the UI marks speaking only when playback starts.
+- **Persistence:** IndexedDB stores workspace records; localStorage stores care and voice preferences. Workspace backups exclude those preferences.
+- **Reliability:** bounded requests, shared production rate limits, provider overload retries, explicit error recovery, and confirmation before saving voice-created reminders.
 
-```json
-{
-  "response_text": "plain spoken sentences",
-  "species_candidate": "red deadnettle",
-  "watering_days": 5,
-  "is_estimate": false,
-  "diagnosis_confidence": "high"
-}
-```
+### Find your way around
 
-Keys stay server-side only. Spoken text is plain (no markdown). When Perenual cannot confirm a species, `is_estimate` is `true` and the spoken reply should hedge with "based on typical care for this type of plant" rather than presenting a guess as a real lookup.
+| Location | Responsibility |
+| --- | --- |
+| `app/dashboard/` | Voice conversation, transcript review, answer layout, Cactea companion, and reminder proposals. |
+| `app/components/workspace/` | Shared navigation, workspace records, and supporting pages. |
+| `app/api/assistant/route.ts` | Validates questions, history, and photos before requesting an answer. |
+| `app/api/transcribe/route.ts` | Validates recorded audio and requests cloud transcription. |
+| `lib/gemini.ts` | Assistant prompt, tool calling, and provider fallback. |
+| `lib/care-dialogue.ts` | Yellow-leaf follow-up flow and brief answer handling. |
+| `lib/reminder-intent.ts` | Parses reminder commands and validates proposed actions. |
+| `lib/workspace-data.ts` | Browser persistence and backup validation. |
+| `lib/api-guard.ts` | Request bounds and local/distributed rate limiting. |
+| `tests/` | Automated coverage for conversations, storage, reminders, voice behavior, and API handling. |
 
-**In practice, `is_estimate: true` shows up more often than we'd like** — see "Known issues" below.
+Before modifying Next.js code, follow [AGENTS.md](AGENTS.md) and read the relevant bundled guides in `node_modules/next/dist/docs/`.
 
-## Known issues / open items
-
-- **Perenual confirmation frequently misses.** In testing, a description of "square stems, purple flowers, yellowing lower leaves" returned a species guess of "sweet basil" with `is_estimate: true`, meaning `confirmSpecies()` in `lib/perenual.ts` never matched it against Perenual's `species-list` endpoint even though sweet basil is a common, real entry there. Needs investigation: check whether the LLM is calling `get_care_data` with a name that doesn't match Perenual's exact `common_name` string, and whether the scientific-name fallback in `confirmSpecies()` is actually firing. Worth adding a console log of the exact query string sent to `species-list?q=` to see what's actually being searched.
-- **Species identification can be ambiguous.** The demo trait description above is genuinely mint-family-ish (basil, deadnettle, and others share square stems/purple flowers), so the LLM may not converge on the same guess every run. If you need a more reliable demo, consider a more distinctive trait description, or treat variability here as expected LLM behavior rather than a bug.
-- **`app/api/debug-log/route.ts` was removed** along with the `dbgLog()` debug scaffolding that used to fire on every UI interaction (it posted to a nonexistent `127.0.0.1:7448` local debug server, cluttering Network tab logs and slowing down debugging). If you still see references to it anywhere, delete them — it was never part of the intended app.
-
-## Deploy (Vercel)
+### Validate changes
 
 ```bash
-npx vercel login
-npx vercel
+npm test
+npm run lint
+npx tsc --noEmit --incremental false
+npm run build
 ```
 
 In the Vercel project settings, add `GEMINI_API_KEY` and `PERENUAL_API_KEY` as environment variables (Production + Preview). Redeploy after setting them. Keys must never ship in the client bundle. Transcription needs no environment variable — the Whisper model downloads at runtime to the function's `/tmp`.
 
-## Demo queries
+This script makes real provider requests. Set `ANTHEA_URL` to target another deployment. It checks API behavior; use the [live demo and recovery checklist](docs/voice-demo.md) to verify actual microphone capture, transcript editing, and audible playback on your presentation device.
 
-1. Primary: agricultural plant, square stems, purple flowers, yellowing lower leaves, sandy soil watering.
-2. Secondary: white powdery coating on leaves (powdery mildew path).
-3. Failure: unclear mumble / nonsense — expect hedge or cannot-identify reply.
+### Deploy
 
-Offline rule checks (no API keys): yellowing lower leaves → overwatering; powdery coating → powdery mildew; nonsense → confidence none; sandy soil base 7 days @ 22C → 5-day interval.
+Deploy the repository as a Next.js project on Vercel. Configure the Gemini, Perenual, and **both Upstash** environment variables for each deployment environment, then redeploy. Production AI routes return `503` if the shared limiter is unavailable or a trusted proxy cannot provide the client IP. Other hosts must supply trusted proxy headers.
 
-## Debugging tips (for co-developers)
+Each AI endpoint allows 10 requests per IP per minute. Questions are limited to 4,000 characters; transcription audio is limited to 5 MB. Configure HTTPS for microphone access. Browser-saved records remain on each user’s device after deployment.
 
 - **When something breaks, test `/api/assistant` directly first**, bypassing the browser entirely — this isolates whether the bug is frontend or backend, and only `/api/assistant` burns Gemini quota (`/api/transcribe` runs on the local Whisper model):
 
-  ```powershell
-  try {
-      Invoke-RestMethod -Uri http://localhost:3000/api/assistant -Method POST -ContentType "application/json" -Body '{"transcript":"Hello"}'
-  } catch {
-      $resp = $_.Exception.Response
-      if ($resp) {
-          $stream = $resp.GetResponseStream()
-          $reader = New-Object System.IO.StreamReader($stream)
-          $reader.ReadToEnd()
-      } else { $_.Exception.Message }
-  }
-  ```
+| Symptom | First thing to check |
+| --- | --- |
+| Microphone does not start | Site permission and HTTPS/localhost; use **Retry microphone** or **Type instead**. |
+| Words need correction | Choose **Edit** in **What I heard**, or **Record again**. |
+| Reply is visible but silent | **Voice settings**, device volume, and **Hear brief answer**. |
+| Assistant requests fail | Server logs, API keys, model access, and provider quota. |
+| Production returns `503` | Upstash configuration and trusted proxy IP headers, then provider availability. |
+| Care data is estimated | Species confirmation may be ambiguous or unavailable; estimates remain labeled. |
+| Saved records are missing | Check the browser and site origin used; restore a previously exported backup. |
 
-- **Double-check the file breadcrumb before pasting code.** `app/api/assistant/route.ts` and `app/api/transcribe/route.ts` both just show as "route.ts" in VS Code tabs — it's easy to paste one's content into the other by accident (this happened during development and caused a confusing, hard-to-diagnose bug where `/api/assistant` was silently running the transcribe handler's code). Check the breadcrumb path at the top of the editor before every paste into either file.
-- **Check the terminal running `npm run dev` for `console.error` output**, not just the browser's Network tab — DevTools' Response panel can sometimes show stale content from a previously-selected request rather than the one you actually clicked, which caused real confusion during development. The terminal's `[/api/assistant]` or `[/api/transcribe]` prefixed log lines are the ground truth.
+For contribution ideas, start with a concrete plant-care problem, include steps to reproduce, and describe the expected behavior. For voice changes, include the browser/device and results from a real microphone-and-speaker rehearsal.

@@ -5,7 +5,7 @@ import { deletePlantWithLinks, loadWorkspace, replaceWorkspace, writeRecords, ty
 
 type RecordType = Chat | Plant | Reminder;
 type Workspace = {
-  data: WorkspaceData; ready: boolean; storageError: string; activeChatId: string | null;
+  data: WorkspaceData; ready: boolean; storageError: string; activeChatId: string | null; draftChat: Chat | null;
   setActiveChatId: (id: string) => void; newChat: (plantId?: string) => string;
   save: (collection: Collection, record: RecordType) => void;
   remove: (collection: Collection, id: string) => void;
@@ -18,6 +18,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   const [storageError, setStorageError] = useState('');
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [draftChat, setDraftChat] = useState<Chat | null>(null);
   const current = useRef(data);
   const queue = useRef(Promise.resolve());
   const update = useCallback((next: WorkspaceData) => { current.current = next; setData(next); }, []);
@@ -32,6 +33,10 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     queue.current = queue.current.then(() => writeRecords(changes)).catch(() => setStorageError('Your latest changes could not be saved in this browser. Export a backup before leaving.'));
   }, []);
   const save = useCallback((collection: Collection, record: RecordType) => {
+    if (collection === 'chats' && !(record as Chat).messages.length) {
+      setDraftChat(record as Chat);
+      return;
+    }
     const rows = current.current[collection] as RecordType[];
     update({ ...current.current, [collection]: rows.some(row => row.id === record.id) ? rows.map(row => row.id === record.id ? record : row) : [...rows, record] });
     persist([{ collection, record }]);
@@ -40,7 +45,22 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     const next = { ...current.current, [collection]: current.current[collection].filter(row => row.id !== id) };
     const changes: Parameters<typeof writeRecords>[0] = [{ collection, id }];
     if (collection === 'plants') {
-      next.chats = next.chats.map(chat => { if (chat.plantId !== id) return chat; const record = { ...chat, plantId: undefined }; changes.push({ collection: 'chats', record }); return record; });
+      setDraftChat(previous => previous?.plantId === id ? { ...previous, plantId: undefined } : previous);
+      next.chats = next.chats.map(chat => {
+        const messages = chat.messages.map(message => {
+          const unlinkMessage = message.plantId === id;
+          const unlinkProposal = message.reminderProposal?.plantId === id;
+          if (!unlinkMessage && !unlinkProposal) return message;
+          return {
+            ...message,
+            ...(unlinkMessage ? { plantId: null } : {}),
+            ...(unlinkProposal && message.reminderProposal ? { reminderProposal: { ...message.reminderProposal, plantId: undefined } } : {}),
+          };
+        });
+        if (chat.plantId !== id && messages.every((message, index) => message === chat.messages[index])) return chat;
+        const record = { ...chat, ...(chat.plantId === id ? { plantId: undefined } : {}), messages };
+        changes.push({ collection: 'chats', record }); return record;
+      });
       next.reminders = next.reminders.map(reminder => { if (reminder.plantId !== id) return reminder; const record = { ...reminder, plantId: undefined }; changes.push({ collection: 'reminders', record }); return record; });
     }
     update(next);
@@ -50,19 +70,19 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   }, [persist, update]);
   const newChat = useCallback((plantId?: string) => {
     const id = crypto.randomUUID();
-    save('chats', { id, title: 'New conversation', messages: [], updatedAt: Date.now(), ...(plantId ? { plantId } : {}) });
+    setDraftChat({ id, title: 'New conversation', messages: [], updatedAt: Date.now(), ...(plantId ? { plantId } : {}) });
     setActiveChatId(id); return id;
-  }, [save]);
+  }, []);
   const interruptChat = useCallback((id: string) => {
     const chat = current.current.chats.find(c => c.id === id);
     if (chat?.messages.some(m => m.pending)) save('chats', { ...chat, messages: recoverMessages(chat.messages) });
   }, [save]);
   const importData = useCallback(async (value: unknown) => {
-    const parsed = parseBackup(value);
+    const parsed = normalizeStoredWorkspace(parseBackup(value));
     await queue.current;
     await replaceWorkspace(parsed);
-    update(parsed); setActiveChatId(null); setStorageError('');
+    update(parsed); setActiveChatId(null); setDraftChat(null); setStorageError('');
   }, [update]);
-  return <Context.Provider value={{ data, ready, storageError, activeChatId, setActiveChatId, newChat, save, remove, importData, interruptChat }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ data, ready, storageError, activeChatId, draftChat, setActiveChatId, newChat, save, remove, importData, interruptChat }}>{children}</Context.Provider>;
 }
 export function useWorkspace() { const value = useContext(Context); if (!value) throw new Error('WorkspaceProvider is missing'); return value; }

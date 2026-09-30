@@ -60,16 +60,13 @@ const activityLabels: Partial<Record<CacteaProps["state"], string>> = {
   speaking: "Cactea is speaking",
   success: "Cactea has finished responding",
   error: "Cactea needs you to try again",
+  sixSeven: "Cactea is doing the six seven gesture",
 };
 
-function Cactea({ state, size = "md", className, ariaLabel }: CacteaProps) {
-  return (
-    <div
-      className={`${styles.mascot} ${styles[size]} ${className ?? ""} ${CACTEA_DEBUG ? styles.debug : ""}`.trim()}
-      data-state={state}
-      role="img"
-      aria-label={ariaLabel ?? activityLabels[state] ?? "Cactea, Anthea's plant care mascot"}
-    >
+function Cactea({ state, size = "md", className, ariaLabel, interactive = false }: CacteaProps) {
+  const classes = `${styles.mascot} ${styles[size]} ${interactive ? styles.interactive : ""} ${className ?? ""} ${CACTEA_DEBUG ? styles.debug : ""}`.trim();
+  const artwork = (
+    <div className={styles.bounce}>
       <div className={styles.rig}>
         {layerNames.map((name) => (
           <span
@@ -96,6 +93,42 @@ function Cactea({ state, size = "md", className, ariaLabel }: CacteaProps) {
       </div>
     </div>
   );
+
+  if (interactive) {
+    return (
+      <button
+        type="button"
+        className={classes}
+        data-state={state}
+        aria-label={ariaLabel ?? "Make Cactea jump"}
+        onClick={(event) => {
+          const bounce = event.currentTarget.firstElementChild;
+          if (!(bounce instanceof HTMLElement)) return;
+          const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          const current = getComputedStyle(bounce).transform;
+          bounce.getAnimations().forEach((animation) => animation.cancel());
+          if (reducedMotion) {
+            bounce.animate([{ opacity: 1 }, { opacity: 0.72 }, { opacity: 1 }], { duration: 180, easing: "ease-out" });
+            return;
+          }
+          const resting = window.matchMedia("(hover: hover) and (pointer: fine)").matches && event.currentTarget.matches(":hover")
+            ? "translateY(-2%) rotate(-2deg)"
+            : "none";
+          bounce.animate([
+            { transform: current, offset: 0 },
+            { transform: "translateY(0) scale(1.04, .96)", offset: 0.16 },
+            { transform: "translateY(-12%) scale(.97, 1.03)", offset: 0.48 },
+            { transform: "translateY(0) scale(1.02, .98)", offset: 0.78 },
+            { transform: resting, offset: 1 },
+          ], { duration: 800, easing: "cubic-bezier(0.23, 1, 0.32, 1)" });
+        }}
+      >
+        {artwork}
+      </button>
+    );
+  }
+
+  return <div className={classes} data-state={state} role="img" aria-label={ariaLabel ?? activityLabels[state] ?? "Cactea, Anthea's plant care mascot"}>{artwork}</div>;
 }
 
 export default memo(Cactea);

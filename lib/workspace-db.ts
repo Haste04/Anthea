@@ -47,7 +47,21 @@ export async function deletePlantWithLinks(id: string) {
       request.onsuccess = () => {
         const cursor = request.result;
         if (!cursor) return;
-        if (cursor.value.plantId === id) cursor.update({ ...cursor.value, plantId: undefined });
+        const value = cursor.value as { plantId?: string; messages?: { plantId?: string | null; reminderProposal?: { plantId?: string } }[] };
+        if (name === 'chats') {
+          const messages = value.messages?.map(message => {
+            const unlinkMessage = message.plantId === id;
+            const unlinkProposal = message.reminderProposal?.plantId === id;
+            if (!unlinkMessage && !unlinkProposal) return message;
+            return {
+              ...message,
+              ...(unlinkMessage ? { plantId: null } : {}),
+              ...(unlinkProposal && message.reminderProposal ? { reminderProposal: { ...message.reminderProposal, plantId: undefined } } : {}),
+            };
+          });
+          const unlinkProposal = Boolean(messages?.some((message, index) => message !== value.messages?.[index]));
+          if (value.plantId === id || unlinkProposal) cursor.update({ ...cursor.value, ...(value.plantId === id ? { plantId: undefined } : {}), ...(unlinkProposal ? { messages } : {}) });
+        } else if (cursor.value.plantId === id) cursor.update({ ...cursor.value, plantId: undefined });
         cursor.continue();
       };
     }

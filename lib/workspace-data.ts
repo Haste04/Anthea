@@ -1,6 +1,10 @@
+import type { ReminderProposal } from './reminder-intent';
 export type Message = {
   id: string; role: 'user' | 'assistant'; text: string; createdAt?: number; photo?: string;
+  plantId?: string | null;
   pending?: boolean; error?: boolean; retryText?: string;
+  spokenText?: string;
+  reminderProposal?: ReminderProposal;
   meta?: { next_check: string | null; species_candidate: string | null; watering_days: number | null; is_estimate: boolean; diagnosis_confidence: string } | null;
 };
 export type Chat = { id: string; title: string; messages: Message[]; updatedAt: number; plantId?: string };
@@ -44,7 +48,12 @@ export function recoverMessages(messages: Message[]): Message[] {
 }
 export function normalizeStoredWorkspace(data: WorkspaceData): WorkspaceData {
   const ids = new Set(data.plants.map(p => p.id));
-  return parseBackup({ ...data, chats: data.chats.map(c => ({ ...c, plantId: c.plantId && ids.has(c.plantId) ? c.plantId : undefined })), reminders: data.reminders.map(r => ({ ...r, plantId: r.plantId && ids.has(r.plantId) ? r.plantId : undefined })) });
+  const normalized = parseBackup({
+    ...data,
+    chats: data.chats.map(c => ({ ...c, plantId: c.plantId && ids.has(c.plantId) ? c.plantId : undefined, messages: c.messages.map(message => ({ ...message, ...(message.plantId && !ids.has(message.plantId) ? { plantId: null } : {}), ...(message.reminderProposal?.plantId && !ids.has(message.reminderProposal.plantId) ? { reminderProposal: { ...message.reminderProposal, plantId: undefined } } : {}) })) })),
+    reminders: data.reminders.map(r => ({ ...r, plantId: r.plantId && ids.has(r.plantId) ? r.plantId : undefined })),
+  });
+  return { ...normalized, chats: normalized.chats.filter(chat => chat.messages.length > 0) };
 }
 export function parseBackup(value: unknown): WorkspaceData {
   const fail = (): never => { throw new Error('This is not a valid Anthea backup. No data was changed.'); };
@@ -61,7 +70,13 @@ export function parseBackup(value: unknown): WorkspaceData {
     if (!str(c.title, 120) || !time(c.updatedAt) || !link(c.plantId) || !Array.isArray(c.messages) || c.messages.length > 10000) fail();
     identity(c.messages);
     for (const m of c.messages) {
-      if (!['user','assistant'].includes(m.role) || !str(m.text, 30000) || (m.photo !== undefined && !validPhoto(m.photo)) || (m.createdAt !== undefined && !time(m.createdAt)) || (m.retryText !== undefined && !str(m.retryText, 4000)) || (m.pending !== undefined && typeof m.pending !== 'boolean') || (m.error !== undefined && typeof m.error !== 'boolean')) fail();
+      if (m.spokenText !== undefined && !str(m.spokenText, 4000)) fail();
+      if (m.reminderProposal !== undefined) {
+        const p = m.reminderProposal;
+        if (!p || typeof p !== 'object' || !str(p.id, 100) || !p.id || !str(p.title, 160) || !['pending','saved','cancelled'].includes(p.status) || typeof p.timeRequested !== 'boolean' || !link(p.plantId) || !(validDate(p.due) || (p.due === '' && p.status !== 'saved'))) fail();
+        if (p.status === 'saved' && !p.title.trim()) fail();
+      }
+      if (!['user','assistant'].includes(m.role) || !str(m.text, 30000) || (m.plantId !== undefined && m.plantId !== null && !link(m.plantId)) || (m.photo !== undefined && !validPhoto(m.photo)) || (m.createdAt !== undefined && !time(m.createdAt)) || (m.retryText !== undefined && !str(m.retryText, 4000)) || (m.pending !== undefined && typeof m.pending !== 'boolean') || (m.error !== undefined && typeof m.error !== 'boolean')) fail();
       if (m.meta != null) {
         const a = m.meta;
         if (typeof a !== 'object' || !(a.next_check === null || str(a.next_check, 30000)) || !(a.species_candidate === null || str(a.species_candidate, 1000)) || !(a.watering_days === null || (typeof a.watering_days === 'number' && Number.isFinite(a.watering_days))) || typeof a.is_estimate !== 'boolean' || !str(a.diagnosis_confidence, 100)) fail();

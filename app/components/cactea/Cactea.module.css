@@ -13,6 +13,7 @@
   --mouth-left: 36%;
   --mouth-top: 43%;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   position: relative;
   display: block;
   width: var(--cactea-size);
@@ -27,6 +28,12 @@
 .md { --cactea-size: 7.5rem; }
 .lg { --cactea-size: clamp(11.25rem, 29vw, 20rem); }
 .hero { --cactea-size: clamp(12rem, 35vw, 25rem); }
+.bounce { position: absolute; inset: 0; transform-origin: 50% 85%; transition: transform 180ms var(--ease-out); }
+.interactive { padding: 0; border: 0; background: transparent; cursor: pointer; appearance: none; touch-action: manipulation; }
+.interactive:focus-visible { outline: 3px solid var(--primary); outline-offset: 5px; border-radius: 50%; }
+@media (hover: hover) and (pointer: fine) {
+  .interactive:hover .bounce { transform: translateY(-2%) rotate(-2deg); }
+}
 
 /* Limbs share one canvas. The ground shadow stays planted during a hop. */
 .rig {
@@ -95,11 +102,11 @@
 .mascot[data-state="idle"] .rightArm { animation: idle-wave 16000ms var(--ease-out) infinite; }
 .mascot[data-state="wave"] .rightArm { animation: greeting-wave 700ms var(--ease-out); }
 
-/* Enter the listening/thinking pose once, then hold it. */
-.mascot[data-state="listening"] .rig { transform: translateY(-1%) rotate(-2deg) scale(1.02); }
+/* An attentive lean and small arm response make active listening visible. */
+.mascot[data-state="listening"] .rig { animation: listening-attend 2400ms var(--ease-in-out) infinite; }
 .mascot[data-state="listening"] .leftEye,
 .mascot[data-state="listening"] .rightEye { transform: scale(1.08); }
-.mascot[data-state="listening"] .rightArm { transform: rotate(-8deg); }
+.mascot[data-state="listening"] .rightArm { animation: listening-arm 2400ms var(--ease-in-out) infinite; }
 .mascot[data-state="thinking"] .rig { transform: rotate(-4deg); }
 .mascot[data-state="thinking"] .leftEye,
 .mascot[data-state="thinking"] .rightEye { transform: translate(7%, -12%); }
@@ -128,6 +135,29 @@
 .mascot[data-state="error"] .mouth > img { opacity: 0; }
 .mascot[data-state="error"] .roundMouth { opacity: 1; transform: scale(0.7); }
 
+/* A short, one-time seesaw gesture when the user says “six seven”. */
+.mascot[data-state="sixSeven"] .rig { animation: six-seven-sway 1400ms var(--ease-in-out) both; }
+.mascot[data-state="sixSeven"] .leftArm { animation: six-seven-left 1400ms var(--ease-in-out) both; }
+.mascot[data-state="sixSeven"] .rightArm { animation: six-seven-right 1400ms var(--ease-in-out) both; }
+.mascot[data-state="sixSeven"] .mouth > img { opacity: 0; }
+.mascot[data-state="sixSeven"] .openMouth { opacity: 1; }
+
+@keyframes six-seven-sway {
+  0%, 100% { transform: rotate(0); }
+  24%, 70% { transform: rotate(-2deg); }
+  47% { transform: rotate(2deg); }
+}
+@keyframes six-seven-left {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  24%, 70% { transform: translateY(-16%) rotate(16deg); }
+  47% { transform: translateY(12%) rotate(-10deg); }
+}
+@keyframes six-seven-right {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  24%, 70% { transform: translateY(12%) rotate(10deg); }
+  47% { transform: translateY(-16%) rotate(-16deg); }
+}
+
 @keyframes eyes-open {
   0%, 67%, 100% { opacity: 1; }
   65% { opacity: 0; }
@@ -151,6 +181,14 @@
   0%, 100% { transform: rotate(0deg); }
   25%, 70% { transform: rotate(-18deg); }
   45% { transform: rotate(4deg); }
+}
+@keyframes listening-attend {
+  0%, 44%, 100% { transform: translateY(-1%) rotate(-2deg) scale(1.02); }
+  22% { transform: translateY(-2.5%) rotate(1deg) scale(1.025); }
+}
+@keyframes listening-arm {
+  0%, 44%, 100% { transform: rotate(-8deg); }
+  22% { transform: rotate(-16deg); }
 }
 @keyframes speaking-gesture {
   0%, 65%, 100% { transform: rotate(0deg); }
@@ -192,6 +230,8 @@
 
 /* Keep the expressions and static poses when the user reduces motion. */
 @media (prefers-reduced-motion: reduce) {
+  .bounce { transition: none; }
+  .interactive:hover .bounce { transform: none; }
   .mascot[data-state] .rig,
   .mascot[data-state] .leftArm,
   .mascot[data-state] .rightArm,
@@ -202,8 +242,14 @@
   .mascot[data-state] .openMouth,
   .mascot[data-state] .roundMouth { animation: none; }
   .rig, .leftArm, .rightArm, .leftEye, .rightEye { transition: none; }
+  .mascot[data-state="listening"] .rig { transform: translateY(-1%) rotate(-2deg) scale(1.02); }
+  .mascot[data-state="listening"] .rightArm { transform: rotate(-8deg); }
   .mascot[data-state="speaking"] .mouth > img { opacity: 0; }
   .mascot[data-state="speaking"] .openMouth { opacity: 1; }
+  .mascot[data-state="sixSeven"] .leftArm { transform: translateY(-12%) rotate(12deg); }
+  .mascot[data-state="sixSeven"] .rightArm { transform: translateY(10%) rotate(8deg); }
+  .mascot[data-state="sixSeven"] .mouth > img { opacity: 0; }
+  .mascot[data-state="sixSeven"] .openMouth { opacity: 1; }
 }
 .debug { outline: 1px dashed rgb(20 38 26 / 45%); outline-offset: 2px; }
 .debug .leftArm { outline: 1px solid rgb(33 150 243 / 85%); }
