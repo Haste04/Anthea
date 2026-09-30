@@ -16,6 +16,6 @@ Open `/home` for the overview or `/dashboard` for Cactea chat. The shared sideba
 
 ## Validation
 
-`npm test`, `npm run lint`, and `npm run build`. Tests cover record persistence, transactional restore, cross-tab plant unlinking, interrupted replies, complete history search, recurrence, backup validation, stale photo draft results, bounded photo requests, image decoding, Gemini image forwarding and existing voice state/history/provider behavior.
+`npm test`, `npm run lint`, and `npm run build`. Tests cover record persistence, transactional restore, cross-tab plant unlinking, interrupted replies, complete history search, recurrence, backup validation, stale photo draft results, bounded photo requests, image decoding, Gemini image forwarding, audio decode/resample and the transcription silence gate, and existing voice state/history/provider behavior.
 
 Browser visual verification and real microphone/speech testing require a connected browser. Live AI availability depends on the configured Gemini service.

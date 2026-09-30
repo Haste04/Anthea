@@ -8,9 +8,9 @@ Hands-free voice assistant that identifies a plant from spoken traits, diagnoses
 
 - Next.js (App Router) + TypeScript, single deployment (frontend + serverless API routes together — no separate backend service)
 - Web Speech API (live captions) + Web Audio RMS silence detection (1.2s pause auto-submits)
-- Cloud speech-to-text fallback via Gemini (`POST /api/transcribe`) when browser `SpeechRecognition` is unsupported or errors (this includes Brave with Shields on, which blocks the browser's built-in STT — Brave users should either disable Shields for this site or rely on the cloud fallback / text input)
+- Cloud speech-to-text fallback via a self-hosted Whisper model (`POST /api/transcribe`, transformers.js running `onnx-community/whisper-base.en` with int8 ONNX weights inside the serverless function — no transcription API key) when browser `SpeechRecognition` is unsupported or errors (this includes Brave with Shields on, which blocks the browser's built-in STT — Brave users should either disable Shields for this site or rely on the cloud fallback / text input)
 - Web Speech Synthesis for spoken replies
-- Google Gemini (`@google/genai` SDK, function calling) — assistant models can be set with `GEMINI_TEXT_MODEL` and `GEMINI_FALLBACK_MODEL`. Cloud transcription uses its own `AUDIO_MODEL` in `app/api/transcribe/route.ts`.
+- Google Gemini (`@google/genai` SDK, function calling) — assistant models can be set with `GEMINI_TEXT_MODEL` and `GEMINI_FALLBACK_MODEL`. Gemini is assistant-only; transcription runs on the local Whisper model configured in `lib/whisper.ts`.
 - Perenual API for confirmed care data (watering, sunlight, soil), used only _after_ the LLM already has a species guess — Perenual has no trait-search endpoint
 - Local `data/disease-rules.json` (12 rules, keyword-overlap matched, not exact string match)
 
@@ -24,14 +24,14 @@ If the assistant starts failing, check the server log for the provider's actual 
 
 1. Check `https://ai.google.dev/gemini-api/docs/models` for the current Stable list.
 2. Test one isolated request via PowerShell/curl (see "Debugging" below), then inspect the server log for `404` (model unavailable), `429 RESOURCE_EXHAUSTED` (quota), or `503 UNAVAILABLE` (temporary overload). Public responses use safe messages instead of exposing raw provider errors.
-3. Set `GEMINI_TEXT_MODEL` if you need a different assistant model. It must support function calling. Transcription requires audio support and is configured separately.
+3. Set `GEMINI_TEXT_MODEL` if you need a different assistant model. It must support function calling. Transcription does not go through Gemini — it runs on the local Whisper model in `lib/whisper.ts`.
 
 The assistant makes up to three attempts on its primary model with short backoff. If all attempts end in `503` overload, it makes one attempt with `GEMINI_FALLBACK_MODEL` (default: `gemini-3.1-flash-lite`), keeping the same question, history, and tools. Set the fallback variable to an empty value to disable it. Quota, authentication, and invalid-request errors do not trigger fallback. If both models are overloaded, the route returns `503` with `Retry-After: 30`, and the dashboard asks the user to wait and retry.
 
 ## Setup
 
 1. Copy `.env.example` to `.env.local` and set:
-   - `GEMINI_API_KEY` (required for the assistant **and** cloud mic transcription)
+   - `GEMINI_API_KEY` (required for the assistant; mic transcription runs locally on Whisper and needs no key)
    - `PERENUAL_API_KEY`
    - `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` for production API rate limiting. Local development uses a process-local limiter when these are omitted; production API requests fail closed with `503` until both values are configured.
 2. **Do not commit real key values into `.env.example`** — it's a template meant to be safe to commit, with placeholder text only. If you ever see a real-looking key in `.env.example`, treat it as compromised and rotate it immediately in Google AI Studio / Perenual's dashboard.
@@ -44,9 +44,11 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-The paid `/api/assistant` and `/api/transcribe` endpoints are limited to 10 requests per IP per minute. Assistant transcripts are capped at 4,000 characters; audio uploads are capped at 5 MB and restricted to supported audio MIME types. Production uses the shared Upstash Redis limiter so limits apply across serverless instances.
+The `/api/assistant` and `/api/transcribe` endpoints are limited to 10 requests per IP per minute. Assistant transcripts are capped at 4,000 characters; audio uploads are capped at 5 MB and restricted to supported audio MIME types. Production uses the shared Upstash Redis limiter so limits apply across serverless instances.
 
-Voice input uses the mic with RMS silence detection. If the browser `SpeechRecognition` service fails (common `network` error, or Brave Shields blocking it), audio is recorded locally and transcribed via Gemini (`POST /api/transcribe`), then sent to the assistant. There's also a manual text-input fallback shown automatically if the mic is unsupported.
+Voice input uses the mic with RMS silence detection. If the browser `SpeechRecognition` service fails (common `network` error, or Brave Shields blocking it), audio is recorded locally and transcribed by Whisper (`POST /api/transcribe`), then sent to the assistant. There's also a manual text-input fallback shown automatically if the mic is unsupported.
+
+The Whisper model (~75 MB int8) is downloaded from Hugging Face on the first transcription request and cached — in `.cache/whisper/` locally (git-ignored) and in `/tmp` on Vercel (per-instance, so a cold function re-downloads it). The model id and quantization live in `lib/whisper.ts`. Silent recordings are detected by RMS before the model runs, so an empty room returns `{"transcript": ""}` instead of a hallucinated sentence.
 
 ## API
 
@@ -87,7 +89,7 @@ npx vercel login
 npx vercel
 ```
 
-In the Vercel project settings, add `GEMINI_API_KEY` and `PERENUAL_API_KEY` as environment variables (Production + Preview). Redeploy after setting them. Keys must never ship in the client bundle.
+In the Vercel project settings, add `GEMINI_API_KEY` and `PERENUAL_API_KEY` as environment variables (Production + Preview). Redeploy after setting them. Keys must never ship in the client bundle. Transcription needs no environment variable — the Whisper model downloads at runtime to the function's `/tmp`.
 
 ## Demo queries
 
@@ -99,7 +101,7 @@ Offline rule checks (no API keys): yellowing lower leaves → overwatering; powd
 
 ## Debugging tips (for co-developers)
 
-- **When something breaks, test `/api/assistant` directly first**, bypassing the browser entirely — this isolates whether the bug is frontend or backend, and doesn't burn through your daily Gemini quota the way repeated full-UI voice attempts do (each UI attempt can trigger both `/api/transcribe` and `/api/assistant`):
+- **When something breaks, test `/api/assistant` directly first**, bypassing the browser entirely — this isolates whether the bug is frontend or backend, and only `/api/assistant` burns Gemini quota (`/api/transcribe` runs on the local Whisper model):
 
   ```powershell
   try {

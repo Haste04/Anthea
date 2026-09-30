@@ -11,13 +11,16 @@
   },
   "dependencies": {
     "@google/genai": "^1.52.0",
+    "@huggingface/transformers": "^4.3.0",
     "@upstash/ratelimit": "^2.2.0",
     "@upstash/redis": "^1.39.0",
+    "audio-decode": "^3.12.0",
     "motion": "^13.4.4",
-    "next": "16.3.6",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
-    "sharp": "^0.35.5"
+    "next": "^16.3.6",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "sharp": "^0.35.5",
+    "wavefile": "^11.0.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

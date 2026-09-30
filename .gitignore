@@ -10,6 +10,9 @@
 !.yarn/releases
 !.yarn/versions
 
+# downloaded Whisper model (transformers.js cache)
+/.cache/
+
 # testing
 /coverage
 
