@@ -1,0 +1,24 @@
+
+> plant-voice-agent@0.1.0 dev
+> next dev
+
+▲ Next.js 16.3.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.68.74:3000
+- Environments: .env.local
+✓ Ready in 989ms
+✓ Running next.config.ts took 69ms
+
+ GET /dashboard 200 in 1883ms (next.js: 1148ms, application-code: 734ms)
+[browser] Image with src "/_next/static/media/body.0l6-simeqcxw6.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
+ POST /api/assistant 200 in 1955ms (next.js: 252ms, application-code: 1704ms)
+ POST /api/transcribe 200 in 8.6s (next.js: 99ms, application-code: 8.5s)
+[browser] Image with src "/_next/static/media/body.0l6-simeqcxw6.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
+ POST /api/assistant 200 in 1583ms (next.js: 50ms, application-code: 1533ms)
+ POST /api/assistant 200 in 2.1s (next.js: 41ms, application-code: 2.0s)
+ POST /api/assistant 200 in 2.1s (next.js: 8ms, application-code: 2.1s)
+ GET /dashboard 200 in 554ms (next.js: 165ms, application-code: 389ms)
+[browser] Image with src "/_next/static/media/body.0l6-simeqcxw6.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading

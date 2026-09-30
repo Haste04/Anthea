@@ -6,7 +6,13 @@ Yellow leaves? Unsure when to water? Anthea helps you turn what you notice into 
 
 **Voice first. Typing always available. No sign-in required.**
 
-[Try Anthea](https://anthea.vercel.app) · [Run locally](#run-locally) · [Demo walkthrough](docs/voice-demo.md) · [Workspace documentation](docs/full-app.md)
+- Next.js (App Router) + TypeScript, single deployment (frontend + serverless API routes together — no separate backend service)
+- Web Speech API (live captions) + Web Audio RMS silence detection (1.2s pause auto-submits)
+- Cloud speech-to-text fallback via a self-hosted Whisper model (`POST /api/transcribe`, transformers.js running `onnx-community/whisper-base.en` with int8 ONNX weights inside the serverless function — no transcription API key) when browser `SpeechRecognition` is unsupported or errors (this includes Brave with Shields on, which blocks the browser's built-in STT — Brave users should either disable Shields for this site or rely on the cloud fallback / text input)
+- Web Speech Synthesis for spoken replies
+- Google Gemini (`@google/genai` SDK, function calling) — assistant models can be set with `GEMINI_TEXT_MODEL` and `GEMINI_FALLBACK_MODEL`. Gemini is assistant-only; transcription runs on the local Whisper model configured in `lib/whisper.ts`.
+- Perenual API for confirmed care data (watering, sunlight, soil), used only _after_ the LLM already has a species guess — Perenual has no trait-search endpoint
+- Local `data/disease-rules.json` (12 rules, keyword-overlap matched, not exact string match)
 
 ## Meet your plant-care companion
 
@@ -25,29 +31,20 @@ Cactea keeps the conversation approachable: visible listening, thinking, and spe
 
 ### Your first conversation
 
-1. Open the chat and choose **Talk to Cactea**. Allow microphone access when prompted.
-2. When you see **Listening — pause when finished**, say: “My monstera’s lower leaves are yellow. What should I check?”
-3. Pause for about a second. Check **What I heard**, edit if needed, and choose **Send question**.
-4. Answer Cactea’s follow-up questions in the same conversation. Enable **Read replies aloud** under **Voice settings** to hear its replies.
-5. Turn the next step into a reminder when you’re ready. Review and confirm before saving.
+1. Check `https://ai.google.dev/gemini-api/docs/models` for the current Stable list.
+2. Test one isolated request via PowerShell/curl (see "Debugging" below), then inspect the server log for `404` (model unavailable), `429 RESOURCE_EXHAUSTED` (quota), or `503 UNAVAILABLE` (temporary overload). Public responses use safe messages instead of exposing raw provider errors.
+3. Set `GEMINI_TEXT_MODEL` if you need a different assistant model. It must support function calling. Transcription does not go through Gemini — it runs on the local Whisper model in `lib/whisper.ts`.
 
 Prefer a keyboard? Type your question or use a starting prompt. If microphone access or transcription fails, the chat offers retry and typing options while preserving your draft or captured words.
 
 ### Your data and expectations
 
-- **Saved in this browser:** plants, chats, photos, and reminders use IndexedDB. Export or restore a JSON backup in Settings. There is no account or device sync; clearing browser storage can remove your records.
-- **Online assistance:** answering questions uses Google Gemini and may use Perenual care lookups. Submitted questions, relevant conversation context, and attached photos are processed by these services. Cloud transcription sends recorded audio to Gemini when needed; browser speech recognition may use the browser’s own service.
-- **Care reminders:** reminders appear inside Anthea. They do not send timed or background notifications. Voice-created reminders are one-time, date-based actions; a requested time requires explicit acceptance of a date-only reminder.
-- **Guidance with context:** identification and diagnosis can be uncertain. Estimated watering intervals are labeled, and soil moisture should guide watering decisions. The guide is an introductory library.
-- **Device-dependent voice:** microphone support and available speaking voices vary by browser and device. Microphone access requires HTTPS or localhost.
-
-## For developers
-
-Anthea is one Next.js application: the interface and API routes deploy together. Browser storage keeps workspace records local; server routes handle AI requests and protect API keys.
-
-### Run locally
-
-**Prerequisites:** Node.js 20.9 or newer, npm, a Gemini API key, and a Perenual API key for care lookups. The installed Next.js package declares the Node minimum; this project has been built with Node.js 24.
+1. Copy `.env.example` to `.env.local` and set:
+   - `GEMINI_API_KEY` (required for the assistant; mic transcription runs locally on Whisper and needs no key)
+   - `PERENUAL_API_KEY`
+   - `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` for production API rate limiting. Local development uses a process-local limiter when these are omitted; production API requests fail closed with `503` until both values are configured.
+2. **Do not commit real key values into `.env.example`** — it's a template meant to be safe to commit, with placeholder text only. If you ever see a real-looking key in `.env.example`, treat it as compromised and rotate it immediately in Google AI Studio / Perenual's dashboard.
+3. Install and run:
 
 ```bash
 git clone https://github.com/Haste04/Anthea.git
@@ -63,11 +60,11 @@ Copy-Item .env.example .env.local
 
 For local development without Redis, leave both Upstash variables empty rather than keeping the template’s placeholder values.
 
-```bash
-npm run dev
-```
+The `/api/assistant` and `/api/transcribe` endpoints are limited to 10 requests per IP per minute. Assistant transcripts are capped at 4,000 characters; audio uploads are capped at 5 MB and restricted to supported audio MIME types. Production uses the shared Upstash Redis limiter so limits apply across serverless instances.
 
-Open [localhost:3000](http://localhost:3000), or go directly to [the chat](http://localhost:3000/dashboard).
+Voice input uses the mic with RMS silence detection. If the browser `SpeechRecognition` service fails (common `network` error, or Brave Shields blocking it), audio is recorded locally and transcribed by Whisper (`POST /api/transcribe`), then sent to the assistant. There's also a manual text-input fallback shown automatically if the mic is unsupported.
+
+The Whisper model (~75 MB int8) is downloaded from Hugging Face on the first transcription request and cached — in `.cache/whisper/` locally (git-ignored) and in `/tmp` on Vercel (per-instance, so a cold function re-downloads it). The model id and quantization live in `lib/whisper.ts`. Silent recordings are detected by RMS before the model runs, so an empty room returns `{"transcript": ""}` instead of a hallucinated sentence.
 
 ### Configuration
 
@@ -131,11 +128,7 @@ npx tsc --noEmit --incremental false
 npm run build
 ```
 
-To exercise the running assistant API’s follow-up flow and separate full/brief replies:
-
-```bash
-node scripts/verify-voice-conversation.mjs
-```
+In the Vercel project settings, add `GEMINI_API_KEY` and `PERENUAL_API_KEY` as environment variables (Production + Preview). Redeploy after setting them. Keys must never ship in the client bundle. Transcription needs no environment variable — the Whisper model downloads at runtime to the function's `/tmp`.
 
 This script makes real provider requests. Set `ANTHEA_URL` to target another deployment. It checks API behavior; use the [live demo and recovery checklist](docs/voice-demo.md) to verify actual microphone capture, transcript editing, and audible playback on your presentation device.
 
@@ -145,7 +138,7 @@ Deploy the repository as a Next.js project on Vercel. Configure the Gemini, Pere
 
 Each AI endpoint allows 10 requests per IP per minute. Questions are limited to 4,000 characters; transcription audio is limited to 5 MB. Configure HTTPS for microphone access. Browser-saved records remain on each user’s device after deployment.
 
-### Troubleshooting
+- **When something breaks, test `/api/assistant` directly first**, bypassing the browser entirely — this isolates whether the bug is frontend or backend, and only `/api/assistant` burns Gemini quota (`/api/transcribe` runs on the local Whisper model):
 
 | Symptom | First thing to check |
 | --- | --- |

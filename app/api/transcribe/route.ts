@@ -1,17 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenAI } from "@google/genai";
 import {
   enforceApiLimit,
   rateLimitResponse,
   readBodyWithLimit,
 } from "@/lib/api-guard";
+import { transcribeAudio } from "@/lib/whisper";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-// Check https://ai.google.dev/gemini-api/docs/models before deploying —
-// this must match the model constant used in lib/gemini.ts.
-const AUDIO_MODEL = "gemini-3.5-flash-lite";
 const MAX_AUDIO_BYTES = 5 * 1024 * 1024;
 const MAX_REQUEST_BYTES = MAX_AUDIO_BYTES + 64 * 1024;
 const ACCEPTED_AUDIO_TYPES = new Set([
@@ -23,17 +20,10 @@ const ACCEPTED_AUDIO_TYPES = new Set([
   "audio/x-wav",
 ]);
 
-function getApiKey(): string {
-  const key = process.env.GEMINI_API_KEY;
-  if (!key || key === "your_gemini_api_key_here") {
-    throw new Error("GEMINI_API_KEY is not configured");
-  }
-  return key;
-}
-
-// Node's fetch defaults to a 5-minute headers timeout - far too long to
-// let a stuck network condition freeze a voice request. Fail fast instead.
-const REQUEST_TIMEOUT_MS = 15000;
+// First use downloads the Whisper model (~75 MB) and CPU inference is far
+// slower than a cloud call, but the budget must stay under maxDuration (60s)
+// and the client's own 65s abort.
+const REQUEST_TIMEOUT_MS = 45000;
 
 function withTimeout<T>(promise: Promise<T>): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -113,33 +103,8 @@ export async function POST(req: NextRequest) {
 
   try {
     const buffer = Buffer.from(await audio.arrayBuffer());
-    const base64 = buffer.toString("base64");
 
-    const ai = new GoogleGenAI({ apiKey: getApiKey() });
-
-    const result = await withTimeout(
-      ai.models.generateContent({
-        model: AUDIO_MODEL,
-        contents: [
-          {
-            role: "user",
-            parts: [
-              {
-                inlineData: {
-                  mimeType,
-                  data: base64,
-                },
-              },
-              {
-                text: "Transcribe the spoken audio into plain English text only. Do not add quotes, labels, markdown, or commentary. If the audio is silent or unintelligible, return an empty string.",
-              },
-            ],
-          },
-        ],
-      }),
-    );
-
-    let transcript = (result.text ?? "").trim();
+    let transcript = await withTimeout(transcribeAudio(buffer));
 
     // Strip accidental quotes wrapping the whole transcript
     if (
