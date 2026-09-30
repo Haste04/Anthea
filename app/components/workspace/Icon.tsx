@@ -8,6 +8,7 @@ export default function Icon({ name, size = 22 }: { name: string; size?: number 
     settings: <><path d="m9 3 1-2h4l1 2 3 2 2 1v4l-2 2v3l1 3-3 3-3-1h-3l-3 1-3-3 1-3v-3l-2-2V6l3-1Z"/><circle cx="12" cy="11" r="3"/></>,
     leaf: <><path d="M20 3C9 2 2 8 5 16c8 4 15-2 15-13Z"/><path d="m3 22 12-13"/></>,
     photo: <><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1"/><path d="m3 17 6-6 4 4 3-3 5 5"/></>,
+    microphone: <><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M9 22h6"/></>,
   };
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name] ?? paths.leaf}</svg>;
 }

@@ -1,6 +1,9 @@
+import type { ReminderProposal } from './reminder-intent';
 export type Message = {
   id: string; role: 'user' | 'assistant'; text: string; createdAt?: number; photo?: string;
   pending?: boolean; error?: boolean; retryText?: string;
+  spokenText?: string;
+  reminderProposal?: ReminderProposal;
   meta?: { next_check: string | null; species_candidate: string | null; watering_days: number | null; is_estimate: boolean; diagnosis_confidence: string } | null;
 };
 export type Chat = { id: string; title: string; messages: Message[]; updatedAt: number; plantId?: string };
@@ -61,6 +64,12 @@ export function parseBackup(value: unknown): WorkspaceData {
     if (!str(c.title, 120) || !time(c.updatedAt) || !link(c.plantId) || !Array.isArray(c.messages) || c.messages.length > 10000) fail();
     identity(c.messages);
     for (const m of c.messages) {
+      if (m.spokenText !== undefined && !str(m.spokenText, 4000)) fail();
+      if (m.reminderProposal !== undefined) {
+        const p = m.reminderProposal;
+        if (!p || typeof p !== 'object' || !str(p.id, 100) || !p.id || !str(p.title, 160) || !['pending','saved','cancelled'].includes(p.status) || typeof p.timeRequested !== 'boolean' || !(validDate(p.due) || (p.due === '' && p.status !== 'saved'))) fail();
+        if (p.status === 'saved' && !p.title.trim()) fail();
+      }
       if (!['user','assistant'].includes(m.role) || !str(m.text, 30000) || (m.photo !== undefined && !validPhoto(m.photo)) || (m.createdAt !== undefined && !time(m.createdAt)) || (m.retryText !== undefined && !str(m.retryText, 4000)) || (m.pending !== undefined && typeof m.pending !== 'boolean') || (m.error !== undefined && typeof m.error !== 'boolean')) fail();
       if (m.meta != null) {
         const a = m.meta;

@@ -6,6 +6,15 @@ const source = await readFile(new URL('../lib/workspace-data.ts', import.meta.ur
 const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } });
 const { parseBackup, normalizeStoredWorkspace, nextDueDate, recoverMessages, validPhoto, visibleChats, applyDraftPhoto } = await import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`);
 const empty = { version: 1, chats: [], plants: [], reminders: [] };
+
+test('voice summaries and unsaved reminder proposals survive backup restoration', () => {
+  const message = { id: 'a', role: 'assistant', text: 'Review your reminder.', spokenText: 'Review your reminder.', reminderProposal: { id: 'r', title: 'Check soil', due: '', status: 'pending', timeRequested: false } };
+  const backup = { ...empty, chats: [{ id: 'c', title: 'Voice reminder', updatedAt: 1, messages: [message] }] };
+  assert.deepEqual(parseBackup(JSON.parse(JSON.stringify(backup))).chats[0].messages[0], message);
+  for (const proposal of [{ ...message.reminderProposal, status: 'saved' }, { ...message.reminderProposal, due: '2026-02-30' }, { ...message.reminderProposal, status: 'surprise' }]) {
+    assert.throws(() => parseBackup({ ...empty, chats: [{ ...backup.chats[0], messages: [{ ...message, reminderProposal: proposal }] }] }));
+  }
+});
 test('backup accepts empty data but rejects wrong versions, dangling links and duplicate IDs', () => {
   assert.deepEqual(parseBackup(empty), empty);
   assert.throws(() => parseBackup({ ...empty, version: 2 }));

@@ -7,7 +7,7 @@ import Icon from "@/app/components/workspace/Icon";
 import { useWorkspace } from "@/app/components/workspace/WorkspaceProvider";
 import { type Chat, type Message as ChatMessage } from "@/lib/workspace-data";
 import { preparePhoto } from "@/lib/prepare-photo";
-import MicButton from "@/app/components/MicButton";
+import { microphoneProblem, voiceHeading } from "@/lib/voice-feedback";
 import CompanionPanel from "./CompanionPanel";
 import styles from "./Dashboard.module.css";
 import { resolveCacteaState, type AgentMode, type CacteaFeedback } from "@/lib/cactea-state";
@@ -17,11 +17,17 @@ import { readPlantProfile, readReadAloud, savePlantProfile, saveReadAloud, usePl
 import { AssistantRequestError, readApiResponse, requestErrorMessage } from "@/lib/assistant-request";
 import useSpeechPlayback from "./useSpeechPlayback";
 import { buildConversationHistory } from "@/lib/conversation";
+import { briefSpeech } from '@/lib/care-dialogue';
+import { parseReminderCommand, validReminderDraft } from '@/lib/reminder-intent';
+import ReminderProposalCard from './ReminderProposalCard';
+import AssistantAnswer from './AssistantAnswer';
+import Link from 'next/link';
 
 const BENIGN_STT_ERRORS = new Set(["aborted", "no-speech"]);
 
 type AssistantResponse = {
   response_text: string;
+  spoken_text?: string;
   next_check: string | null;
   species_candidate: string | null;
   watering_days: number | null;
@@ -118,6 +124,13 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
   const [recordingReady, setRecordingReady] = useState(false);
   const [hasNewMessages, setHasNewMessages] = useState(false);
   const [reviewTranscript, setReviewTranscript] = useState<string | null>(null);
+  const [editingTranscript, setEditingTranscript] = useState(false);
+  const [micIssue, setMicIssue] = useState<string | null>(null);
+  const [transcribing, setTranscribing] = useState(false);
+  const [canRetryTranscription, setCanRetryTranscription] = useState(false);
+  const retainedRecordingRef = useRef<Blob | null>(null);
+  const previousReviewRef = useRef<string | null>(null);
+  const confirmedReminderIdsRef = useRef(new Set<string>());
   const conversationNumber = workspace.chats.findIndex(c => c.id === chat.id) + 1;
 
   // Meter samples are consumed by the canvas; they do not render chat content.
@@ -148,13 +161,17 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
   const chatScrollRef = useRef<HTMLElement | null>(null);
   const messagesRef = useRef<ChatMessage[]>(chat.messages);
   const transcriptReviewRef = useRef<HTMLTextAreaElement | null>(null);
+  const transcriptCardRef = useRef<HTMLElement | null>(null);
   const newPlantDialogRef = useRef<HTMLDialogElement | null>(null);
   const reviewingTranscript = reviewTranscript !== null;
 
   useEffect(() => { messagesRef.current = messages; }, [messages]);
   useEffect(() => {
-    if (reviewingTranscript) transcriptReviewRef.current?.focus();
-  }, [reviewingTranscript]);
+    if (reviewingTranscript) {
+      if (editingTranscript) transcriptReviewRef.current?.focus();
+      else transcriptCardRef.current?.focus();
+    }
+  }, [reviewingTranscript, editingTranscript]);
 
   const changeMode = useCallback((mode: AgentMode) => {
     modeRef.current = mode;
@@ -266,14 +283,14 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
     lastHeardSpeechRef.current = false;
   }, [stopAudioMeter, stopRecognition]);
 
-  const onSpeechStart = useCallback(() => changeMode("speaking"), [changeMode]);
+  const onSpeechStart = useCallback(() => { setMascotFeedback(null); changeMode("speaking"); }, [changeMode]);
   const onSpeechFinish = useCallback(() => {
     if (modeRef.current === "speaking") changeMode("idle");
   }, [changeMode]);
   const onSpeechError = useCallback(() => {
-    setStatusHint("Audio playback isn’t available. You can read the answer here.");
+    setStatusHint("The spoken reply could not play. Choose Hear brief answer to retry, and check your device volume. The answer is saved below.");
   }, []);
-  const { speak: speakText, stop: stopSpeech, speakingMessageId } = useSpeechPlayback(onSpeechStart, onSpeechFinish, onSpeechError);
+  const { speak: speakText, stop: stopSpeech, speakingMessageId, playbackPending } = useSpeechPlayback(onSpeechStart, onSpeechFinish, onSpeechError);
 
   const submitTranscript = useCallback(
     async (text: string, retryId?: string) => {
@@ -285,6 +302,20 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
         return;
       }
       stopSpeech();
+      const reminderDraft = !retryId ? parseReminderCommand(trimmed) : null;
+      if (reminderDraft) {
+        const assistantId = newId();
+        const answer = reminderDraft.due ? 'I’ve prepared your reminder. Review the date and confirm below to save it.' : 'I’ve prepared your reminder. Choose a due date and confirm below to save it.';
+        setMessages(previous => [...previous,
+          { id: newId(), role: 'user', text: trimmed, photo, createdAt: Date.now() },
+          { id: assistantId, role: 'assistant', text: answer, spokenText: answer, createdAt: Date.now(), reminderProposal: { ...reminderDraft, id: newId(), status: 'pending' } },
+        ]);
+        setPhoto(undefined);
+        changeMode('idle');
+        setStatusHint('Reminder proposal ready. Nothing has been saved yet.');
+        if (readReadAloud()) speakText(answer, assistantId);
+        return;
+      }
       requestBusyRef.current = true;
       const controller = new AbortController();
       requestRef.current = controller;
@@ -319,13 +350,15 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
         if (!data || typeof data.response_text !== "string" || !data.response_text.trim()) {
           throw new AssistantRequestError("Anthea returned an empty answer. Please try again.");
         }
-        const spoken = data.response_text;
+        const fullAnswer = data.response_text;
+        const spoken = briefSpeech(data.spoken_text || fullAnswer);
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantId
               ? {
                   ...m,
-                  text: spoken,
+                  text: fullAnswer,
+                  spokenText: spoken,
                   pending: false,
                   error: false,
                   retryText: undefined,
@@ -396,14 +429,17 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
     if (submittedRef.current) return;
     submittedRef.current = true;
     const session = recordingSessionRef.current;
+    setTranscribing(true);
+    setCanRetryTranscription(false);
     changeMode("processing");
     setRecordingReady(false);
     setStatusHint("Finishing recording…");
 
-    const browserText = transcriptRef.current.trim();
-    const recorded = await stopMediaRecorder();
+    const recorded = await stopMediaRecorder() || retainedRecordingRef.current;
+    retainedRecordingRef.current = recorded;
     if (session !== recordingSessionRef.current) return;
     stopRecognition();
+    const browserText = transcriptRef.current.trim();
     if (noSpeechTimerRef.current) {
       clearTimeout(noSpeechTimerRef.current);
       noSpeechTimerRef.current = null;
@@ -434,17 +470,24 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
       setLiveCaption("");
       if (text.trim()) {
         setReviewTranscript(text.trim());
+        previousReviewRef.current = null;
+        retainedRecordingRef.current = null;
         setStatusHint("Review your transcript before sending. You can edit anything I misheard.");
       } else {
+        setReviewTranscript(previousReviewRef.current);
+        setMicIssue("No words were detected. Move closer to your microphone, check its input level, and retry or type your question.");
         setStatusHint("I didn’t hear any words. Try recording again, or type your question.");
       }
     } catch (err) {
       if (session !== recordingSessionRef.current || controller.signal.aborted) return;
       console.error("submit/transcribe failed", err);
       changeMode("idle");
+      setReviewTranscript(previousReviewRef.current || browserText || null);
+      setCanRetryTranscription(Boolean(recorded?.size));
       setStatusHint(requestErrorMessage(err, "transcription"));
       showMascotFeedback("error");
     } finally {
+      if (session === recordingSessionRef.current) setTranscribing(false);
       if (transcriptionRef.current === controller) transcriptionRef.current = null;
     }
   }, [
@@ -520,13 +563,16 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
       if (event.data.size > 0) chunks.push(event.data);
     };
     recorder.start(250);
-    if (ctx.state === "suspended") void ctx.resume();
+    if (ctx.state === "suspended") await ctx.resume();
     return true;
   }, []);
 
   const beginListening = useCallback(
     async (opts: { autoSilenceSubmit: boolean }) => {
       const session = ++recordingSessionRef.current;
+      setMicIssue(null);
+      setCanRetryTranscription(false);
+      retainedRecordingRef.current = null;
       submittedRef.current = false;
       preferCloudSttRef.current = false;
       silenceStartedRef.current = null;
@@ -542,20 +588,33 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
 
       try {
         if (!await startMicStream(session)) return;
+        if (session !== recordingSessionRef.current) return;
       } catch (err) {
         if (session !== recordingSessionRef.current) return;
         console.error("getUserMedia failed", err);
         cleanupListening();
         changeMode("idle");
-        setStatusHint(err instanceof DOMException && err.name === "NotAllowedError"
-          ? "Microphone access was denied. Allow it in your browser settings, or type your question."
-          : "The microphone couldn’t start. Check that it’s connected and available, or type your question.");
+        setStatusHint("");
+        setMicIssue(microphoneProblem(err));
+        setReviewTranscript(previousReviewRef.current);
         showMascotFeedback("error");
         return;
       }
 
       setRecordingReady(true);
-      setStatusHint(opts.autoSilenceSubmit ? "Listening—pause when finished, or choose Review recording." : "Hold and speak…");
+      setStatusHint(opts.autoSilenceSubmit ? "Speak now. Pause for about a second when finished, or choose Review recording. Nothing is sent until you approve the transcript." : "Hold and speak…");
+      streamRef.current?.getAudioTracks().forEach(track => {
+        track.onended = () => {
+          if (session !== recordingSessionRef.current || submittedRef.current) return;
+          setMicIssue("The microphone disconnected. Review any words captured, then reconnect and retry or type the rest.");
+          void finishRecording();
+        };
+      });
+      if (mediaRecorderRef.current) mediaRecorderRef.current.onerror = () => {
+        if (session !== recordingSessionRef.current || submittedRef.current) return;
+        setMicIssue("Recording stopped unexpectedly. Review any captured words, or retry your microphone. Your typed draft is still here.");
+        void finishRecording();
+      };
       const Ctor = getSpeechRecognitionCtor();
       if (Ctor) {
         const recognition = new Ctor();
@@ -613,9 +672,12 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
             cleanupListening();
             changeMode("idle");
             setRecordingReady(false);
+            setReviewTranscript(transcriptRef.current.trim() || previousReviewRef.current);
+            setMicIssue("No voice was detected. Check your microphone input, move closer, and retry or type. Your draft has been kept.");
             setStatusHint("I didn’t hear any words. Try recording again, or type your question.");
           } else {
-            void finishRecording();
+            // Do not cut a sentence off at the initial no-speech deadline.
+            noSpeechTimerRef.current = setTimeout(() => void finishRecording(), 45000);
           }
         }, NO_SPEECH_TIMEOUT_MS);
       } else {
@@ -636,19 +698,10 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
   );
 
   const onStartListen = useCallback(() => {
-    if (modeRef.current !== "idle") return;
+    if (modeRef.current !== "idle" && modeRef.current !== "speaking") return;
+    stopSpeech();
     void beginListening({ autoSilenceSubmit: true });
-  }, [beginListening]);
-
-  const onPushStart = useCallback(() => {
-    if (modeRef.current !== "idle") return;
-    void beginListening({ autoSilenceSubmit: false });
-  }, [beginListening]);
-
-  const onPushEnd = useCallback(() => {
-    if (modeRef.current !== "listening") return;
-    void finishRecording();
-  }, [finishRecording]);
+  }, [beginListening, stopSpeech]);
 
   const cancelRecording = useCallback(() => {
     recordingSessionRef.current += 1;
@@ -659,6 +712,7 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
     setLiveCaption("");
     transcriptRef.current = "";
     changeMode("idle");
+    setReviewTranscript(previousReviewRef.current);
     setStatusHint("Recording cancelled. Nothing was sent.");
   }, [changeMode, cleanupListening, stopMediaRecorder]);
 
@@ -676,7 +730,8 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
 
 
   const showWelcome = messages.length === 0;
-  const cacteaState = resolveCacteaState(mode, mascotFeedback);
+  const visibleMode = mode === "listening" && !recordingReady ? "idle" : mode;
+  const cacteaState = resolveCacteaState(visibleMode, mascotFeedback);
   const latestPlantSummary = useMemo(() => {
     for (let index = messages.length - 1; index >= 0; index--) {
       const message = messages[index];
@@ -703,6 +758,10 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
     followConversationRef.current = true;
     setHasNewMessages(false);
     setTypedInput("");
+    setMicIssue(null);
+    previousReviewRef.current = null;
+    retainedRecordingRef.current = null;
+    setCanRetryTranscription(false);
     void submitTranscript(text);
   };
 
@@ -720,11 +779,35 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
   const sendReviewedTranscript = () => {
     const text = reviewTranscript?.trim();
     if (!text || text.length > 4000 || requestBusyRef.current) return;
-    setReviewTranscript(null);
+    setReviewTranscript(null); setEditingTranscript(false);
+    previousReviewRef.current = null;
+    retainedRecordingRef.current = null;
+    setCanRetryTranscription(false);
+    setMicIssue(null);
     setStatusHint("");
     followConversationRef.current = true;
     setHasNewMessages(false);
     void submitTranscript(text);
+  };
+
+  const confirmReminder = (message: ChatMessage, draft: { title: string; due: string }, plantId?: string) => {
+    const proposal = message.reminderProposal;
+    if (!proposal || proposal.status !== 'pending' || composerDisabled || !validReminderDraft(draft) || confirmedReminderIdsRef.current.has(proposal.id) || workspace.reminders.some(r => r.id === proposal.id)) return;
+    confirmedReminderIdsRef.current.add(proposal.id);
+    save('reminders', { id: proposal.id, title: draft.title, due: draft.due, repeat: 0, completed: false, ...(plantId && workspace.plants.some(p => p.id === plantId) ? { plantId } : {}) });
+    const answer = `Your reminder is saved for ${new Date(`${draft.due}T12:00:00`).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}. You can find it in Reminders.`;
+    setMessages(previous => previous.map(m => m.id === message.id ? { ...m, text: answer, spokenText: answer, reminderProposal: { ...proposal, ...draft, status: 'saved' } } : m));
+    setStatusHint('Reminder saved. You can find it in Reminders.');
+    if (readReadAloud()) speakText(answer, message.id);
+  };
+  const cancelReminder = (message: ChatMessage) => {
+    const proposal = message.reminderProposal;
+    if (!proposal || composerDisabled || confirmedReminderIdsRef.current.has(proposal.id) || workspace.reminders.some(r => r.id === proposal.id)) return;
+    stopSpeech();
+    const answer = 'Reminder cancelled. Nothing was saved.';
+    setMessages(previous => previous.map(m => m.id === message.id ? { ...m, text: answer, spokenText: answer, reminderProposal: { ...proposal, status: 'cancelled' } } : m));
+    setStatusHint(answer);
+    if (readReadAloud()) speakText(answer, message.id);
   };
   return (
     <div className={`app-shell ${styles.shell}`}>
@@ -733,7 +816,7 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
         <div className="ws-greeting"><Icon name="leaf" size={34}/><div><h1 id="chat-title">Hi, I’m Cactea!</h1><p>Ask me anything about your plants. Let’s help them grow.</p></div><Cactea state={cacteaState} size="sm" className={styles.mobileMascot}/></div>
         <div className="ws-chat-toolbar">
           <select aria-label="Link conversation to a plant" value={chat.plantId ?? ''} disabled={mode !== 'idle'} onChange={e => save('chats',{...chat,plantId:e.target.value || undefined})}><option value="">General plant conversation</option>{workspace.plants.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
-          <label><input type="checkbox" checked={readAloud} onChange={e => {saveReadAloud(e.target.checked); if (!e.target.checked) stopSpeech();}}/>Read aloud</label>
+          <details className={styles.voiceSettings}><summary>Voice settings</summary><div><label><input type="checkbox" checked={readAloud} onChange={e => {saveReadAloud(e.target.checked); if (!e.target.checked) stopSpeech();}}/>Read replies aloud</label><Link className={styles.voicePreferencesLink} href="/settings#voice-settings-title">Choose or preview a voice →</Link></div></details>
           <details className={styles.chatMenu}><summary aria-label="Conversation options">•••</summary><div><button onClick={() => {const title = window.prompt('Conversation name',chat.title); if (title?.trim()) save('chats',{...chat,title:title.trim().slice(0,120)});}}>Rename chat</button><button onClick={() => { if (messages.length || typedInput.trim() || photo || reviewingTranscript || mode !== 'idle') newPlantDialogRef.current?.showModal(); else startNewPlantConversation(); }}>New chat</button><button onClick={() => {if (window.confirm('Delete this saved conversation?')) remove('chats',chat.id);}}>Delete chat</button></div></details>
         </div>
       <section className={`chat-scroll ${styles.scroll}`} aria-label="Chat messages" ref={chatScrollRef} onScroll={() => {
@@ -746,13 +829,14 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
         {showWelcome && (
           <section className={`dashboard-welcome ${styles.welcome}`} aria-labelledby="welcome-title">
             <div className={`welcome-copy ${styles.welcomeCopy}`}>
-              <p className="welcome-eyebrow">Your plant-care dashboard</p>
+              <p className="welcome-eyebrow">Your voice plant-care companion</p>
               <h2 id="welcome-title" className={styles.questionTitle}>What&apos;s happening with your plant?</h2>
               <p className={`welcome-description ${styles.description}`}>
-                Type a question below or start a voice question. Include what your plant looks like, where it grows, and what has changed.
+                Tell me what you&apos;ve noticed. I&apos;ll listen, then help you figure out what your plant needs.
               </p>
+              <details className={styles.demoGuide}><summary>Try the voice demo</summary><ol><li>Enable Read replies aloud in Voice settings and allow microphone access.</li><li>Say: “My monstera’s lower leaves are yellow. What should I check?” Pause for about a second.</li><li>Review or edit the transcript, then choose Send question.</li><li>Listen to the answer. Choose Talk to Cactea again and ask: “How do I check if the soil is too wet?”</li></ol><p>Stay in this conversation. Add a plant or reminder only if it helps carry out the advice.</p></details>
               <div className={`dashboard-preferences ${styles.starters}`}>
-                <p className="starter-heading">{profile ? "A starting point picked for you" : "Not sure where to start?"}</p>
+                <p className="starter-heading">{profile ? "Or choose a starting prompt" : "Need a prompt to get started?"}</p>
                 {starterGoals.map((goal, index) => <button type="button" key={goal} disabled={composerDisabled} className={`dashboard-starter ${index === 0 ? "dashboard-starter--primary" : ""}`} onClick={() => chooseStarter(starterQuestions[goal])}><span>{index === 0 && profile && <span className={styles.starterLabel}>For you</span>}{starterQuestions[goal]}</span><span aria-hidden="true">↗</span></button>)}
                 {profile && <button type="button" className="dashboard-clear" onClick={() => {
                   const cleared = savePlantProfile(null);
@@ -771,7 +855,7 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
             )}
             <div className="msg-col">
               <span className="sr-only">{m.role === "assistant" ? "Anthea" : "You"}:</span>
-              <div className={`msg-bubble msg-bubble--${m.role} ${m.error ? "msg-bubble--error" : ""}`}>
+              {!m.reminderProposal && <div className={`msg-bubble msg-bubble--${m.role} ${m.error ? "msg-bubble--error" : ""}`}>
                 {m.photo && <img className="ws-chat-photo" src={m.photo} alt="Plant photo shared in this conversation"/>}
                 {m.pending ? (
                   <span className="typing-dots" aria-label="Thinking">
@@ -780,13 +864,12 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
                     <span />
                   </span>
                 ) : (
-                  m.text
+                  m.role === "assistant" && !m.error ? <AssistantAnswer text={m.text} brief={m.spokenText || briefSpeech(m.text)} nextStep={m.meta?.next_check} speaking={speakingMessageId === m.id} disabled={composerDisabled} onBrief={() => speakText(m.spokenText || briefSpeech(m.text), m.id)} onMore={() => speakText(m.text, m.id)} onStop={stopSpeech}/> : m.text
                 )}
-              </div>
-              {m.createdAt && <time className="ws-time" dateTime={new Date(m.createdAt).toISOString()}>{new Date(m.createdAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</time>}
-              {m.role === "assistant" && !m.pending && <div className="message-actions">
-                {m.retryText ? <button type="button" disabled={composerDisabled} onClick={() => void submitTranscript(m.retryText!, m.id)}>Retry question</button> : <button type="button" disabled={composerDisabled} onClick={() => speakingMessageId === m.id ? stopSpeech() : speakText(m.text, m.id)}>{speakingMessageId === m.id ? "Stop audio" : "Read aloud"}</button>}
               </div>}
+              {m.createdAt && <time className="ws-time" dateTime={new Date(m.createdAt).toISOString()}>{new Date(m.createdAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</time>}
+              {m.role === "assistant" && !m.pending && m.retryText && <div className="message-actions"><button type="button" disabled={composerDisabled} onClick={() => void submitTranscript(m.retryText!, m.id)}>Retry question</button></div>}
+              {m.reminderProposal && <ReminderProposalCard proposal={m.reminderProposal} savedReminder={workspace.reminders.find(r => r.id === m.reminderProposal?.id)} plants={workspace.plants} initialPlantId={chat.plantId} disabled={composerDisabled} onConfirm={(draft, plantId) => confirmReminder(m, draft, plantId)} onCancel={() => cancelReminder(m)} />}
               {m.meta && !m.pending && (
                 <span className={styles.messageSource}>{m.meta.is_estimate ? "Estimated guidance" : "AI plant-care guidance"}</span>
               )}
@@ -795,39 +878,38 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
         ))}
         </div>
 
-        {mode === "listening" && (
-          <div className="msg-row msg-row--user msg-row--ghost">
-            <div className="msg-col">
-              <div className="msg-bubble msg-bubble--user msg-bubble--ghost">
-                {liveCaption || "…"}
-              </div>
-            </div>
-          </div>
-        )}
-
         <div ref={scrollEndRef} />
       </section>
 
       <div className={styles.inputDock}>
       {hasNewMessages && <button type="button" className="new-response" onClick={scrollToLatest}>New response ↓</button>}
-      <div className="conversation-controls">
-        {mode === "listening" && <>
-          <button type="button" className="control-primary" disabled={!recordingReady} onClick={() => void finishRecording()}>Review recording</button>
-          <button type="button" onClick={cancelRecording}>Cancel recording</button>
-        </>}
-        {mode === "speaking" && <button type="button" onClick={stopSpeech}>Stop audio</button>}
-      </div>
-      <p className="status-hint" role="status">{statusHint || (!micSupported ? "Microphone recording isn’t available in this browser. You can type your question." : "")}</p>
+      <section className={styles.voiceDock} aria-label="Voice conversation">
+        <div className={styles.voiceStatus} role="status"><strong>{mode === "listening" && recordingReady ? "Listening — pause when finished" : voiceHeading(mode, recordingReady, reviewingTranscript, transcribing, playbackPending)}</strong><span>{mode === "listening" ? recordingReady ? "Your microphone is on." : "Allow Microphone in the browser prompt." : mode === "speaking" ? "Stop audio or talk again to ask a follow-up." : reviewingTranscript ? "Check your words before sending." : mode === "processing" || playbackPending ? "Your question stays in this conversation." : !micSupported ? "Microphone unavailable. Type your question below." : micIssue ? "Your draft is kept. Choose a recovery option below." : statusHint || (readAloud ? "Ask a plant question aloud." : "Enable spoken replies in Voice settings.")}</span></div>
+        {micSupported && !reviewingTranscript && <button type="button" className={styles.voiceStart} disabled={mode === "processing" || photoBusy || (mode === "listening" && !recordingReady)} onClick={() => mode === "listening" ? void finishRecording() : onStartListen()}>
+          <span className={styles.voiceIcon}><Icon name="microphone" size={24}/></span><span className={styles.voiceCopy}><strong>{mode === "listening" ? recordingReady ? "Review recording" : "Allow microphone…" : mode === "processing" ? "Please wait…" : messages.length ? "Talk to Cactea again" : "Talk to Cactea"}</strong></span>
+        </button>}
+        {(mode === "listening" || speakingMessageId) && <div className={styles.voiceSecondary}>
+          {mode === "listening" && <button type="button" onClick={cancelRecording}>Cancel recording</button>}
+          {speakingMessageId && <button type="button" onClick={stopSpeech}>Stop audio</button>}
+        </div>}
+        {mode === "listening" && recordingReady && liveCaption && <p className={styles.liveCaption}><span>Hearing</span>{liveCaption}</p>}
+      </section>
+      {(micIssue || canRetryTranscription) && <section className={styles.micRecovery} aria-label="Voice recovery"><p role="alert">{micIssue || "Your recording has been kept for another transcription attempt. Any captured words are available to edit."}</p><div>
+        {canRetryTranscription && <button type="button" disabled={mode !== "idle"} onClick={() => { previousReviewRef.current = reviewTranscript; submittedRef.current = false; void finishRecording(); }}>Retry transcription</button>}
+        {micSupported && <button type="button" disabled={mode !== "idle"} onClick={() => { previousReviewRef.current = reviewTranscript; setReviewTranscript(null); setEditingTranscript(false); onStartListen(); }}>Retry microphone</button>}
+        <button type="button" disabled={mode !== "idle"} onClick={() => { setMicIssue(null); setEditingTranscript(true); setStatusHint("Type or edit your question below. Your draft has been kept."); requestAnimationFrame(() => reviewingTranscript ? transcriptReviewRef.current?.focus() : textareaRef.current?.focus()); }}>Type instead</button>
+      </div></section>}
 
-      {reviewingTranscript ? <section className={styles.transcriptReview} aria-labelledby="transcript-review-title">
-        <div className={styles.reviewHeading}><h2 id="transcript-review-title">Did I hear you correctly?</h2><span>{reviewTranscript.length.toLocaleString()} / 4,000</span></div>
-        <label className="sr-only" htmlFor="transcript-review">Edit your recorded question</label>
-        <textarea id="transcript-review" ref={transcriptReviewRef} value={reviewTranscript} onChange={(event) => setReviewTranscript(event.target.value)} maxLength={4000} rows={3} />
+      {reviewingTranscript ? <section ref={transcriptCardRef} tabIndex={-1} className={styles.transcriptReview} aria-labelledby="transcript-review-title">
+        <div className={styles.reviewHeading}><h2 id="transcript-review-title">What I heard</h2>{editingTranscript && <span>{reviewTranscript.length.toLocaleString()} / 4,000</span>}</div>
+        {editingTranscript ? <><label className="sr-only" htmlFor="transcript-review">Edit your recorded question</label>
+        <textarea id="transcript-review" ref={transcriptReviewRef} value={reviewTranscript} disabled={mode !== "idle"} onChange={(event) => setReviewTranscript(event.target.value)} maxLength={4000} rows={2} /></> : <p className={styles.heardTranscript}>{reviewTranscript || "No words captured. Edit your question or record again."}</p>}
         {reviewTranscript.length > 4000 && <p className={styles.reviewLimit}>Please shorten your question to 4,000 characters before sending.</p>}
         <div className={styles.reviewActions}>
-          <button type="button" onClick={() => { setReviewTranscript(null); setLiveCaption(""); transcriptRef.current = ""; setStatusHint("Transcript discarded. Nothing was sent."); requestAnimationFrame(() => textareaRef.current?.focus()); }}>Discard</button>
-          <button type="button" onClick={() => { setReviewTranscript(null); onStartListen(); }}>Record again</button>
-          <button type="button" className={styles.sendTranscript} disabled={!reviewTranscript.trim() || reviewTranscript.length > 4000} onClick={sendReviewedTranscript}>Send question →</button>
+          <button type="button" aria-expanded={editingTranscript} disabled={mode !== "idle"} onClick={() => setEditingTranscript(value => !value)}>{editingTranscript ? "Done editing" : "Edit"}</button>
+          <button type="button" disabled={mode !== "idle"} onClick={() => { previousReviewRef.current = null; retainedRecordingRef.current = null; setCanRetryTranscription(false); setMicIssue(null); setReviewTranscript(null); setEditingTranscript(false); setLiveCaption(""); transcriptRef.current = ""; setStatusHint("Transcript discarded. Nothing was sent."); requestAnimationFrame(() => textareaRef.current?.focus()); }}>Discard</button>
+          <button type="button" disabled={mode !== "idle"} onClick={() => { previousReviewRef.current = reviewTranscript; setReviewTranscript(null); setEditingTranscript(false); onStartListen(); }}>Record again</button>
+          <button type="button" className={styles.sendTranscript} disabled={mode !== "idle" || !reviewTranscript.trim() || reviewTranscript.length > 4000} onClick={sendReviewedTranscript}>Send question →</button>
         </div>
       </section> : <>
 
@@ -841,19 +923,6 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
       >
         <button type="button" className="ws-attach" aria-label="Attach a plant photo" disabled={composerDisabled} onClick={() => photoInputRef.current?.click()}><Icon name="photo"/></button>
         <input className="sr-only" ref={photoInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={async e => { const file = e.target.files?.[0]; e.target.value = ''; if (!file) return; setPhotoBusy(true); setStatusHint('Preparing photo…'); try {setPhoto(await preparePhoto(file)); setStatusHint('Photo ready. Add a question or send it as it is.');} catch (error) {setStatusHint((error as Error).message);} finally {setPhotoBusy(false);} }}/>
-        {micSupported && (
-          <div className="composer-mic">
-            <MicButton
-              mode={mode}
-              speechSupported
-              onStartListen={onStartListen}
-              onPushStart={onPushStart}
-              onPushEnd={onPushEnd}
-              onStopListen={() => void finishRecording()}
-              recordingReady={recordingReady}
-            />
-          </div>
-        )}
         <textarea
           ref={textareaRef}
           className="composer-input"
@@ -884,7 +953,7 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
       </>}
       </div>
       </section>
-      <CompanionPanel mode={mode} state={cacteaState} summary={latestPlantSummary} conversationNumber={conversationNumber} onAskNext={() => chooseStarter("What should I check next for this plant?")} actionsDisabled={composerDisabled} />
+      <CompanionPanel mode={visibleMode} state={cacteaState} transcribing={transcribing} summary={latestPlantSummary} conversationNumber={conversationNumber} onAskNext={() => chooseStarter("What should I check next for this plant?")} actionsDisabled={composerDisabled} />
       </main>
       <dialog ref={newPlantDialogRef} className={styles.resetDialog} aria-labelledby="new-plant-title" aria-describedby="new-plant-description">
         <h2 id="new-plant-title">Start a new plant conversation?</h2>
