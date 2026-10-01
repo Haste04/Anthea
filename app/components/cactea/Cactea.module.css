@@ -252,6 +252,17 @@
   .mascot[data-state="sixSeven"] .openMouth { opacity: 1; }
 }
 .debug { outline: 1px dashed rgb(20 38 26 / 45%); outline-offset: 2px; }
+/* Home's controller owns gestures; eye tracking and blinking stay independent. */
+.mascot:is([data-stationary], [data-lively]) .bounce,
+.mascot:is([data-stationary], [data-lively]) .rig,
+.mascot:is([data-stationary], [data-lively]) .leftArm,
+.mascot:is([data-stationary], [data-lively]) .rightArm { animation: none; transform: none; }
+.mascot:is([data-stationary], [data-lively]) .leftEye > img,
+.mascot:is([data-stationary], [data-lively]) .rightEye > img { translate: var(--home-eye-x, 0%) var(--home-eye-y, 0%); }
+@media (prefers-reduced-motion: reduce) {
+  .mascot:is([data-stationary], [data-lively]) .leftEye > img,
+  .mascot:is([data-stationary], [data-lively]) .rightEye > img { translate: none; }
+}
 .debug .leftArm { outline: 1px solid rgb(33 150 243 / 85%); }
 .debug .rightArm { outline: 1px solid rgb(156 39 176 / 85%); }
 .debug .body { outline: 1px solid rgb(76 175 80 / 85%); }

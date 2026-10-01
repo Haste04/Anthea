@@ -11,6 +11,7 @@ import mouth from "../../../public/cacthea/mouth.png";
 import type { CacteaProps } from "./Cactea.types";
 import styles from "./Cactea.module.css";
 import { ClosedEye, OpenMouth, WorriedBrow } from "./FaceExpressions";
+import useCacteaIdleAnimations from "./useCacteaIdleAnimations";
 
 // Enable manually when adjusting layer alignment; never show in production.
 const CACTEA_DEBUG = false;
@@ -63,8 +64,10 @@ const activityLabels: Partial<Record<CacteaProps["state"], string>> = {
   sixSeven: "Cactea is doing the six seven gesture",
 };
 
-function Cactea({ state, size = "md", className, ariaLabel, interactive = false }: CacteaProps) {
-  const classes = `${styles.mascot} ${styles[size]} ${interactive ? styles.interactive : ""} ${className ?? ""} ${CACTEA_DEBUG ? styles.debug : ""}`.trim();
+function Cactea({ state, size = "md", className, ariaLabel, interactive = false, stationary = false, lively = false }: CacteaProps) {
+  const livelyMode = lively && !stationary && state === "idle";
+  const { mascotRef, jump } = useCacteaIdleAnimations(livelyMode);
+  const classes = `${styles.mascot} ${styles[size]} ${interactive || livelyMode ? styles.interactive : ""} ${className ?? ""} ${CACTEA_DEBUG ? styles.debug : ""}`.trim();
   const artwork = (
     <div className={styles.bounce}>
       <div className={styles.rig}>
@@ -73,6 +76,8 @@ function Cactea({ state, size = "md", className, ariaLabel, interactive = false 
             key={name}
             className={`${styles.layer} ${layerStyles[name]}`}
             aria-hidden="true"
+            data-cactea-eye={name === "left-eye" || name === "right-eye" ? "" : undefined}
+            data-cactea-mouth={name === "mouth" ? "" : undefined}
           >
             <Image
               src={layerImages[name]}
@@ -94,14 +99,20 @@ function Cactea({ state, size = "md", className, ariaLabel, interactive = false 
     </div>
   );
 
-  if (interactive) {
+  if ((interactive && !stationary) || livelyMode) {
     return (
       <button
         type="button"
         className={classes}
         data-state={state}
+        data-lively={livelyMode || undefined}
+        ref={mascotRef}
         aria-label={ariaLabel ?? "Make Cactea jump"}
         onClick={(event) => {
+          if (livelyMode) {
+            jump();
+            return;
+          }
           const bounce = event.currentTarget.firstElementChild;
           if (!(bounce instanceof HTMLElement)) return;
           const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -128,7 +139,7 @@ function Cactea({ state, size = "md", className, ariaLabel, interactive = false 
     );
   }
 
-  return <div className={classes} data-state={state} role="img" aria-label={ariaLabel ?? activityLabels[state] ?? "Cactea, Anthea's plant care mascot"}>{artwork}</div>;
+  return <div className={classes} data-state={state} data-stationary={stationary || undefined} role="img" aria-label={ariaLabel ?? activityLabels[state] ?? "Cactea, Anthea's plant care mascot"}>{artwork}</div>;
 }
 
 export default memo(Cactea);

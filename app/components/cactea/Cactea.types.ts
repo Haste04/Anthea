@@ -9,4 +9,6 @@ export type CacteaProps = {
   className?: string;
   ariaLabel?: string;
   interactive?: boolean;
+  stationary?: boolean;
+  lively?: boolean;
 };

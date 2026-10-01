@@ -1,9 +1,10 @@
 ﻿# Botanical workspace
 
-Open `/home` for the overview or `/dashboard` for Cactea chat. The shared sidebar links to plants, the plant guide, reminders, and settings. The original public landing and welcome flow remain available.
+Open `/home` for the overview or `/dashboard` for Cactea chat. The shared sidebar links to plants and settings. The original public landing and welcome flow remain available.
 
 - Chats save automatically, can be renamed/deleted, and remain accessible through sidebar search and “View all”. Linking or naming a saved plant lets Cactea reuse its notes and up to four recent successful exchanges from chats linked to that plant. Each exchange and photo keeps its plant association when a chat switches plants, so memory and image context stay with the right plant. Ambiguous plant names require an explicit selection; switching chats stops the old microphone/audio/request. Interrupted replies offer retry.
 - Plant records include photos, species, location, notes, and linked chats/reminders. Removing a plant keeps its chats and reminders, without the link.
+- In My Plants, entering a common plant name fills its scientific name from a small local list when there is one match. Broad names such as Monstera offer choices. Manual and previously saved species are preserved. Unknown names have an optional **Look up species** button using Perenual; typing alone makes no API request. Results are cached in memory for the browser session (up to one day), and provider fetches are cached for one day. Saving remains available if lookup fails. See [species lookup](plant-species.md) for coverage and sources.
 - Photo questions accept JPEG, PNG, and WebP. Browser preparation resizes the image; the server bounds the request and decodes/re-encodes it before Gemini receives it. Follow-ups may reuse the latest photo in that conversation.
 - Reminders are in-app checks, not scheduled background notifications. Recurring completion advances from the original due date to the next occurrence after today. Watering reminders prompt a soil check.
 - Spoken or typed â€œRemind me to check the soil tomorrowâ€ prepares a review card in chat, linked to the selected saved plant. Confirming saves a one-time local reminder and gives a brief spoken acknowledgement and Cactea success gesture; cancelling saves nothing. Today, tomorrow, dates in YYYY-MM-DD form, and â€œin two days/weeksâ€ are supported. Other dates need manual selection. Time requests explicitly require accepting a date-only reminder; timed notifications are not added.
@@ -11,7 +12,6 @@ Open `/home` for the overview or `/dashboard` for Cactea chat. The shared sideba
 - Settings provides a device voice selector and preview. The selection applies to Cacteaâ€™s replies and is stored separately from backups. Voices load initially and through the browserâ€™s `voiceschanged` event; unavailable selections fall back to the device default. See [MDN getVoices](https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesis/getVoices) and [voiceschanged](https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesis/voiceschanged_event).
 - Records and photos use IndexedDB in this browser. Settings exports/imports JSON backups; imports validate before replacing all three record collections atomically. Voice/care preferences retain their existing localStorage keys and are configured separately.
 - Storage failures show a banner. Export before closing if a write fails. Data does not sync between devices; simultaneous edits to the same record in multiple tabs use the last saved version.
-- The guide contains four introductory articles with links to the RHS sources. It is a starting library, not a comprehensive species database.
 
 ## Visual asset
 

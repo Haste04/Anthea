@@ -26,7 +26,7 @@ Cactea keeps the conversation approachable: visible listening, thinking, and spe
 | Get the useful part quickly | Read the main advice and highlighted **Next step**. Open **Details** or choose **Hear more** for the full explanation. |
 | Show what you see | Attach a plant photo and ask a question about it. |
 | Follow through on advice | Say “Remind me to check the soil tomorrow,” review the care action, and choose **Confirm reminder**. |
-| Keep your garden organized | Save plants, link conversations and reminders, revisit chats, and browse the introductory plant guide. |
+| Keep your garden organized | Save plants, link conversations and reminders, revisit chats. |
 | Make the voice your own | Turn spoken replies on or off, select an available device voice, and preview it in Settings. |
 
 ### Your first conversation

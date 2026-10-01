@@ -18,6 +18,25 @@ export type CareData = {
   soil: string[];
 };
 
+/** Explicit form lookup: one cached provider request, with all plausible choices. */
+export async function searchSpeciesOptions(query: string): Promise<{ commonName: string; scientificName: string }[]> {
+  const key = getApiKey();
+  const response = await fetch(`https://perenual.com/api/v2/species-list?key=${encodeURIComponent(key)}&q=${encodeURIComponent(query)}`, {
+    next: { revalidate: 86400 },
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!response.ok) throw new Error('Species lookup unavailable');
+  const payload = await response.json() as SpeciesListResponse;
+  const options: { commonName: string; scientificName: string }[] = [];
+  for (const item of payload.data ?? []) {
+    const scientificName = scientificLabel(item).trim();
+    if (!scientificName || scientificName.length > 120 || options.some(option => option.scientificName === scientificName)) continue;
+    options.push({ commonName: (item.common_name || scientificName).slice(0, 120), scientificName });
+    if (options.length === 10) break;
+  }
+  return options;
+}
+
 function getApiKey(): string {
   const key = process.env.PERENUAL_API_KEY;
   if (!key || key === "your_perenual_api_key_here") {

@@ -19,7 +19,7 @@ Lead with Cactea remembering one saved plant, inspecting a leaf photo, and helpi
 7. Say “Remind me to check the soil tomorrow.” Review the proposed title, date, and linked Monstera. Show that nothing appears in Reminders until you choose **Confirm reminder**. After confirmation, Cactea gives a brief Monstera-specific spoken acknowledgement and a short happy gesture. Then briefly open Reminders to show the saved action.
 8. In Settings, choose a device voice and use **Preview voice**. Rehearse voice selection before the presentation so the chosen voice is ready on that device.
 
-Keep plants and the guide out of the main presentation unless they directly help with this care problem. Reminder creation is part of carrying out the advice, rather than a separate feature tour.
+Keep plants out of the main presentation unless they directly help with this care problem. Reminder creation is part of carrying out the advice, rather than a separate feature tour.
 
 ## Recovery rehearsal
 

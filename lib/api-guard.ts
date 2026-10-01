@@ -1,7 +1,7 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
-export type ApiLimitName = "assistant" | "transcribe";
+export type ApiLimitName = "assistant" | "transcribe" | "species";
 
 type LocalBucket = { count: number; resetAt: number };
 type LimitResult =
@@ -12,6 +12,7 @@ type LimitResult =
 const policies: Record<ApiLimitName, { requests: number; windowMs: number }> = {
   assistant: { requests: 10, windowMs: 60_000 },
   transcribe: { requests: 10, windowMs: 60_000 },
+  species: { requests: 10, windowMs: 60_000 },
 };
 
 const localBuckets = new Map<string, LocalBucket>();
