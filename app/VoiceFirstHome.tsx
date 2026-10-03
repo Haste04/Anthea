@@ -56,7 +56,7 @@ export default function VoiceFirstHome() {
               </button>
               <button className="voice-home-type" type="button" onClick={() => startConversation(false)} disabled={!ready}>I’d rather type <span aria-hidden="true">→</span></button>
             </div>
-            <p className="voice-home-instruction">Your microphone starts after you choose Talk. Review what Cactea heard before sending.</p>
+            <p className="voice-home-instruction">Your microphone starts after you choose Talk. Pause when finished and your question sends automatically.</p>
             {ready && recentChat ? <div className={styles.quickReturn} aria-label="Your recent plant care">
               {recentChat && <button type="button" onClick={resumeConversation} title={recentChat.title} aria-label={`Continue last chat: ${recentChat.title}`}><Icon name="chat" size={17}/><span>Continue last chat</span><span aria-hidden="true">→</span></button>}
             </div> : <div className={styles.promise}><Icon name="leaf" size={18}/><span>One question. A little more confidence.</span></div>}
@@ -83,7 +83,7 @@ export default function VoiceFirstHome() {
           <div><p className="welcome-eyebrow">A simple conversation</p><h2 id="how-title">Care starts with what you notice.</h2></div>
           <div className="voice-home-steps">
             <p><span>01</span> Ask your plant question by voice or text.</p>
-            <p><span>02</span> Review your words, then send them to Cactea.</p>
+            <p><span>02</span> Speak naturally, then pause to send your question.</p>
             <p><span>03</span> Hear a short answer and keep the care details in chat.</p>
           </div>
         </section>

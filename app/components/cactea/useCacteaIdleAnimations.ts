@@ -2,9 +2,12 @@
 
 import { useEffect, useRef } from "react";
 
-type Gesture = "jump" | "smile";
+type Gesture = "jump" | "smile" | "roll";
 
-export default function useCacteaIdleAnimations(enabled: boolean) {
+export default function useCacteaIdleAnimations(enabled: boolean, {
+  barrelRoll = false,
+  independentSmile = false,
+}: { barrelRoll?: boolean; independentSmile?: boolean } = {}) {
   const mascotRef = useRef<HTMLButtonElement>(null);
   const jumpRef = useRef<(() => void) | null>(null);
 
@@ -19,6 +22,9 @@ export default function useCacteaIdleAnimations(enabled: boolean) {
     let alive = true;
     let timer = 0;
     let nextGesture: Gesture = "jump";
+    let clickCount = 0;
+    let burstStarted = 0;
+    let lastClick = 0;
 
     function clearTimer() {
       if (timer) window.clearTimeout(timer);
@@ -37,16 +43,24 @@ export default function useCacteaIdleAnimations(enabled: boolean) {
     }
 
     function play(gesture: Gesture) {
-      if (!alive || document.hidden || active.has(gesture)) return;
+      if (!alive || document.hidden || active.has(gesture) || active.has("roll")) return;
       if (gesture === "smile" && reducedMotion.matches) return;
       clearTimer();
 
       let animation: Animation;
-      if (gesture === "jump") {
+      if (gesture === "jump" || gesture === "roll") {
         if (reducedMotion.matches) {
           animation = bounce!.animate([{ opacity: 1 }, { opacity: 0.8 }, { opacity: 1 }], {
             duration: 180, easing: "ease-out",
           });
+        } else if (gesture === "roll") {
+          animation = bounce!.animate([
+            { transform: "translateY(0) rotate(0deg) scale(1)", transformOrigin: "50% 50%", offset: 0 },
+            { transform: "translateY(-6%) rotate(90deg) scale(.98)", offset: 0.25 },
+            { transform: "translateY(-9%) rotate(180deg) scale(.98)", offset: 0.5 },
+            { transform: "translateY(-6%) rotate(270deg) scale(.98)", offset: 0.75 },
+            { transform: "translateY(0) rotate(360deg) scale(1)", transformOrigin: "50% 50%", offset: 1 },
+          ], { duration: 1100, easing: "ease-in-out" });
         } else {
           const height = Math.max(6, Math.min(10, mascot!.getBoundingClientRect().width * 0.025));
           animation = bounce!.animate([
@@ -68,7 +82,7 @@ export default function useCacteaIdleAnimations(enabled: boolean) {
       }
 
       active.set(gesture, animation);
-      nextGesture = gesture === "jump" ? "smile" : "jump";
+      nextGesture = gesture === "jump" && !independentSmile ? "smile" : "jump";
       animation.onfinish = () => {
         if (!alive || active.get(gesture) !== animation) return;
         active.delete(gesture);
@@ -79,6 +93,7 @@ export default function useCacteaIdleAnimations(enabled: boolean) {
 
     function stop() {
       clearTimer();
+      clickCount = 0;
       active.forEach(animation => {
         animation.onfinish = null;
         animation.cancel();
@@ -91,7 +106,25 @@ export default function useCacteaIdleAnimations(enabled: boolean) {
       schedule();
     }
 
-    jumpRef.current = () => play("jump");
+    jumpRef.current = () => {
+      if (!alive || document.hidden || active.has("roll")) return;
+      if (barrelRoll) {
+        const now = Date.now();
+        // A pause or a slow series of clicks starts a new burst.
+        if (!clickCount || now - burstStarted > 5000 || now - lastClick > 800 || now < lastClick) {
+          clickCount = 0;
+          burstStarted = now;
+        }
+        lastClick = now;
+        clickCount += 1;
+        if (clickCount === 15) {
+          stop();
+          play("roll");
+          return;
+        }
+      }
+      play("jump");
+    };
     document.addEventListener("visibilitychange", availabilityChanged);
     reducedMotion.addEventListener("change", availabilityChanged);
     schedule();
@@ -103,7 +136,7 @@ export default function useCacteaIdleAnimations(enabled: boolean) {
       document.removeEventListener("visibilitychange", availabilityChanged);
       reducedMotion.removeEventListener("change", availabilityChanged);
     };
-  }, [enabled]);
+  }, [enabled, barrelRoll, independentSmile]);
 
   return { mascotRef, jump: () => jumpRef.current?.() };
 }

@@ -4,7 +4,9 @@ import {
   rateLimitResponse,
   readBodyWithLimit,
 } from "@/lib/api-guard";
-import { transcribeAudio } from "@/lib/whisper";
+import { warmTranscriber } from "@/lib/whisper";
+import { transcribeRecording } from "@/lib/recorded-transcription";
+import { buildPlantVocabulary, normalizeVoiceVocabulary } from "@/lib/voice-vocabulary";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -48,6 +50,17 @@ function withTimeout<T>(promise: Promise<T>): Promise<T> {
 export async function POST(req: NextRequest) {
   const rate = await enforceApiLimit(req, "transcribe");
   if (!rate.allowed) return rateLimitResponse(rate);
+
+  // Same route/function as inference so a warm instance can reuse the loaded model.
+  // Serverless hosts may still route a later recording to another cold instance.
+  if (req.headers.get("x-anthea-warmup") === "1") {
+    try {
+      await withTimeout(warmTranscriber());
+      return NextResponse.json({ ready: true }, { headers: { "Cache-Control": "no-store" } });
+    } catch {
+      return NextResponse.json({ ready: false }, { status: 503, headers: { "Cache-Control": "no-store" } });
+    }
+  }
 
   const contentType = req.headers.get("content-type") ?? "";
   if (!contentType.toLowerCase().startsWith("multipart/form-data;")) {
@@ -103,8 +116,19 @@ export async function POST(req: NextRequest) {
 
   try {
     const buffer = Buffer.from(await audio.arrayBuffer());
-
-    let transcript = await withTimeout(transcribeAudio(buffer));
+    let suppliedVocabulary: unknown = [];
+    const field = form.get("vocabulary");
+    if (typeof field === "string") {
+      try { suppliedVocabulary = JSON.parse(field); } catch { /* Invalid hints do not block audio. */ }
+    }
+    const vocabulary = normalizeVoiceVocabulary([...normalizeVoiceVocabulary(suppliedVocabulary), ...buildPlantVocabulary([])]);
+    const controller = new AbortController();
+    let transcript: string;
+    try {
+      transcript = await withTimeout(transcribeRecording(buffer, mimeType, vocabulary, AbortSignal.any([req.signal, controller.signal])));
+    } finally {
+      controller.abort();
+    }
 
     // Strip accidental quotes wrapping the whole transcript
     if (

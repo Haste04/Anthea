@@ -82,6 +82,13 @@
 .leftEye { top: var(--eyes-top); left: var(--left-eye-left); width: var(--left-eye-width); }
 .rightEye { top: var(--eyes-top); left: var(--right-eye-left); width: var(--right-eye-width); }
 .mouth { top: var(--mouth-top); left: var(--mouth-left); width: var(--mouth-width); }
+.smilingMouth { position: absolute; top: 24%; left: 0; right: 0; opacity: 0; transition: opacity 180ms ease; }
+.smilingMouth > img { display: block; width: 100%; height: auto; }
+.mascot[data-png-smile][data-state="idle"] .mouth > img { transition: opacity 180ms ease; }
+.mascot[data-png-smile][data-state="idle"][data-smiling] .mouth > img { opacity: 0; }
+.mascot[data-png-smile][data-state="idle"][data-smiling] .smilingMouth { opacity: 1; }
+.mascot[data-chat-expressions] .leftEye > img,
+.mascot[data-chat-expressions] .rightEye > img { translate: var(--home-eye-x, 0px) var(--home-eye-y, 0px); }
 .leftEye, .rightEye { transition: transform 240ms var(--ease-out); }
 
 .closedEye, .worriedBrow, .openMouth, .roundMouth {
@@ -231,6 +238,9 @@
 /* Keep the expressions and static poses when the user reduces motion. */
 @media (prefers-reduced-motion: reduce) {
   .bounce { transition: none; }
+  .smilingMouth { transition: none; }
+  .mascot[data-chat-expressions] .leftEye > img,
+  .mascot[data-chat-expressions] .rightEye > img { translate: none; }
   .interactive:hover .bounce { transform: none; }
   .mascot[data-state] .rig,
   .mascot[data-state] .leftArm,

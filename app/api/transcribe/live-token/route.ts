@@ -1,4 +1,5 @@
-import { enforceApiLimit, rateLimitResponse } from "@/lib/api-guard";
+import { enforceApiLimit, rateLimitResponse, readBodyWithLimit } from "@/lib/api-guard";
+import { buildPlantVocabulary, normalizeVoiceVocabulary } from "@/lib/voice-vocabulary";
 
 export const runtime = "nodejs";
 
@@ -13,6 +14,18 @@ export async function POST(request: Request) {
     return Response.json({ error: "Live transcription is unavailable." }, { status: 503 });
   }
 
+  const bytes = await readBodyWithLimit(request, 64 * 1024);
+  if (!bytes) return Response.json({ error: "Voice hints are too large." }, { status: 413 });
+  let supplied: unknown = {};
+  if (bytes.length) {
+    try { supplied = JSON.parse(new TextDecoder().decode(bytes)); }
+    catch { return Response.json({ error: "Invalid voice hints." }, { status: 400 }); }
+  }
+  const terms = typeof supplied === "object" && supplied !== null && "vocabulary" in supplied ? supplied.vocabulary : [];
+  const inputAudioTranscription = {
+    languageCodes: [],
+    customVocabulary: normalizeVoiceVocabulary([...normalizeVoiceVocabulary(terms), ...buildPlantVocabulary([])]),
+  };
   try {
     const now = Date.now();
     const response = await fetch("https://generativelanguage.googleapis.com/v1beta/auth_tokens", {
@@ -26,7 +39,7 @@ export async function POST(request: Request) {
           model: MODEL,
           config: {
             responseModalities: ["TEXT"],
-            inputAudioTranscription: { languageCodes: [] },
+            inputAudioTranscription,
           },
         },
       }),
@@ -39,7 +52,7 @@ export async function POST(request: Request) {
     const token: unknown = await response.json();
     const name = typeof token === "object" && token !== null && "name" in token ? token.name : null;
     if (typeof name !== "string" || !name) throw new Error("Missing live token");
-    return Response.json({ token: name }, { headers: { "Cache-Control": "no-store" } });
+    return Response.json({ token: name, inputAudioTranscription }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("Live token request failed", error);
     return Response.json({ error: "Live transcription is unavailable." }, { status: 502 });

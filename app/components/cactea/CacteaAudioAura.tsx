@@ -14,6 +14,7 @@ export default function CacteaAudioAura({
   className,
   ariaLabel,
   volumeRef,
+  chatExpressions,
 }: CacteaAudioAuraProps) {
   const isListening = state === "listening";
   const isSpeaking = state === "speaking";
@@ -55,7 +56,7 @@ export default function CacteaAudioAura({
       className={`cactea-aura-wrapper ${className ?? ""} ${isListening ? "cactea-aura-active" : ""} ${isSpeaking ? "cactea-aura-speaking" : ""}`.trim()}
     >
       <div ref={ringRef} className="cactea-aura-ring" aria-hidden="true" />
-      <Cactea state={state} size={size} ariaLabel={ariaLabel} interactive />
+      <Cactea state={state} size={size} ariaLabel={ariaLabel} interactive chatExpressions={chatExpressions} />
     </div>
   );
 }

@@ -9,12 +9,11 @@ export function microphoneProblem(error: unknown): string {
   }
 }
 
-export function voiceHeading(mode: string, ready: boolean, reviewing: boolean, transcribing: boolean, queued: boolean): string {
+export function voiceHeading(mode: string, ready: boolean, transcribing: boolean, queued: boolean): string {
   if (mode === 'listening') return ready ? 'Cactea is listening' : 'Waiting for microphone access';
   if (mode === 'processing') return transcribing ? 'Turning your recording into words' : 'Cactea is thinking';
   if (mode === 'speaking') return 'Cactea is replying aloud';
   if (queued) return 'Preparing the spoken reply';
-  if (reviewing) return 'Review what Cactea heard';
   return 'Ready for your voice question';
 }
 
@@ -25,6 +24,6 @@ export function captureCaptionPresentation(liveAvailable: boolean, caption: stri
   }
   return {
     label: 'Recording audio',
-    text: words || 'Keep speaking. Your words will appear after you review the recording.',
+    text: words || 'Keep speaking. Your question will be transcribed and sent when you finish.',
   };
 }

@@ -8,10 +8,12 @@ import rightArm from "../../../public/cacthea/right-arm.png";
 import leftEye from "../../../public/cacthea/left-eye.png";
 import rightEye from "../../../public/cacthea/right-eye.png";
 import mouth from "../../../public/cacthea/mouth.png";
+import smilingMouth from "../../../public/cacthea/Smiling Mouth.png";
 import type { CacteaProps } from "./Cactea.types";
 import styles from "./Cactea.module.css";
 import { ClosedEye, OpenMouth, WorriedBrow } from "./FaceExpressions";
 import useCacteaIdleAnimations from "./useCacteaIdleAnimations";
+import useCacteaSmile from "./useCacteaSmile";
 
 // Enable manually when adjusting layer alignment; never show in production.
 const CACTEA_DEBUG = false;
@@ -64,9 +66,14 @@ const activityLabels: Partial<Record<CacteaProps["state"], string>> = {
   sixSeven: "Cactea is doing the six seven gesture",
 };
 
-function Cactea({ state, size = "md", className, ariaLabel, interactive = false, stationary = false, lively = false }: CacteaProps) {
+function Cactea({ state, size = "md", className, ariaLabel, interactive = false, stationary = false, lively = false, chatExpressions = false }: CacteaProps) {
   const livelyMode = lively && !stationary && state === "idle";
-  const { mascotRef, jump } = useCacteaIdleAnimations(livelyMode);
+  const pngExpressions = chatExpressions || livelyMode;
+  const { mascotRef, jump } = useCacteaIdleAnimations(livelyMode, {
+    barrelRoll: livelyMode,
+    independentSmile: livelyMode,
+  });
+  useCacteaSmile(mascotRef, pngExpressions && !stationary && state === "idle");
   const classes = `${styles.mascot} ${styles[size]} ${interactive || livelyMode ? styles.interactive : ""} ${className ?? ""} ${CACTEA_DEBUG ? styles.debug : ""}`.trim();
   const artwork = (
     <div className={styles.bounce}>
@@ -90,6 +97,9 @@ function Cactea({ state, size = "md", className, ariaLabel, interactive = false,
               <span className={styles.worriedBrow}><WorriedBrow /></span>
             </>}
             {name === "mouth" && <>
+              {pngExpressions && <span className={styles.smilingMouth}>
+                <Image src={smilingMouth} alt="" sizes={mascotSizes[size]} draggable={false} />
+              </span>}
               <span className={styles.openMouth}><OpenMouth /></span>
               <span className={styles.roundMouth}><OpenMouth round /></span>
             </>}
@@ -106,6 +116,8 @@ function Cactea({ state, size = "md", className, ariaLabel, interactive = false,
         className={classes}
         data-state={state}
         data-lively={livelyMode || undefined}
+        data-chat-expressions={chatExpressions || undefined}
+        data-png-smile={pngExpressions || undefined}
         ref={mascotRef}
         aria-label={ariaLabel ?? "Make Cactea jump"}
         onClick={(event) => {

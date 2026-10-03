@@ -61,6 +61,11 @@ export function normalizeSpeciesQuery(name: string): string {
   return name.trim().toLowerCase().replace(/[’']/g, '').replace(/[-\s]+/g, ' ');
 }
 
+/** Names for speech hints; these do not turn an alias into a species identification. */
+export function plantSpeciesVocabulary(): string[] {
+  return catalog.flatMap(item => [item.commonName, item.scientificName, ...item.aliases]);
+}
+
 export function localSpeciesMatches(name: string): SpeciesOption[] {
   const query = normalizeSpeciesQuery(name);
   if (!query) return [];

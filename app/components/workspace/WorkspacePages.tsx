@@ -8,6 +8,7 @@ import { useWorkspace } from "./WorkspaceProvider";
 import Icon from "./Icon";
 import Cactea from "../cactea/Cactea";
 import VoiceSettings from "../VoiceSettings";
+import VoiceCalibration from "../VoiceCalibration";
 import PlantSpeciesFields from "./PlantSpeciesFields";
 import useHomeMascotFollow from "./useHomeMascotFollow";
 import { applyDraftPhoto, localDate, type Plant } from "@/lib/workspace-data";
@@ -97,7 +98,7 @@ export function HomePage() {
           <h2>Happy plants start with a conversation</h2>
           <p>
             Noticed a yellow leaf? Found a new plant? I’m Cactea, and I’m here
-            to help you figure it out.
+            to help you figure it out
           </p>
           <br />
           <button
@@ -533,6 +534,7 @@ export function SettingsPage() {
         </label>
       </section>
       <VoiceSettings />
+      <VoiceCalibration />
       <section className="ws-panel">
         <h2>Your care preferences</h2>
         {profileQuestions.map((q) => (

@@ -255,6 +255,9 @@
 
 /* Keep the live microphone state compact and readable as one action. */
 .voiceActions { grid-column:2; display:flex; align-items:center; justify-content:flex-end; gap:10px; min-width:0; }
+.voiceActions { flex-wrap:wrap; }
+.pushToTalk { touch-action:none; user-select:none; min-height:44px; padding:8px 12px; border:1px solid var(--border); border-radius:12px; background:var(--surface); color:var(--primary); font:inherit; font-size:13px; cursor:pointer; }
+.pushToTalk:hover:not(:disabled), .pushToTalk:active:not(:disabled) { background:var(--selected); }
 .voiceActions .voiceStart { width:auto; max-width:none; flex:none; }
 .cancelRecording { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:44px; padding:8px 13px; border:1px solid var(--border); border-radius:12px; background:var(--surface); color:var(--text-secondary); font:inherit; font-size:13px; font-weight:650; white-space:nowrap; cursor:pointer; }
 .cancelRecording span { font-size:20px; line-height:0.8; font-weight:400; }
@@ -479,14 +482,14 @@
 .companionStatus {
   width: min(100%, 290px);
   max-width: none;
-  padding: 18px 19px 15px;
+  padding: 10px 12px;
   border: 1.5px solid #789477;
-  border-radius: 22px;
+  border-radius: 16px;
   background: #fffdf2;
   box-shadow: 0 13px 32px rgb(49 75 46 / 22%), inset 0 1px #fff;
   z-index: 1;
 }
-.companionStatus[data-suggestion="true"] { min-height: 154px; text-align: left; }
+.companionStatus[data-suggestion="true"] { min-height: 0; text-align: left; }
 .companionStatus::after {
   right: 58px;
   bottom: -9px;
@@ -505,34 +508,34 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 10px;
+  gap: 6px;
   width: 100%;
-  min-height: 58px;
-  margin-top: 7px;
+  min-height: 0;
+  margin-top: 4px;
   padding: 0;
   border: 0;
   background: none;
   color: #274a33;
-  font: 600 17px/1.3 var(--font-brand), Georgia, serif;
+  font: 600 12px/1.35 var(--font-display), sans-serif;
   text-align: left;
   cursor: pointer;
 }
-.suggestionQuestion span { color: #537e59; font: 600 17px/1.2 var(--font-display), sans-serif; }
+.suggestionQuestion span { color: #537e59; font: 600 12px/1.2 var(--font-display), sans-serif; }
 .suggestionQuestion:hover { color: #08704b; }
 .suggestionFooter {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  margin-top: 10px;
-  padding-top: 9px;
+  gap: 6px;
+  margin-top: 6px;
+  padding-top: 4px;
   border-top: 1px solid #d7e2d2;
   color: #526854;
-  font-size: 11px;
+  font-size: 10px;
 }
 .suggestionNext {
   flex: none;
-  padding: 4px 0 4px 5px;
+  padding: 2px 0 2px 4px;
   border: 0;
   background: none;
   color: #246545;
@@ -690,47 +693,64 @@
   .welcome .starterChoice { min-height: 62px; }
 }
 
-/* The conversation controls share the same content axis as the chat. */
+/* One greeting card contains the introduction and conversation controls. */
+.chatArea .chatGreeting {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  flex: none;
+  padding: 14px 18px;
+  margin-bottom: 0;
+}
+.greetingIntro { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 190px; }
+.greetingIntro > svg { flex: none; color: #517a56; }
+.greetingCopy { min-width: 0; flex: 1; }
+.chatGreeting h1 { font-size: 23px; }
+.chatGreeting p { font-size: 13px; line-height: 1.4; }
 .toolbar {
   position: relative;
   z-index: 5;
-  flex: none;
-  padding: 11px clamp(16px, 2.1vw, 32px);
-  border-bottom: 1px solid rgb(109 130 105 / 17%);
-  background: linear-gradient(100deg, rgb(255 254 247 / 80%), rgb(248 249 238 / 57%));
+  flex: 2 1 350px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 .toolbarInner {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 24px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px 8px;
   width: 100%;
-  max-width: 858px;
-  margin-inline: auto;
+  margin: 0;
 }
-.toolbarIdentity { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.toolbarIdentity { display: flex; align-items: center; gap: 8px; min-width: 0; max-width: 170px; }
 .toolbarIdentity > div { display: grid; gap: 2px; min-width: 0; }
-.toolbarIdentity strong { overflow: hidden; color: #294b37; font-size: 14px; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+.toolbarIdentity strong { overflow: hidden; color: #294b37; font-size: 12px; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
 .toolbarEyebrow { color: #69806b; font-size: 10px; font-weight: 750; letter-spacing: .075em; text-transform: uppercase; }
 .toolbarChatIcon {
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   flex: none;
   border: 1px solid #cbdcc8;
   border-radius: 12px;
   background: #eaf2e6;
   color: #36704b;
 }
-.toolbarControls { display: flex; align-items: center; gap: 8px; flex: none; }
+.toolbarControls { display: contents; }
 .plantContext,
 .toolbar .voiceSettings summary,
 .toolbar .chatMenu summary {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 42px;
+  min-height: 36px;
   margin: 0;
   border: 1px solid #cddbc8;
   border-radius: 11px;
@@ -763,7 +783,7 @@
 .toolbar .voiceSettings > div { top: calc(100% + 8px); background: #fffdf4; }
 .toolbar .voiceSettings > div label { display: flex; align-items: center; gap: 9px; color: #294b37; font-size: 13px; }
 .toolbar .voiceSettings > div input { width: 16px; height: 16px; accent-color: #2d6945; }
-.toolbar .chatMenu summary { justify-content: center; width: 42px; padding: 0; font-size: 23px; font-weight: 700; letter-spacing: 0; line-height: 1; }
+.toolbar .chatMenu summary { justify-content: center; width: 36px; padding: 0; font-size: 23px; font-weight: 700; letter-spacing: 0; line-height: 1; }
 .toolbar .chatMenu > div { top: calc(100% + 8px); min-width: 175px; border-color: #cddbc8; background: #fffdf4; box-shadow: 0 12px 26px rgb(43 69 47 / 15%); }
 .toolbar .chatMenu > div button { min-height: 39px; border: 0; background: transparent; color: #294b37; font: inherit; font-size: 13px; cursor: pointer; }
 .toolbar .chatMenu > div button:hover { background: #eaf2e6; }
@@ -774,15 +794,209 @@
 .toolbar .chatMenu[open] summary { border-color: #91b296; background: #f0f5e9; }
 .toolbar :is(select,summary,button,a,input):focus-visible { outline: 2px solid #1e7048; outline-offset: 3px; }
 @media (max-width: 700px) {
-  .toolbarIdentity { display: none; }
-  .toolbarControls { width: 100%; }
-  .plantContext { flex: 1 1 auto; min-width: 0; }
-  .plantContext select { width: 100%; min-width: 0; }
+  .chatArea .chatGreeting { padding: 12px 14px; gap: 8px; }
+  .toolbarInner { flex-wrap: wrap; gap: 6px; }
+  .toolbarChatIcon { display: none; }
+  .plantContext { min-width: 0; }
+  .plantContext select { width: 110px; min-width: 0; }
 }
 @media (max-width: 460px) {
-  .toolbar { padding: 9px 12px; }
-  .toolbarControls { gap: 6px; }
+  .toolbarInner { justify-content: flex-start; }
+  .toolbarIdentity { max-width: 140px; }
   .plantContextLabel,
   .toolbar .voiceSettings summary span { display: none; }
-  .toolbar .voiceSettings summary { justify-content: center; width: 42px; padding: 0; }
+  .toolbar .voiceSettings summary { justify-content: center; width: 36px; padding: 0; }
+}
+
+/* Voice options expand inside the same border as the text composer. */
+.composerBox {
+  border: 1px solid rgb(106 131 103 / 35%);
+  border-radius: 26px;
+  background: var(--surface);
+  box-shadow: inset 0 1px rgb(255 255 255 / 90%), 0 5px 16px rgb(55 74 49 / 8%);
+}
+.composerBox:focus-within { border-color: var(--primary); }
+.inputDock .composerBox .composer { border: 0; background: transparent; box-shadow: none; }
+.inputDock .voiceDock {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 10px 12px;
+  margin: 0;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 26px 26px 0 0;
+  background: transparent;
+  box-shadow: none;
+}
+.inputDock .voiceDock .voiceStatus { grid-column: 1; grid-row: 1; gap: 2px; }
+.inputDock .voiceDock .voiceStatus strong { font-size: 12px; line-height: 1.35; }
+.inputDock .voiceDock .voiceStatus span { font-size: 11px; line-height: 1.3; }
+.voiceStatus[data-has-hint="false"] > span { display: none; }
+.inputDock .voiceDock .voiceActions {
+  grid-column: 2;
+  grid-row: 1;
+  width: auto;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.inputDock .voiceDock .voiceStart {
+  flex: none;
+  width: auto;
+  max-width: none;
+  min-height: 36px;
+  margin: 0;
+  padding: 5px 10px;
+  gap: 6px;
+  border-radius: 9px;
+  box-shadow: none;
+  white-space: nowrap;
+}
+.inputDock .voiceDock .voiceIcon { width: 22px; height: 22px; }
+.inputDock .voiceDock .voiceCopy strong { font-size: 12px; }
+.inputDock .pushToTalk,
+.inputDock .cancelRecording,
+.inputDock .stopAudio {
+  min-height: 36px;
+  padding: 5px 9px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--primary);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.inputDock .stopAudio:hover { background: var(--selected); }
+.composerMic,
+.dismissVoice {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--primary);
+  cursor: pointer;
+}
+.composerMic:hover:not(:disabled),
+.composerMic[aria-expanded="true"],
+.dismissVoice:hover { background: var(--selected); }
+.composerMic:disabled { opacity: .45; cursor: not-allowed; }
+.dismissVoice { font-size: 22px; }
+.composerMic:focus-visible,
+.dismissVoice:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* Summary and conversation controls share the header above the chat. */
+.chatArea .summaryHeader {
+  flex: none;
+  width: 100%;
+  min-width: 0;
+  overflow: visible;
+  margin: 0;
+  padding: 12px 18px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 24px 24px 0 0;
+  background: var(--selected);
+  scrollbar-width: thin;
+}
+.summaryHeaderRow { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.summaryToggle { display: inline-flex; align-items: center; gap: 8px; flex: none; padding: 6px 0; border: 0; background: transparent; color: var(--primary); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
+.summaryChevron { font-size: 10px; }
+.summaryToggle[aria-expanded="true"] .summaryChevron { transform: rotate(90deg); }
+.summaryHeaderRow .toolbar { flex: 1 1 350px; }
+.summaryContent { max-height: min(35dvh, 280px); overflow: auto; scrollbar-width: thin; }
+.summaryContent:not([hidden]) { margin-top: 10px; }
+.summaryHeader .plantEmpty { margin-top: 10px; }
+.companion > .sidebarGreeting {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  flex: none;
+  width: 100%;
+  min-width: 0;
+  gap: 12px;
+  margin: 0;
+  padding: 16px;
+  border-radius: 18px;
+}
+.sidebarGreeting .greetingIntro { flex: none; align-items: flex-start; }
+.sidebarGreeting .greetingIntro > svg { width: 24px; height: 24px; }
+.sidebarGreeting h1 { font-size: 22px; }
+.sidebarGreeting p { font-size: 13px; line-height: 1.45; }
+@media (max-width: 1100px) {
+  .workspace { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; gap: 8px; }
+  .chatArea { height: auto; min-height: 0; }
+  .companion { display: flex; overflow: visible; padding: 0; gap: 0; }
+  .companionGarden { display: none; }
+  .companion > .sidebarGreeting { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 12px 14px; }
+  .sidebarGreeting .greetingIntro { flex: 1 1 190px; }
+  .chatArea .summaryHeader { padding: 12px 14px; border-radius: 18px 18px 0 0; }
+}
+@media (min-width: 801px) and (max-width: 1100px) {
+  .shell { height: 100dvh; min-height: 0; }
+}
+.inputDock .voiceDock .liveCaption {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  min-height: 44px;
+  max-height: 68px;
+  padding: 5px 8px;
+  gap: 8px;
+}
+.inputDock .waveformFrame { width: 104px; height: 36px; }
+.inputDock .waveformFrame :global(.audio-waveform-canvas) { width: 96px; height: 28px; }
+.inputDock .liveCaptionCopy p { font-size: 12px; }
+@media (max-width: 600px) {
+  .inputDock .voiceDock { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .inputDock .voiceDock .voiceActions { grid-column: 1; grid-row: 2; justify-content: flex-start; }
+  .inputDock .voiceDock .liveCaption { grid-row: 3; }
+}
+
+/* Fit the thought, avatar, and greeting in the available desktop column. */
+.shell { padding-inline: clamp(12px, 1.5vw, 24px); }
+@media (max-width: 800px) {
+  .shell { padding-inline: 8px; }
+}
+@media (min-width: 1101px) {
+  .workspace { grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; }
+  .companion {
+    height: 100%;
+    max-height: 100%;
+    overflow: hidden;
+    container-type: size;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+  .companion > .companionGarden {
+    flex: 0 1 auto;
+    min-height: 0;
+    gap: 8px;
+    padding: 0;
+  }
+  .companion .companionStatus { flex: none; padding: 10px 12px; }
+  .companion .companionStatus p { margin: 0; font-size: 12px; line-height: 1.35; }
+  .companion .companionMascot,
+  .companion .companionMascot > :is(button, [role="img"]) {
+    --cactea-size: clamp(64px, calc(100cqh - 260px), 240px);
+  }
+  .companion .companionMascot { margin: 0; max-height: 240px; }
+  .companion > .sidebarGreeting { padding: 12px; gap: 8px; }
+  .sidebarGreeting h1 { font-size: 20px; }
+  .sidebarGreeting p { font-size: 12px; line-height: 1.4; }
+}
+
+/* Expanded controls stay reachable in short windows without scrolling the page. */
+@media (max-height: 500px) {
+  .chatArea .summaryHeader { max-height: 40%; overflow: auto; }
+  .inputDock { flex-shrink: 1; min-height: 0; max-height: 45%; overflow: auto; }
+  .chatArea .scroll { padding-block: 6px; }
 }

@@ -7,12 +7,33 @@ Yellow leaves? Unsure when to water? Anthea helps you turn what you notice into 
 **Voice first. Typing always available. No sign-in required.**
 
 - Next.js (App Router) + TypeScript, single deployment (frontend + serverless API routes together — no separate backend service)
-- Web Speech API (live captions) + Web Audio RMS silence detection (1.2s pause auto-submits)
-- Cloud speech-to-text fallback via a self-hosted Whisper model (`POST /api/transcribe`, transformers.js running `onnx-community/whisper-base.en` with int8 ONNX weights inside the serverless function — no transcription API key) when browser `SpeechRecognition` is unsupported or errors (this includes Brave with Shields on, which blocks the browser's built-in STT — Brave users should either disable Shields for this site or rely on the cloud fallback / text input)
+- Gemini Live transcription with saved plant-name vocabulary hints, browser Web Speech API recognition, and Web Audio RMS silence detection. A pause sends the question; uncertain names trigger a recording retry and review.
+- Recorded speech recognition (`POST /api/transcribe`) uses Gemini 3.5 Transcribe with vocabulary hints and the existing Gemini key. Local Whisper (`onnx-community/whisper-base.en`, quantized ONNX via transformers.js) provides a fallback when the key or provider is unavailable.
 - Web Speech Synthesis for spoken replies
-- Google Gemini (`@google/genai` SDK, function calling) — assistant models can be set with `GEMINI_TEXT_MODEL` and `GEMINI_FALLBACK_MODEL`. Gemini is assistant-only; transcription runs on the local Whisper model configured in `lib/whisper.ts`.
+- Google Gemini (`@google/genai` SDK, function calling) — assistant models can be set with `GEMINI_TEXT_MODEL` and `GEMINI_FALLBACK_MODEL`. Transcription models are configured separately; see [voice accuracy and microphone checks](docs/voice-accuracy.md).
 - Perenual API for confirmed care data (watering, sunlight, soil), used only _after_ the LLM already has a species guess — Perenual has no trait-search endpoint
 - Local `data/disease-rules.json` (12 rules, keyword-overlap matched, not exact string match)
+
+## Tech stack
+
+The dependency versions below reflect [package.json](package.json).
+
+| Layer | Technologies | Purpose |
+| --- | --- | --- |
+| Framework and API | Next.js 16.3 App Router, Node.js route handlers | Frontend and API endpoints in one deployment |
+| Interface | React 19.2, TypeScript 5 | Components, application state, and typed data |
+| Styling and animation | Tailwind CSS 4, CSS Modules, custom CSS, Motion 13 | Layout, styling, and interactive visuals |
+| AI assistant | Google Gemini, `@google/genai` | Text/photo reasoning, structured replies, and tool calling |
+| Live transcription | Gemini Live API, WebSocket, Web Audio AudioWorklet | Stream microphone audio using short-lived tokens |
+| Browser voice | Web Speech API, Web Audio API, MediaRecorder | Recognition, device speech synthesis, recording, and silence detection |
+| Recorded transcription | Gemini 3.5 Transcribe; Transformers.js 4 / ONNX Whisper fallback | Vocabulary-aware recorded recognition with local recovery |
+| Audio processing | `audio-decode`, `wavefile` | Decode, resample, and prepare audio for transcription |
+| Plant data | Perenual API, local species mappings, JSON symptom rules | Scientific-name suggestions and care lookups |
+| Image processing | Sharp, browser canvas | Resize and validate plant photos |
+| Storage | IndexedDB, localStorage, JSON backups | Browser workspace records and preferences |
+| Rate limiting | Upstash Redis, `@upstash/ratelimit` | Shared production API limits |
+| Quality checks | Node.js test runner, `fake-indexeddb`, ESLint 9, TypeScript | Behavior/storage tests, linting, and type checks |
+| Deployment | Vercel-compatible Next.js deployment | Host the interface and server routes together |
 
 ## Meet your plant-care companion
 
@@ -26,21 +47,24 @@ Cactea keeps the conversation approachable: visible listening, thinking, and spe
 | Get the useful part quickly | Read the main advice and highlighted **Next step**. Open **Details** or choose **Hear more** for the full explanation. |
 | Show what you see | Attach a plant photo and ask a question about it. |
 | Follow through on advice | Say “Remind me to check the soil tomorrow,” review the care action, and choose **Confirm reminder**. |
-| Keep your garden organized | Save plants, link conversations and reminders, revisit chats. |
+| Keep your garden organized | Save plant photos, species, location, and notes; link conversations and reminders; search, rename, and revisit chats. |
+| Continue care across conversations | Cactea uses saved plant details and up to four recent successful exchanges from linked chats. Messages and photos retain their plant association when you switch plants; ambiguous names require a selection. |
+| Find a scientific name | A local list of 50 plants suggests names without API calls. Broad names offer choices, and **Look up species** queries Perenual for other names. Manual entry remains available. |
+| Back up your workspace | Export or restore validated JSON backups in Settings. Records stay in this browser; voice and care preferences are configured separately. |
 | Make the voice your own | Turn spoken replies on or off, select an available device voice, and preview it in Settings. |
 
 ### Your first conversation
 
-1. Check `https://ai.google.dev/gemini-api/docs/models` for the current Stable list.
-2. Test one isolated request via PowerShell/curl (see "Debugging" below), then inspect the server log for `404` (model unavailable), `429 RESOURCE_EXHAUSTED` (quota), or `503 UNAVAILABLE` (temporary overload). Public responses use safe messages instead of exposing raw provider errors.
-3. Set `GEMINI_TEXT_MODEL` if you need a different assistant model. It must support function calling. Transcription does not go through Gemini — it runs on the local Whisper model in `lib/whisper.ts`.
+1. Open `/dashboard` and choose **Talk to Cactea**, or type a plant-care question.
+2. Speak naturally, then pause to review the transcript. Edit it or record again if needed, then send.
+3. Read the advice and **Next step**, listen to the brief reply, or choose **Hear more** for the fuller explanation.
 
 Prefer a keyboard? Type your question or use a starting prompt. If microphone access or transcription fails, the chat offers retry and typing options while preserving your draft or captured words.
 
-### Your data and expectations
+### Run locally
 
 1. Copy `.env.example` to `.env.local` and set:
-   - `GEMINI_API_KEY` (required for the assistant; mic transcription runs locally on Whisper and needs no key)
+   - `GEMINI_API_KEY` (required for the assistant and Gemini Live transcription tokens; recorded-audio Whisper fallback needs no separate key)
    - `PERENUAL_API_KEY`
    - `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` for production API rate limiting. Local development uses a process-local limiter when these are omitted; production API requests fail closed with `503` until both values are configured.
 2. **Do not commit real key values into `.env.example`** — it's a template meant to be safe to commit, with placeholder text only. If you ever see a real-looking key in `.env.example`, treat it as compromised and rotate it immediately in Google AI Studio / Perenual's dashboard.
@@ -60,9 +84,21 @@ Copy-Item .env.example .env.local
 
 For local development without Redis, leave both Upstash variables empty rather than keeping the template’s placeholder values.
 
+```bash
+npm run dev
+```
+
+Open `http://localhost:3000`. The workspace includes `/home`, `/dashboard`, `/plants`, and `/settings`.
+
+### Your data and expectations
+
+Plants, chats, reminders, and photos are saved in IndexedDB in the current browser and site origin, without cross-device sync. Voice and care preferences use localStorage. Export a backup before clearing site data; restoring a backup replaces the workspace collections after validation. Questions, relevant plant context, photos, and audio are sent to the services used to answer or transcribe them.
+
+Reminders are date-based in-app checks, without background notifications. Spoken or typed reminder requests require confirmation before saving. Completing a recurring reminder advances its due date to the next occurrence after today.
+
 The `/api/assistant` and `/api/transcribe` endpoints are limited to 10 requests per IP per minute. Assistant transcripts are capped at 4,000 characters; audio uploads are capped at 5 MB and restricted to supported audio MIME types. Production uses the shared Upstash Redis limiter so limits apply across serverless instances.
 
-Voice input uses the mic with RMS silence detection. If the browser `SpeechRecognition` service fails (common `network` error, or Brave Shields blocking it), audio is recorded locally and transcribed by Whisper (`POST /api/transcribe`), then sent to the assistant. There's also a manual text-input fallback shown automatically if the mic is unsupported.
+Voice input uses the mic with RMS silence detection. Gemini Live streams captions using a short-lived token from `POST /api/transcribe/live-token`. Live and recorded Gemini transcription receive up to 100 plant-name hints, prioritizing saved names and species. Uncertain names trigger a complete-recording retry, then require confirmation or editing if still unresolved. Browser recognition and local Whisper provide recovery paths. See [voice accuracy](docs/voice-accuracy.md) for limitations and a repeatable microphone test.
 
 The Whisper model (~75 MB int8) is downloaded from Hugging Face on the first transcription request and cached — in `.cache/whisper/` locally (git-ignored) and in `/tmp` on Vercel (per-instance, so a cold function re-downloads it). The model id and quantization live in `lib/whisper.ts`. Silent recordings are detected by RMS before the model runs, so an empty room returns `{"transcript": ""}` instead of a hallucinated sentence.
 
@@ -70,14 +106,14 @@ The Whisper model (~75 MB int8) is downloaded from Hugging Face on the first tra
 
 | Variable | Purpose |
 | --- | --- |
-| `GEMINI_API_KEY` | Server-side key for assistant replies and cloud transcription. |
+| `GEMINI_API_KEY` | Server-side key for assistant replies, live transcription tokens, and recorded transcription. |
 | `PERENUAL_API_KEY` | Server-side key for species confirmation and care lookups. |
 | `GEMINI_TEXT_MODEL` | Assistant model; defaults to the value shown in `.env.example`. Requires function calling. |
 | `GEMINI_FALLBACK_MODEL` | Fallback after repeated provider overload. Set empty to disable. |
 | `UPSTASH_REDIS_REST_URL` | Shared production rate limiter connection. |
 | `UPSTASH_REDIS_REST_TOKEN` | Shared production rate limiter credential. |
 
-Keep real keys in `.env.local` or your host’s secret environment settings. Do not commit them or expose them through `NEXT_PUBLIC_` variables. Cloud transcription has a separate `AUDIO_MODEL` constant in `app/api/transcribe/route.ts`; changing the text model does not change that setting. Provider model availability and quotas depend on your account and can change.
+Keep real keys in `.env.local` or your host’s secret environment settings. Do not commit them or expose them through `NEXT_PUBLIC_` variables. Live transcription has a separate model configured in `lib/live-transcription.ts` and `app/api/transcribe/live-token/route.ts`; recorded transcription uses `lib/whisper.ts`. Changing the assistant model does not change those transcription models. Provider model availability and quotas depend on your account and can change.
 
 ### How it works
 
@@ -96,7 +132,7 @@ Type or attach a photo ───────────────────
 ```
 
 - **Interface:** Next.js App Router, React, TypeScript, CSS, and Cactea’s state-driven mascot.
-- **Listening:** browser speech recognition for live captions, recorded audio for Gemini transcription fallback, and Web Audio silence detection. A pause opens review; it does not automatically send the question.
+- **Listening:** Gemini Live captions, browser speech recognition, recorded audio for server-side Whisper fallback, and Web Audio silence detection. A pause opens review; it does not automatically send the question.
 - **Reasoning:** deterministic yellow-leaf follow-ups gather missing context; Gemini can call species, symptom-rule, watering, and care-data tools.
 - **Speaking:** browser speech synthesis uses the selected device voice. Detailed and short spoken answers are kept separately; the UI marks speaking only when playback starts.
 - **Persistence:** IndexedDB stores workspace records; localStorage stores care and voice preferences. Workspace backups exclude those preferences.
@@ -109,7 +145,11 @@ Type or attach a photo ───────────────────
 | `app/dashboard/` | Voice conversation, transcript review, answer layout, Cactea companion, and reminder proposals. |
 | `app/components/workspace/` | Shared navigation, workspace records, and supporting pages. |
 | `app/api/assistant/route.ts` | Validates questions, history, and photos before requesting an answer. |
-| `app/api/transcribe/route.ts` | Validates recorded audio and requests cloud transcription. |
+| `app/api/transcribe/route.ts` | Validates recorded audio and runs server-side Whisper transcription. |
+| `app/api/transcribe/live-token/route.ts` | Issues short-lived Gemini Live transcription tokens. |
+| `app/api/species/route.ts` | Optional Perenual scientific-name lookup. |
+| `lib/live-transcription.ts`, `lib/whisper.ts` | Streaming captions and server-side recorded-audio transcription. |
+| `lib/plant-memory.ts`, `lib/plant-species.ts` | Saved plant context and local scientific-name suggestions. |
 | `lib/gemini.ts` | Assistant prompt, tool calling, and provider fallback. |
 | `lib/care-dialogue.ts` | Yellow-leaf follow-up flow and brief answer handling. |
 | `lib/reminder-intent.ts` | Parses reminder commands and validates proposed actions. |
@@ -128,7 +168,11 @@ npx tsc --noEmit --incremental false
 npm run build
 ```
 
-In the Vercel project settings, add `GEMINI_API_KEY` and `PERENUAL_API_KEY` as environment variables (Production + Preview). Redeploy after setting them. Keys must never ship in the client bundle. Transcription needs no environment variable — the Whisper model downloads at runtime to the function's `/tmp`.
+For a live API check with the development server running:
+
+```bash
+node scripts/verify-voice-conversation.mjs
+```
 
 This script makes real provider requests. Set `ANTHEA_URL` to target another deployment. It checks API behavior; use the [live demo and recovery checklist](docs/voice-demo.md) to verify actual microphone capture, transcript editing, and audible playback on your presentation device.
 
@@ -138,7 +182,9 @@ Deploy the repository as a Next.js project on Vercel. Configure the Gemini, Pere
 
 Each AI endpoint allows 10 requests per IP per minute. Questions are limited to 4,000 characters; transcription audio is limited to 5 MB. Configure HTTPS for microphone access. Browser-saved records remain on each user’s device after deployment.
 
-- **When something breaks, test `/api/assistant` directly first**, bypassing the browser entirely — this isolates whether the bug is frontend or backend, and only `/api/assistant` burns Gemini quota (`/api/transcribe` runs on the local Whisper model):
+### Troubleshooting
+
+Test `/api/assistant` directly to isolate API failures from interface problems. Assistant and live transcription use Gemini services; `/api/transcribe` runs Whisper on the application server. Inspect server logs for model access, quota, and provider availability errors.
 
 | Symptom | First thing to check |
 | --- | --- |

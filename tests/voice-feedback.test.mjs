@@ -14,21 +14,20 @@ test('microphone errors explain the correct recovery', () => {
   assert.match(microphoneProblem({ name: 'SecurityError' }), /HTTPS/);
 });
 test('permission pending never claims to be listening', () => {
-  assert.equal(voiceHeading('listening', false, false, false, false), 'Waiting for microphone access');
-  assert.equal(voiceHeading('listening', true, false, false, false), 'Cactea is listening');
+  assert.equal(voiceHeading('listening', false, false, false), 'Waiting for microphone access');
+  assert.equal(voiceHeading('listening', true, false, false), 'Cactea is listening');
 });
-test('review, transcription, reply generation, and actual playback are distinct', () => {
-  assert.equal(voiceHeading('idle', false, true, false, false), 'Review what Cactea heard');
-  assert.equal(voiceHeading('processing', false, false, true, false), 'Turning your recording into words');
-  assert.equal(voiceHeading('processing', false, false, false, false), 'Cactea is thinking');
-  assert.equal(voiceHeading('idle', false, false, false, true), 'Preparing the spoken reply');
-  assert.equal(voiceHeading('speaking', false, false, false, false), 'Cactea is replying aloud');
+test('transcription, reply generation, and actual playback are distinct', () => {
+  assert.equal(voiceHeading('processing', false, true, false), 'Turning your recording into words');
+  assert.equal(voiceHeading('processing', false, false, false), 'Cactea is thinking');
+  assert.equal(voiceHeading('idle', false, false, true), 'Preparing the spoken reply');
+  assert.equal(voiceHeading('speaking', false, false, false), 'Cactea is replying aloud');
 });
 
 test('recording copy distinguishes live captions from deferred transcription', () => {
   assert.deepEqual(captureCaptionPresentation(false, ''), {
     label: 'Recording audio',
-    text: 'Keep speaking. Your words will appear after you review the recording.',
+    text: 'Keep speaking. Your question will be transcribed and sent when you finish.',
   });
   assert.deepEqual(captureCaptionPresentation(true, ''), {
     label: 'What I hear',

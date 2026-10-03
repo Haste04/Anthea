@@ -54,7 +54,12 @@ export async function blobToWav(blob: Blob): Promise<Blob> {
   try {
     const arrayBuffer = await blob.arrayBuffer();
     const audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
-    return audioBufferToWav(audioBuffer);
+    const offline = new OfflineAudioContext(1, Math.max(1, Math.ceil(audioBuffer.duration * 16000)), 16000);
+    const source = offline.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(offline.destination);
+    source.start();
+    return audioBufferToWav(await offline.startRendering());
   } finally {
     await ctx.close();
   }

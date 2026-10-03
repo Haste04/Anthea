@@ -3,11 +3,15 @@
 import { useEffect, useRef } from "react";
 
 export default function useHomeMascotFollow() {
+  return useMascotEyeFollow(".ws-home-mascot");
+}
+
+export function useMascotEyeFollow(selector: string, maxOffset = 6, unit: "%" | "px" = "%") {
   const heroRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const hero = heroRef.current;
-    const mascot = hero?.querySelector<HTMLElement>(".ws-home-mascot");
+    const mascot = hero?.querySelector<HTMLElement>(selector);
     if (!hero || !mascot) return;
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -33,9 +37,8 @@ export default function useHomeMascotFollow() {
     }
 
     function writePosition() {
-      // Six percent of an eye layer is about 1–3px at Home's mascot sizes.
-      mascot!.style.setProperty("--home-eye-x", `${x.toFixed(3)}%`);
-      mascot!.style.setProperty("--home-eye-y", `${y.toFixed(3)}%`);
+      mascot!.style.setProperty("--home-eye-x", `${x.toFixed(3)}${unit}`);
+      mascot!.style.setProperty("--home-eye-y", `${y.toFixed(3)}${unit}`);
     }
 
     function animate(time: number) {
@@ -49,8 +52,8 @@ export default function useHomeMascotFollow() {
         const dx = (cursor.x - bounds.centerX) / Math.max(1, window.innerWidth / 2);
         const dy = (cursor.y - bounds.centerY) / Math.max(1, window.innerHeight / 2);
         const distance = Math.max(1, Math.hypot(dx, dy));
-        targetX = dx / distance * 6;
-        targetY = dy / distance * 6;
+        targetX = dx / distance * maxOffset;
+        targetY = dy / distance * maxOffset;
       }
 
       const elapsed = lastTime === null ? 16 : Math.min(64, Math.max(0, time - lastTime));
@@ -131,7 +134,7 @@ export default function useHomeMascotFollow() {
       document.removeEventListener("visibilitychange", visibilityChanged);
       reducedMotion.removeEventListener("change", motionChanged);
     };
-  }, []);
+  }, [selector, maxOffset, unit]);
 
   return heroRef;
 }

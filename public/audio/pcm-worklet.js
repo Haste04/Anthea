@@ -7,10 +7,13 @@ class PcmWorklet extends AudioWorkletProcessor {
     this.chunk = new Int16Array(1600);
     this.index = 0;
     this.port.onmessage = (event) => {
-      if (event.data === "flush" && this.index) {
-        const tail = this.chunk.slice(0, this.index);
-        this.port.postMessage(tail.buffer, [tail.buffer]);
-        this.index = 0;
+      if (event.data === "flush") {
+        if (this.index) {
+          const tail = this.chunk.slice(0, this.index);
+          this.port.postMessage(tail.buffer, [tail.buffer]);
+          this.index = 0;
+        }
+        this.port.postMessage({ type: "flushed" });
       }
     };
   }

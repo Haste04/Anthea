@@ -9,7 +9,7 @@ try { source = await readFile(new URL('../app/components/workspace/useHomeMascot
 catch (error) { if (error.code !== 'ENOENT') throw error; }
 const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
 
-function harness({ reduced = false, edge = false } = {}) {
+function harness({ reduced = false, edge = false, chat = false } = {}) {
   const window = new EventTarget();
   const document = new EventTarget();
   document.documentElement = new EventTarget();
@@ -44,7 +44,10 @@ function harness({ reduced = false, edge = false } = {}) {
     return { useRef: () => ({ current: hero }), useEffect: callback => { cleanup = callback(); } };
   } });
   assert.equal(typeof exports.default, 'function', 'Home cursor-follow hook must exist');
-  exports.default();
+  if (chat) {
+    assert.equal(typeof exports.useMascotEyeFollow, 'function', 'Chat must reuse the eye-follow controller');
+    exports.useMascotEyeFollow('.cactea-aura-wrapper', 4, 'px');
+  } else exports.default();
   function event(target, type, props = {}) {
     const message = new Event(type);
     Object.assign(message, props);
@@ -161,4 +164,19 @@ test('hidden tabs and unmount cancel frames; late callbacks and events cannot re
   app.resize({ left: 650, right: 850, top: 200, bottom: 400 });
   assert.equal(app.frames.size, 0);
   assert.deepEqual(app.position(), { x: 0, y: 0 });
+});
+
+test('chat eye tracking uses pixel offsets clamped to four pixels', () => {
+  const app = harness({ chat: true });
+  for (const [x, y] of [[10000, 10000], [-10000, 10000], [-10000, -10000], [10000, -10000]]) {
+    app.move(x, y);
+    app.settle();
+    assert.ok(Math.hypot(app.position().x, app.position().y) <= 4.001);
+    assert.match(app.styles.get('--home-eye-x'), /px$/);
+    assert.match(app.styles.get('--home-eye-y'), /px$/);
+  }
+  app.leave();
+  app.settle();
+  assert.deepEqual(app.position(), { x: 0, y: 0 });
+  app.cleanup();
 });

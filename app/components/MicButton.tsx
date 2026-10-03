@@ -45,7 +45,7 @@ export default function MicButton({
         }}
         aria-label="Hold to talk"
       >
-        {listening ? "Release to review" : "Hold to talk"}
+        {listening ? "Release to send" : "Hold to talk"}
       </button>
     );
   }
@@ -56,9 +56,9 @@ export default function MicButton({
       className={`mic-btn ${listening ? "mic-btn--active" : ""}`}
       disabled={disabled || busy || (listening && !recordingReady)}
       onClick={listening ? onStopListen : onStartListen}
-      aria-label={listening ? "Stop recording and review transcript" : "Start recording"}
+      aria-label={listening ? "Stop recording and send question" : "Start recording"}
       aria-pressed={listening}
-      title={listening ? "Stop recording and review transcript" : "Start recording"}
+      title={listening ? "Stop recording and send question" : "Start recording"}
     >
       {listening ? "Listening…" : busy ? "Please wait…" : "Tap to speak"}
     </button>

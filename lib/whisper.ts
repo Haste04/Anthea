@@ -40,6 +40,11 @@ function getTranscriber(): Promise<Transcriber> {
   return transcriberPromise;
 }
 
+/** Load weights and ONNX sessions ahead of the first recorded-audio fallback. */
+export async function warmTranscriber(): Promise<void> {
+  await getTranscriber();
+}
+
 /** Decode an uploaded recording and transcribe it with the local Whisper model. */
 export async function transcribeAudio(buffer: Buffer): Promise<string> {
   const samples = await decodeAudioToPcm(buffer);
@@ -48,7 +53,7 @@ export async function transcribeAudio(buffer: Buffer): Promise<string> {
   const transcriber = await getTranscriber();
   // No `task`/`language` options: the .en model rejects both.
   const output = await withTimeout(
-    transcriber(samples, { chunk_length_s: 30 }),
+    transcriber(samples, { chunk_length_s: 10, stride_length_s: 2 }),
     INFERENCE_TIMEOUT_MS,
   );
   return (output.text ?? "").trim();
