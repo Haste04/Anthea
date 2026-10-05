@@ -30,3 +30,18 @@ export function OpenMouth({ round = false }: { round?: boolean }) {
     </svg>
   );
 }
+export function AngryBrow() {
+  return (
+    <svg viewBox="0 0 1280 1280" aria-hidden="true" focusable="false">
+      <path d="M 250 100 L 1030 390" fill="none" stroke="#24452d" strokeWidth="85" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function FrownMouth() {
+  return (
+    <svg viewBox="0 0 1280 1280" aria-hidden="true" focusable="false">
+      <path d="M 285 780 Q 640 360 995 780" fill="none" stroke="#173c26" strokeWidth="90" strokeLinecap="round" />
+    </svg>
+  );
+}

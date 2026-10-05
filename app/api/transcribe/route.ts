@@ -7,12 +7,11 @@ import {
 import { warmTranscriber } from "@/lib/whisper";
 import { transcribeRecording } from "@/lib/recorded-transcription";
 import { buildPlantVocabulary, normalizeVoiceVocabulary } from "@/lib/voice-vocabulary";
+import { MAX_AUDIO_BYTES, MAX_TRANSCRIPTION_REQUEST_BYTES } from "@/lib/transcription-limits";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const MAX_AUDIO_BYTES = 5 * 1024 * 1024;
-const MAX_REQUEST_BYTES = MAX_AUDIO_BYTES + 64 * 1024;
 const ACCEPTED_AUDIO_TYPES = new Set([
   "audio/mp4",
   "audio/mpeg",
@@ -70,10 +69,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const bytes = await readBodyWithLimit(req, MAX_REQUEST_BYTES);
+  const bytes = await readBodyWithLimit(req, MAX_TRANSCRIPTION_REQUEST_BYTES);
   if (!bytes) {
     return NextResponse.json(
-      { transcript: "", error: "Audio upload exceeds the 5 MB limit." },
+      { transcript: "", error: "Audio upload exceeds the 4 MiB limit or contains too much form data." },
       { status: 413 },
     );
   }
@@ -101,7 +100,7 @@ export async function POST(req: NextRequest) {
   }
   if (audio.size > MAX_AUDIO_BYTES) {
     return NextResponse.json(
-      { transcript: "", error: "Audio upload exceeds the 5 MB limit." },
+      { transcript: "", error: "Audio upload exceeds the 4 MiB limit." },
       { status: 413 },
     );
   }

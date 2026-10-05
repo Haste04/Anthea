@@ -45,8 +45,13 @@ export function yellowLeafFollowUp(transcript: string, history: Turn[], plantCon
   const currentSubject = plantSubject(transcript);
   const changedPlant = Boolean(previousSubject && currentSubject && previousSubject !== currentSubject);
   const newSymptom = yellowLeaves(transcript);
-  const questionOrSwitch = /\?|^\s*(?:how|why|what|can|could|now|another|different)\b/i.test(transcript);
-  const answersCurrentQuestion = uncertain.test(transcript) || (currentQuestion === 'soil' ? /\b(?:wet|dry|damp|moist|soggy|dried out|has dried|become damp)\b/i.test(transcript) : currentQuestion === 'watering' ? wateringTime.test(transcript) || /\b(?:water|watered|watering|never)\b/i.test(transcript) : currentQuestion === 'light' ? /\b(?:light|sun|sunlight|shade|shaded|sunny|bright|dim|window|indoors|outside|outdoors)\b/i.test(transcript) : false);
+  const questionOrSwitch = /\?|^\s*(?:how|why|what|who|where|when|can|could|should|would|tell|write|explain|give|show|create|play|sing|solve|calculate|recommend|now|another|different)\b|^\s*(?:i|we)\s+(?:want|need|would like)\b/i.test(transcript);
+  // A moisture word in an unrelated sentence is not an answer about the soil.
+  const soilAnswer = /^\s*(?:(?:it(?:['’]s| is| feels| seems)?|the soil(?: is| feels)?|soil(?: is| feels)?)\s+)?(?:wet|dry|damp|moist|soggy|dried out|has dried|has become damp)[.!]?\s*$/i.test(transcript);
+  const wateringAnswer = /^\s*(?:(?:i|we) (?:last )?water(?:ed)?(?: it| the plant| this plant)?(?: on)?\s+)?(?:today|yesterday|last (?:night|week|month)|(?:on |last )?(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)|(?:once|twice) (?:a|per) (?:day|week|month)|every (?:day|week|month)|(?:about )?\d+ (?:hours?|days?|weeks?|months?) ago|never|\d{4}-\d{2}-\d{2}|\d{1,2}[/-]\d{1,2})[.!]?\s*$/i.test(transcript);
+  const lightAnswer = /^\s*(?:(?:it(?:['’]s| is| gets| receives)?|the plant(?: gets| receives)?)\s+)?(?:(?:bright|dim|low|direct|indirect|morning|afternoon|full)\s+)*(?:light|sun|sunlight|shade|shaded|sunny|bright|dim|indoors|outside|outdoors|(?:by|near|next to) (?:a|the) (?:sunny )?window)[.!]?\s*$/i.test(transcript);
+  const uncertainAnswer = /^\s*(?:(?:i|we)(?:['’]m| am| are)?\s+)?(?:not sure|unsure|don.t know|don.t remember|can.t tell|no idea)[.!]?\s*$/i.test(transcript);
+  const answersCurrentQuestion = uncertainAnswer || (currentQuestion === 'soil' ? soilAnswer : currentQuestion === 'watering' ? wateringAnswer : currentQuestion === 'light' ? lightAnswer : false);
   if (!newSymptom && (!currentQuestion || !answersCurrentQuestion || questionOrSwitch || changedPlant)) return null;
   const all = [...history, { role: 'user' as const, text: transcript }];
   // A newly described plant starts a fresh triage instead of inheriting facts.
@@ -97,16 +102,16 @@ export function briefSpeech(text: string): string {
   return words.length <= 60 ? selected : `${words.slice(0, 58).join(' ')}…`;
 }
 
-export function parseAssistantReply(raw: string): { response_text: string; spoken_text: string } {
+export function parseAssistantReply(raw: string): { response_text: string; spoken_text: string; off_topic: boolean } {
   const trimmed = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
   if (trimmed.startsWith('{')) {
     const value: unknown = JSON.parse(trimmed);
     if (!value || typeof value !== 'object' || !('response_text' in value) || typeof value.response_text !== 'string' || !value.response_text.trim()) throw new Error('The assistant returned an invalid answer.');
     const response_text = plainText(value.response_text).slice(0, 4000);
     const summary = 'spoken_text' in value && typeof value.spoken_text === 'string' && value.spoken_text.trim() ? value.spoken_text : response_text;
-    return { response_text, spoken_text: briefSpeech(summary) };
+    return { response_text, spoken_text: briefSpeech(summary), off_topic: 'off_topic' in value && value.off_topic === true };
   }
   if (!trimmed) throw new Error('The assistant returned an empty answer.');
   const response_text = plainText(trimmed).slice(0, 4000);
-  return { response_text, spoken_text: briefSpeech(response_text) };
+  return { response_text, spoken_text: briefSpeech(response_text), off_topic: false };
 }

@@ -27,6 +27,17 @@ test('existing facts skip questions; uncertainty and topic changes do not trap t
   const history = [{ role: 'user', text: 'Yellow leaves on my monstera' }, { role: 'assistant', text: CARE_QUESTIONS.soil }];
   assert.equal(yellowLeafFollowUp("I don't know", history), CARE_QUESTIONS.watering);
   assert.equal(yellowLeafFollowUp('How do I check the soil?', history), null);
+  assert.equal(yellowLeafFollowUp('Tell me a story about a dry desert', history), null);
+  assert.equal(yellowLeafFollowUp('Write a joke about damp weather', history), null);
+  assert.equal(yellowLeafFollowUp('My bank account is dry', history), null);
+  for (const [question, request] of [
+    [CARE_QUESTIONS.watering, 'Recommend a movie for Friday'],
+    [CARE_QUESTIONS.watering, 'Find me a water park for Friday'],
+    [CARE_QUESTIONS.light, 'I want a joke about sunlight'],
+    [CARE_QUESTIONS.soil, "I don't know who won the football match"],
+  ]) {
+    assert.equal(yellowLeafFollowUp(request, [{ role: 'user', text: 'My monstera leaves are yellow' }, { role: 'assistant', text: question }]), null);
+  }
   assert.equal(yellowLeafFollowUp('Now my cactus needs help.', history), null);
   assert.equal(yellowLeafFollowUp('How do I prune my rose?', []), null);
   assert.equal(yellowLeafFollowUp('My rose has aphids.', history), null);

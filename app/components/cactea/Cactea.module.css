@@ -91,7 +91,7 @@
 .mascot[data-chat-expressions] .rightEye > img { translate: var(--home-eye-x, 0px) var(--home-eye-y, 0px); }
 .leftEye, .rightEye { transition: transform 240ms var(--ease-out); }
 
-.closedEye, .worriedBrow, .openMouth, .roundMouth {
+.closedEye, .worriedBrow, .angryBrow, .openMouth, .roundMouth, .frownMouth {
   position: absolute;
   inset: 0;
   display: block;
@@ -99,6 +99,7 @@
 }
 .layer svg { display: block; width: 100%; height: 100%; }
 .rightEye .worriedBrow { transform: scaleX(-1); }
+.rightEye .angryBrow { transform: scaleX(-1); }
 
 /* A brief drawn eyelid replaces the eye, instead of squashing the eyeball. */
 .leftEye > img, .rightEye > img { animation: eyes-open 7000ms steps(1, end) infinite; }
@@ -142,12 +143,42 @@
 .mascot[data-state="error"] .mouth > img { opacity: 0; }
 .mascot[data-state="error"] .roundMouth { opacity: 1; transform: scale(0.7); }
 
+.mascot[data-state="angry"] .rig { animation: angry-shake 650ms ease-in-out both; }
+.mascot[data-state="angry"] .leftArm { transform: rotate(-12deg); }
+.mascot[data-state="angry"] .rightArm { transform: rotate(12deg); }
+.mascot[data-state="angry"] .leftEye > img,
+.mascot[data-state="angry"] .rightEye > img { animation: none; }
+.mascot[data-state="angry"] .closedEye { animation: none; opacity: 0; }
+.mascot[data-state="angry"] .mouth > img { animation: none; opacity: 0; }
+.mascot[data-state="angry"] .angryBrow,
+.mascot[data-state="angry"] .frownMouth { opacity: 1; }
+@keyframes angry-shake {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  20%, 60% { transform: translateX(-1.5%) rotate(-2deg); }
+  40%, 80% { transform: translateX(1.5%) rotate(2deg); }
+}
+
 /* A short, one-time seesaw gesture when the user says “six seven”. */
 .mascot[data-state="sixSeven"] .rig { animation: six-seven-sway 1400ms var(--ease-in-out) both; }
 .mascot[data-state="sixSeven"] .leftArm { animation: six-seven-left 1400ms var(--ease-in-out) both; }
 .mascot[data-state="sixSeven"] .rightArm { animation: six-seven-right 1400ms var(--ease-in-out) both; }
 .mascot[data-state="sixSeven"] .mouth > img { opacity: 0; }
 .mascot[data-state="sixSeven"] .openMouth { opacity: 1; }
+
+/* A two-second hello: a wave and two leaves growing from the crown. */
+.mascot[data-state="lifewood"] .rightArm { animation: greeting-wave 700ms var(--ease-out) 2; }
+.mascot[data-state="lifewood"] .mouth > img { opacity: 0; }
+.mascot[data-state="lifewood"] .smilingMouth { opacity: 1; }
+.lifewoodSprout { position: absolute; top: -2%; left: 35%; width: 30%; height: 18%; z-index: 4; overflow: visible; pointer-events: none; }
+.sproutStem { stroke: #367747; stroke-width: 5; stroke-linecap: round; }
+.sproutLeft, .sproutRight { transform-box: view-box; transform-origin: 50% 95%; animation: lifewood-grow 2000ms var(--ease-out) both; }
+.sproutLeft { fill: #73b965; stroke: #367747; stroke-width: 2; }
+.sproutRight { fill: #a1ce77; stroke: #367747; stroke-width: 2; }
+@keyframes lifewood-grow {
+  0% { transform: scale(0); opacity: 0; }
+  25%, 80% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(.9); opacity: 0; }
+}
 
 @keyframes six-seven-sway {
   0%, 100% { transform: rotate(0); }
@@ -260,6 +291,8 @@
   .mascot[data-state="sixSeven"] .rightArm { transform: translateY(10%) rotate(8deg); }
   .mascot[data-state="sixSeven"] .mouth > img { opacity: 0; }
   .mascot[data-state="sixSeven"] .openMouth { opacity: 1; }
+  .mascot[data-state="lifewood"] .rightArm { transform: rotate(-18deg); }
+  .sproutLeft, .sproutRight { animation: none; }
 }
 .debug { outline: 1px dashed rgb(20 38 26 / 45%); outline-offset: 2px; }
 /* Home's controller owns gestures; eye tracking and blinking stay independent. */
@@ -269,6 +302,20 @@
 .mascot:is([data-stationary], [data-lively]) .rightArm { animation: none; transform: none; }
 .mascot:is([data-stationary], [data-lively]) .leftEye > img,
 .mascot:is([data-stationary], [data-lively]) .rightEye > img { translate: var(--home-eye-x, 0%) var(--home-eye-y, 0%); }
+/* Home gestures use separate layers so breathing and waving can accompany a jump. */
+@media (prefers-reduced-motion: no-preference) {
+  .mascot[data-lively] .rig { animation: home-breathe 5000ms ease-in-out infinite; }
+  .mascot[data-lively] .rightArm { animation: home-wave 18000ms var(--ease-out) infinite; }
+}
+@keyframes home-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.025, 1.04); }
+}
+@keyframes home-wave {
+  0%, 8%, 100% { transform: rotate(0deg); }
+  1.5%, 4.5% { transform: rotate(-18deg); }
+  3%, 6% { transform: rotate(4deg); }
+}
 @media (prefers-reduced-motion: reduce) {
   .mascot:is([data-stationary], [data-lively]) .leftEye > img,
   .mascot:is([data-stationary], [data-lively]) .rightEye > img { translate: none; }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import CacteaAudioAura from "@/app/components/cactea/CacteaAudioAura";
+import Cactea from "@/app/components/cactea/Cactea";
 import { useMascotEyeFollow } from "@/app/components/workspace/useHomeMascotFollow";
 import type { AgentMode, CacteaState } from "@/lib/cactea-state";
 import styles from "./Dashboard.module.css";
@@ -36,7 +37,7 @@ export default function CompanionPanel({ mode, state, children, onChooseSuggesti
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const cyclePaused = hovered || focused;
-  const showSuggestion = mode === "idle" && state !== "success" && state !== "error" && !actionsDisabled && !transcribing;
+  const showSuggestion = mode === "idle" && state === "idle" && !actionsDisabled && !transcribing;
   useEffect(() => {
     if (!showSuggestion || cyclePaused) return;
     const timer = window.setInterval(() => {
@@ -45,9 +46,10 @@ export default function CompanionPanel({ mode, state, children, onChooseSuggesti
     return () => window.clearInterval(timer);
   }, [showSuggestion, cyclePaused]);
   const status = statusCopy[mode];
+  const reaction = state === "lifewood" ? "Hello, Lifewood! 🌱" : state === "angry" ? "Let’s stick to plant questions. 🌿" : null;
 
   return (
-    <aside ref={companionRef} className={styles.companion} aria-labelledby="companion-title">
+    <aside ref={companionRef} className={styles.companion} aria-labelledby="companion-title" data-greeting={reaction ? state : undefined}>
       <section className={styles.companionGarden}>
         <p className={styles.eyebrow}>Your growing companion</p>
         <CacteaAudioAura state={state} size="lg" volumeRef={volumeRef} className={styles.companionMascot} chatExpressions />
@@ -57,7 +59,7 @@ export default function CompanionPanel({ mode, state, children, onChooseSuggesti
           onPointerEnter={() => setHovered(true)} onPointerLeave={() => setHovered(false)}
           onFocusCapture={() => setFocused(true)}
           onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false); }}>
-          {showSuggestion ? <>
+          {reaction ? <p role="status">{reaction}</p> : showSuggestion ? <>
             <span className={styles.suggestionEyebrow}>A thought from Cactea</span>
             <button className={styles.suggestionQuestion} type="button" onClick={() => onChooseSuggestion(idleSuggestions[suggestionIndex].question)} aria-label={`${idleSuggestions[suggestionIndex].line} Add a question to the chat draft.`}>
               {idleSuggestions[suggestionIndex].line}<span aria-hidden="true">↗</span>
@@ -67,6 +69,12 @@ export default function CompanionPanel({ mode, state, children, onChooseSuggesti
         </div>
       </section>
 
+      {reaction && (
+        <div className={styles.lifewoodMobile}>
+          <Cactea state={state} size="sm" chatExpressions />
+          <p role="status">{reaction}</p>
+        </div>
+      )}
       {children}
     </aside>
   );

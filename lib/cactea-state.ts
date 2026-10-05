@@ -6,10 +6,12 @@ export type CacteaState =
   | "speaking"
   | "success"
   | "error"
-  | "sixSeven";
+  | "angry"
+  | "sixSeven"
+  | "lifewood";
 
 export type AgentMode = "idle" | "listening" | "speaking" | "processing";
-export type CacteaFeedback = Extract<CacteaState, "success" | "error"> | null;
+export type CacteaFeedback = Extract<CacteaState, "success" | "error" | "angry"> | null;
 
 export function resolveCacteaState(
   mode: AgentMode,

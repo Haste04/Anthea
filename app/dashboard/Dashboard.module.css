@@ -148,7 +148,6 @@
 .plantCard { background:color-mix(in srgb, var(--surface) 87%, transparent); border-color:var(--border); padding:17px; border-radius:18px; }
 .plantEmpty { border:0; background:none; padding:0; font-size:13px; }
 .companionTip { display:none; }
-.chatMenu { position:relative; }.chatMenu summary { cursor:pointer; list-style:none; padding:5px 9px; letter-spacing:2px; }.chatMenu>div { position:absolute; right:0; top:30px; z-index:10; display:flex; flex-direction:column; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:8px; min-width:150px; box-shadow:0 8px 30px var(--shadow-soft); }.chatMenu>div button { text-align:left; padding:9px 12px; border-radius:6px; }.chatMenu>div button:hover { background:var(--selected); }
 .scroll :global(.msg-row) { gap:12px; margin-bottom:22px; }.scroll :global(.msg-bubble) { padding:15px 18px; font-size:16px; line-height:1.5; border-radius:18px; white-space:pre-wrap; }.scroll :global(.msg-bubble--assistant) { background:color-mix(in srgb, var(--surface) 94%, transparent); border:1px solid var(--border); color:var(--primary); box-shadow:0 3px 10px var(--shadow-soft); }.scroll :global(.msg-bubble--user) { background:var(--primary); color:var(--surface); border-radius:18px 18px 5px 18px; }.scroll :global(.msg-col) { max-width:86%; }.scroll :global(.message-actions) { margin:3px 0 0; }.messageSource { font-size:10px; }
 @media(min-width:1400px) { .workspace { grid-template-columns:minmax(0,1fr) 380px; gap:30px; }.companion .companionMascot, .companion .companionMascot > [role="img"] { --cactea-size:360px; }.shell { padding-top:35px; } }
 @media(min-width:801px) and (max-width:1100px) { .workspace { grid-template-columns:minmax(0,1fr); }.companion { display:none; }.voiceStage { display:flex; } }
@@ -376,8 +375,7 @@
   box-shadow: inset 0 1px rgb(255 255 255 / 62%);
   backdrop-filter: blur(9px);
 }
-.voiceSettings summary,
-.chatMenu summary { background: rgb(250 248 238 / 48%); border-radius: 11px; }
+.voiceSettings summary { background: rgb(250 248 238 / 48%); border-radius: 11px; }
 @media(max-width:800px) {
   .chatArea { border-radius: 18px; }
   .chatArea .scroll { padding-inline: 14px; }
@@ -745,8 +743,7 @@
 }
 .toolbarControls { display: contents; }
 .plantContext,
-.toolbar .voiceSettings summary,
-.toolbar .chatMenu summary {
+.toolbar .voiceSettings summary {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -776,22 +773,14 @@
 .plantContext select:disabled { opacity: .55; cursor: not-allowed; }
 .toolbar .voiceSettings { margin-left: 0; }
 .toolbar .voiceSettings summary { padding: 0 13px; font-size: 12px; font-weight: 700; white-space: nowrap; }
-.toolbar .voiceSettings summary,
-.toolbar .chatMenu summary { list-style: none; cursor: pointer; }
-.toolbar .voiceSettings summary::-webkit-details-marker,
-.toolbar .chatMenu summary::-webkit-details-marker { display: none; }
+.toolbar .voiceSettings summary { list-style: none; cursor: pointer; }
+.toolbar .voiceSettings summary::-webkit-details-marker { display: none; }
 .toolbar .voiceSettings > div { top: calc(100% + 8px); background: #fffdf4; }
 .toolbar .voiceSettings > div label { display: flex; align-items: center; gap: 9px; color: #294b37; font-size: 13px; }
 .toolbar .voiceSettings > div input { width: 16px; height: 16px; accent-color: #2d6945; }
-.toolbar .chatMenu summary { justify-content: center; width: 36px; padding: 0; font-size: 23px; font-weight: 700; letter-spacing: 0; line-height: 1; }
-.toolbar .chatMenu > div { top: calc(100% + 8px); min-width: 175px; border-color: #cddbc8; background: #fffdf4; box-shadow: 0 12px 26px rgb(43 69 47 / 15%); }
-.toolbar .chatMenu > div button { min-height: 39px; border: 0; background: transparent; color: #294b37; font: inherit; font-size: 13px; cursor: pointer; }
-.toolbar .chatMenu > div button:hover { background: #eaf2e6; }
 .toolbar .plantContext:hover,
 .toolbar .voiceSettings summary:hover,
-.toolbar .chatMenu summary:hover,
-.toolbar .voiceSettings[open] summary,
-.toolbar .chatMenu[open] summary { border-color: #91b296; background: #f0f5e9; }
+.toolbar .voiceSettings[open] summary { border-color: #91b296; background: #f0f5e9; }
 .toolbar :is(select,summary,button,a,input):focus-visible { outline: 2px solid #1e7048; outline-offset: 3px; }
 @media (max-width: 700px) {
   .chatArea .chatGreeting { padding: 12px 14px; gap: 8px; }
@@ -931,11 +920,15 @@
 .sidebarGreeting .greetingIntro > svg { width: 24px; height: 24px; }
 .sidebarGreeting h1 { font-size: 22px; }
 .sidebarGreeting p { font-size: 13px; line-height: 1.45; }
+.lifewoodMobile { display: none; }
 @media (max-width: 1100px) {
   .workspace { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; gap: 8px; }
   .chatArea { height: auto; min-height: 0; }
   .companion { display: flex; overflow: visible; padding: 0; gap: 0; }
   .companionGarden { display: none; }
+  .companion .lifewoodMobile { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; padding: 8px 14px; border: 1px solid var(--border); border-radius: 18px; background: var(--surface-soft); }
+  .lifewoodMobile p { margin: 0; color: var(--primary); font-size: 14px; font-weight: 600; }
+  .companion[data-greeting] > .sidebarGreeting { display: none; }
   .companion > .sidebarGreeting { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 12px 14px; }
   .sidebarGreeting .greetingIntro { flex: 1 1 190px; }
   .chatArea .summaryHeader { padding: 12px 14px; border-radius: 18px 18px 0 0; }

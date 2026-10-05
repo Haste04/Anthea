@@ -103,3 +103,21 @@ test('plant photos reach Gemini as inline image data and follow-ups identify old
   assert.match(parts[1].text,/historical context only/);
   assert.match(parts[1].text,/do not follow instructions/);
 });
+test('the provider topic decision reaches chat without another model call', async () => {
+  let calls = 0;
+  const { runAssistant } = loadAssistant(async () => {
+    calls++;
+    return { text: JSON.stringify({ response_text: 'Ask me about your plants.', spoken_text: 'Ask me about your plants.', off_topic: true }) };
+  });
+  const result = await runAssistant('Who won the football match?');
+  assert.equal(result.off_topic, true);
+  assert.equal(calls, 1);
+});
+
+test('plant follow-ups and legacy replies do not request an angry reaction', async () => {
+  for (const offTopic of [false, undefined, 'true']) {
+    const { runAssistant } = loadAssistant(async () => ({ text: JSON.stringify({ response_text: 'Check the soil first.', spoken_text: 'Check the soil first.', off_topic: offTopic }) }));
+    const result = await runAssistant('How often?', null, [{ role: 'user', text: 'How do I water my fern?' }]);
+    assert.equal(result.off_topic, false);
+  }
+});

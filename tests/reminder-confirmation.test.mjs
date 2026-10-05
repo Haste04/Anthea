@@ -1,52 +1,46 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
-import vm from 'node:vm';
 import ts from 'typescript';
 
-async function compile(path) {
-  return ts.transpileModule(await readFile(new URL(path, import.meta.url), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } }).outputText;
-}
-const intent = {};
-vm.runInNewContext(await compile('../lib/reminder-intent.ts'), { exports: intent });
-const card = {};
-vm.runInNewContext(await compile('../app/dashboard/ReminderProposalCard.tsx'), {
-  exports: card,
-  require: name => {
-    if (name === 'react') return { useState: value => [value, () => {}] };
-    if (name === 'react/jsx-runtime') return { jsx: (type, props) => ({ type, props }), jsxs: (type, props) => ({ type, props }) };
-    if (name === '@/lib/reminder-intent') return intent;
-    return { default: {} };
-  },
+const source = await readFile(new URL('../lib/workspace-data.ts', import.meta.url), 'utf8');
+const { outputText } = ts.transpileModule(source, {
+  compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
 });
-function proposal(overrides = {}) {
-  return { id: 'r1', status: 'pending', title: 'Check soil', due: '2026-10-01', timeRequested: false, ...overrides };
-}
-test('rendering a spoken reminder does not save; only confirmation calls the action', () => {
-  let saves = 0;
-  const tree = card.default({ proposal: proposal(), plants: [], disabled: false, onConfirm: draft => { saves++; assert.equal(draft.due, '2026-10-01'); }, onCancel: () => {} });
-  assert.equal(saves, 0);
-  assert.equal(tree.type, 'form');
-  tree.props.onSubmit({ preventDefault() {} });
-  assert.equal(saves, 1);
-});
-test('missing dates and a busy conversation cannot confirm a reminder', () => {
-  let saves = 0;
-  for (const props of [{ proposal: proposal({ due: '' }), disabled: false }, { proposal: proposal(), disabled: true }]) {
-    const tree = card.default({ ...props, plants: [], onConfirm: () => saves++, onCancel: () => {} });
-    tree.props.onSubmit({ preventDefault() {} });
-  }
-  assert.equal(saves, 0);
-});
-test('saved and cancelled proposals expose no confirmation form after reload', () => {
-  for (const status of ['saved', 'cancelled']) {
-    const tree = card.default({ proposal: proposal({ status }), plants: [], disabled: false, onConfirm: () => assert.fail('Must not save again'), onCancel: () => {} });
-    assert.notEqual(tree.type, 'form');
-    assert.equal(tree.props.onSubmit, undefined);
+const { normalizeStoredWorkspace, parseBackup } = await import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`);
+
+test('restoring legacy reminder proposals never creates reminders automatically', () => {
+  for (const status of ['pending', 'saved', 'cancelled']) {
+    const message = {
+      id: 'a', role: 'assistant', text: 'Older reminder draft',
+      reminderProposal: { id: 'r1', title: 'Check soil', due: '2026-10-01', timeRequested: false, status },
+    };
+    const backup = {
+      version: 1, plants: [], reminders: [],
+      chats: [{ id: 'c', title: 'Plant care', updatedAt: 1, messages: [message] }],
+    };
+    for (const restored of [normalizeStoredWorkspace(backup), parseBackup(backup)]) {
+      assert.deepEqual(restored.reminders, []);
+      assert.deepEqual(restored.chats[0].messages[0], message);
+    }
   }
 });
-test('an already persisted reminder prevents an interrupted chat update from showing another confirmation', () => {
-  const tree = card.default({ proposal: proposal(), savedReminder: { title: 'Edited soil check', due: '2026-10-03' }, plants: [], disabled: false, onConfirm: () => assert.fail('Must not save twice'), onCancel: () => {} });
-  assert.notEqual(tree.type, 'form');
-  assert.equal(tree.props.onSubmit, undefined);
+
+test('an older saved reminder and its proposal remain separate records after restore', () => {
+  const reminder = { id: 'r1', title: 'Edited soil check', due: '2026-10-03', repeat: 0, completed: false };
+  const backup = {
+    version: 1, plants: [], reminders: [reminder],
+    chats: [{ id: 'c', title: 'Plant care', updatedAt: 1, messages: [{
+      id: 'a', role: 'assistant', text: 'Older reminder draft',
+      reminderProposal: { id: 'r1', title: 'Check soil', due: '2026-10-01', timeRequested: false, status: 'pending' },
+    }] }],
+  };
+  for (const restored of [normalizeStoredWorkspace(backup), parseBackup(backup)]) {
+    assert.equal(restored.reminders.length, 1);
+    assert.equal(restored.reminders[0].id, 'r1');
+    assert.equal(restored.reminders[0].title, 'Edited soil check');
+    assert.equal(restored.reminders[0].due, '2026-10-03');
+    assert.equal(restored.reminders[0].completed, false);
+    assert.equal(restored.chats[0].messages[0].reminderProposal.status, 'pending');
+  }
 });

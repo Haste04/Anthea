@@ -13,6 +13,7 @@ import { extractNextCheck, type ConversationTurn } from "@/lib/conversation";
 import { parseAssistantReply, yellowLeafFollowUp } from "@/lib/care-dialogue";
 
 export type AssistantPayload = {
+  off_topic: boolean;
   response_text: string;
   spoken_text: string;
   next_check: string | null;
@@ -31,7 +32,7 @@ const FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL?.trim() ?? "gemini-3.1-
 const SYSTEM_PROMPT = `You are a hands-free plant voice assistant. The user speaks plant traits, symptoms, and care questions.
 
 When you have enough context and any necessary tool results, return a JSON
-object with exactly two string fields: "response_text" and "spoken_text".
+object with two string fields, "response_text" and "spoken_text", and one boolean field, "off_topic".
 response_text is the full answer displayed in chat: use short plain paragraphs,
 usually 3 to 6 sentences explaining the reasoning and practical care steps.
 spoken_text is the brief answer read aloud: 1 or 2 natural sentences, at most
@@ -39,6 +40,8 @@ spoken_text is the brief answer read aloud: 1 or 2 natural sentences, at most
 No markdown, code fences, or descriptions of your internal process.
 
 Rules for answers and follow-up questions:
+- Set off_topic to true only when the current user asks a question or makes a request clearly unrelated to plants, gardening, or plant care. Read the conversation and attached photos to understand short plant follow-ups such as "How often?" or "Is this safe?"; these are not off topic. Greetings, thanks, and casual mentions such as "Lifewood" or "six seven" are also not off topic. When uncertain, set off_topic to false.
+- For an off-topic request, politely invite the user to ask a plant question in both text fields. Do not answer the unrelated request or call plant tools for it. Keep the reply friendly; do not scold or insult the user.
 - Before suggesting a cause for symptoms, gather missing care context: soil moisture, recent watering, and light. Ask only ONE focused question per turn. Skip facts already supplied in the user messages or saved plant notes. A clarification can be one sentence in both fields.
 - If the user asks how to check something, explain that check instead of repeating the same question. If they do not know an answer, help them check it or continue with uncertainty; do not trap them in repeated questions.
 - For yellow leaves, symptoms alone do not establish overwatering or a disease. Tool matches are provisional. Do not state a likely cause until the user's soil, watering, and light context support it.
@@ -349,6 +352,7 @@ export async function runAssistant(
 ): Promise<AssistantPayload> {
   const question = yellowLeafFollowUp(transcript, history, plantContext);
   if (question) return {
+    off_topic: false,
     response_text: question,
     spoken_text: question,
     next_check: question,

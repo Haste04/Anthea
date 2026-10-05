@@ -23,7 +23,6 @@ import styles from "./Dashboard.module.css";
 import {
   resolveCacteaState,
   type AgentMode,
-  type CacteaFeedback,
 } from "@/lib/cactea-state";
 import { starterQuestions } from "@/lib/plant-profile";
 import {
@@ -40,6 +39,7 @@ import {
   requestErrorMessage,
 } from "@/lib/assistant-request";
 import useSpeechPlayback from "./useSpeechPlayback";
+import useMascotFeedback from "./useMascotFeedback";
 import { buildConversationHistory } from "@/lib/conversation";
 import { briefSpeech } from "@/lib/care-dialogue";
 import AssistantAnswer from "./AssistantAnswer";
@@ -47,6 +47,7 @@ import { buildPlantMemory, resolveConversationPlant } from "@/lib/plant-memory";
 import useVoiceInput from "./useVoiceInput";
 import { buildPlantVocabulary } from "@/lib/voice-vocabulary";
 import { heardSixSeven } from "@/lib/six-seven";
+import useLifewoodGreeting from "./useLifewoodGreeting";
 import Link from "next/link";
 import { landingPrompts } from "@/lib/landing-prompts";
 
@@ -64,6 +65,7 @@ const starterDescriptions: Record<keyof typeof starterQuestions, string> = {
 };
 
 type AssistantResponse = {
+  off_topic?: boolean;
   response_text: string;
   spoken_text?: string;
   next_check: string | null;
@@ -94,8 +96,6 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
   const {
     data: workspace,
     save,
-    remove,
-    newChat,
     interruptChat,
   } = useWorkspace();
   const chatRef = useRef(chat);
@@ -136,8 +136,9 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
   const voiceOptionsId = useId();
   const micButtonRef = useRef<HTMLButtonElement>(null);
   const [statusHint, setStatusHint] = useState("");
-  const [mascotFeedback, setMascotFeedback] = useState<CacteaFeedback>(null);
+  const { feedback: mascotFeedback, show: showMascotFeedback, clear: clearMascotFeedback, finishSpeech: finishMascotSpeech } = useMascotFeedback();
   const [sixSevenActive, setSixSevenActive] = useState(false);
+  const { active: lifewoodActive, trigger: triggerLifewood, reset: resetLifewood } = useLifewoodGreeting();
   const [hasNewMessages, setHasNewMessages] = useState(false);
   const conversationNumber =
     workspace.chats.findIndex((c) => c.id === chat.id) + 1 ||
@@ -146,7 +147,6 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
   const modeRef = useRef<AgentMode>("idle");
   const scrollEndRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sixSevenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sixSevenPlayedRef = useRef(false);
   const landingVoiceStartedRef = useRef(false);
@@ -155,7 +155,6 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
   const followConversationRef = useRef(true);
   const chatScrollRef = useRef<HTMLElement | null>(null);
   const messagesRef = useRef<ChatMessage[]>(chat.messages);
-  const newPlantDialogRef = useRef<HTMLDialogElement | null>(null);
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -199,21 +198,6 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
     textarea.style.overflowY = contentHeight > 120 ? "auto" : "hidden";
   }, [typedInput]);
 
-  const showMascotFeedback = useCallback(
-    (feedback: Exclude<CacteaFeedback, null>) => {
-      if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
-      setMascotFeedback(feedback);
-      feedbackTimerRef.current = setTimeout(
-        () => {
-          setMascotFeedback(null);
-          feedbackTimerRef.current = null;
-        },
-        feedback === "success" ? 720 : 900,
-      );
-    },
-    [],
-  );
-
   const triggerSixSeven = useCallback((transcript: string) => {
     if (sixSevenPlayedRef.current || !heardSixSeven(transcript)) return;
     sixSevenPlayedRef.current = true;
@@ -227,7 +211,6 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
 
   useEffect(() => {
     return () => {
-      if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
       if (sixSevenTimerRef.current) clearTimeout(sixSevenTimerRef.current);
     };
   }, []);
@@ -236,8 +219,9 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
     changeMode("speaking");
   }, [changeMode]);
   const onSpeechFinish = useCallback(() => {
+    finishMascotSpeech();
     if (modeRef.current === "speaking") changeMode("idle");
-  }, [changeMode]);
+  }, [changeMode, finishMascotSpeech]);
   const onSpeechError = useCallback(() => {
     setStatusHint(
       "The spoken reply could not play. Choose Hear brief answer to retry, and check your device volume. The answer is saved below.",
@@ -298,6 +282,7 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
         setStatusHint(`Following ${linkedPlant.name} in this conversation.`);
       }
       requestBusyRef.current = true;
+      clearMascotFeedback();
       const controller = new AbortController();
       requestRef.current = controller;
 
@@ -404,6 +389,7 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
                   ...m,
                   text: fullAnswer,
                   spokenText: spoken,
+                  offTopic: data.off_topic === true,
                   pending: false,
                   error: false,
                   retryText: undefined,
@@ -421,7 +407,11 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
         if (!followConversationRef.current) setHasNewMessages(true);
         changeMode("idle");
         setStatusHint("");
-        if (readReadAloud()) speakText(spoken, assistantId);
+        if (readReadAloud()) {
+          speakText(spoken, assistantId, data.off_topic === true ? () => showMascotFeedback("angry", true) : undefined);
+        } else if (data.off_topic === true) {
+          showMascotFeedback("angry");
+        }
       } catch (err) {
         if (controller.signal.aborted) return;
         console.error("assistant fetch failed", err);
@@ -453,6 +443,7 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
     },
     [
       changeMode,
+      clearMascotFeedback,
       linkCurrentChat,
       showMascotFeedback,
       speakText,
@@ -490,6 +481,7 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
         return;
       }
       triggerSixSeven(text);
+      triggerLifewood(text);
       const reviewedDraft = voiceReviewDraftRef.current;
       setTypedInput((current) => (current === reviewedDraft ? "" : current));
       voiceReviewDraftRef.current = null;
@@ -511,12 +503,13 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
     start: startCapture,
   } = voice;
   const resetVoiceFeedback = useCallback(() => {
+    resetLifewood();
     voiceReviewDraftRef.current = null;
     sixSevenPlayedRef.current = false;
     if (sixSevenTimerRef.current) clearTimeout(sixSevenTimerRef.current);
     setSixSevenActive(false);
     setStatusHint("");
-  }, []);
+  }, [resetLifewood]);
   const onStartListen = useCallback(() => {
     if (
       (modeRef.current !== "idle" && modeRef.current !== "speaking") ||
@@ -620,7 +613,11 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
     liveAvailable,
     liveCaption,
   );
-  const cacteaState = sixSevenActive
+  const cacteaState = mascotFeedback === "angry"
+    ? "angry"
+    : lifewoodActive
+    ? "lifewood"
+    : sixSevenActive
     ? "sixSeven"
     : resolveCacteaState(visibleMode, mascotFeedback);
   const latestPlantSummary = useMemo(() => {
@@ -673,11 +670,6 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
     followConversationRef.current = true;
     setHasNewMessages(false);
     scrollEndRef.current?.scrollIntoView({ behavior: "instant", block: "end" });
-  };
-
-  const startNewPlantConversation = () => {
-    newPlantDialogRef.current?.close();
-    newChat();
   };
 
   return (
@@ -739,53 +731,6 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
                         >
                           Choose or preview a voice →
                         </Link>
-                      </div>
-                    </details>
-                    <details className={styles.chatMenu}>
-                      <summary aria-label="Conversation actions">⋯</summary>
-                      <div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const title = window.prompt(
-                              "Conversation name",
-                              chat.title,
-                            );
-                            if (title?.trim())
-                              save("chats", {
-                                ...chat,
-                                title: title.trim().slice(0, 120),
-                              });
-                          }}
-                        >
-                          Rename chat
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (
-                              messages.length ||
-                              typedInput.trim() ||
-                              photo ||
-                              mode !== "idle"
-                            )
-                              newPlantDialogRef.current?.showModal();
-                            else startNewPlantConversation();
-                          }}
-                        >
-                          New chat
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (
-                              window.confirm("Delete this saved conversation?")
-                            )
-                              remove("chats", chat.id);
-                          }}
-                        >
-                          Delete chat
-                        </button>
                       </div>
                     </details>
                   </div>
@@ -959,9 +904,9 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
                           speaking={speakingMessageId === m.id}
                           disabled={composerDisabled}
                           onBrief={() =>
-                            speakText(m.spokenText || briefSpeech(m.text), m.id)
+                            speakText(m.spokenText || briefSpeech(m.text), m.id, m.offTopic === true ? () => showMascotFeedback("angry", true) : undefined)
                           }
-                          onMore={() => speakText(m.text, m.id)}
+                          onMore={() => speakText(m.text, m.id, m.offTopic === true ? () => showMascotFeedback("angry", true) : undefined)}
                           onStop={stopSpeech}
                         />
                       ) : (
@@ -1460,30 +1405,6 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
           </div>
         </CompanionPanel>
       </main>
-      <dialog
-        ref={newPlantDialogRef}
-        className={styles.resetDialog}
-        aria-labelledby="new-plant-title"
-        aria-describedby="new-plant-description"
-      >
-        <h2 id="new-plant-title">Start a new plant conversation?</h2>
-        <p id="new-plant-description">
-          This conversation will stay in Recent chats. Any unsent draft or
-          recording will be discarded.
-        </p>
-        <div className={styles.dialogActions}>
-          <form method="dialog">
-            <button type="submit">Keep this conversation</button>
-          </form>
-          <button
-            type="button"
-            className={styles.sendTranscript}
-            onClick={startNewPlantConversation}
-          >
-            Start fresh
-          </button>
-        </div>
-      </dialog>
     </div>
   );
 }

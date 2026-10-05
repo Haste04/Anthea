@@ -125,9 +125,12 @@ export function HomePage() {
           <span>saved conversations</span>
         </Link>
       </div>
-      <div className="ws-section-heading">
+      <div className="ws-section-heading ws-garden-heading">
         <h2>Your plants</h2>
-        <Link href="/plants">View garden →</Link>
+        <Link href="/plants" className="ws-primary">
+          <Icon name="plants" size={18} />
+          View garden <span aria-hidden="true">→</span>
+        </Link>
       </div>
       {data.plants.length ? (
         <div className="ws-card-grid">
@@ -151,9 +154,12 @@ export function HomePage() {
       )}
       <div className="ws-home-columns">
         <section className="ws-panel">
-          <div className="ws-section-heading">
+          <div className="ws-section-heading ws-conversation-heading">
             <h2>Pick up a conversation</h2>
-            <Link href="/dashboard">Chat →</Link>
+            <Link href="/dashboard" className="ws-chat-link">
+              <Icon name="chat" size={18} />
+              Chat <span className="ws-chat-link-arrow" aria-hidden="true">→</span>
+            </Link>
           </div>
           {[...data.chats]
             .sort((a, b) => b.updatedAt - a.updatedAt)
@@ -195,10 +201,13 @@ export function HomePage() {
   );
 }
 
+const PLANTS_PER_PAGE = 12;
+
 export function PlantsPage() {
   const { data, save, remove, newChat, setActiveChatId } = useWorkspace();
   const router = useRouter();
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<Plant | null>(null);
   const [detail, setDetail] = useState<string | null>(() =>
     typeof window === "undefined" ? null : window.location.hash.slice(1),
@@ -226,6 +235,12 @@ export function PlantsPage() {
       .toLowerCase()
       .includes(query.toLowerCase()),
   );
+  const pageCount = Math.max(1, Math.ceil(matches.length / PLANTS_PER_PAGE));
+  const currentPage = Math.min(page, pageCount);
+  const visiblePlants = matches.slice(
+    (currentPage - 1) * PLANTS_PER_PAGE,
+    currentPage * PLANTS_PER_PAGE,
+  );
   return (
     <main className="ws-page">
       <Heading
@@ -233,8 +248,11 @@ export function PlantsPage() {
         title="My Plants"
         description="A little space for every plant you’re helping grow."
       >
-        <button className="ws-primary" onClick={() => open()}>
-          ＋ Add a plant
+        <button className="ws-primary ws-add-plant" onClick={() => open()}>
+          <span className="ws-add-plant-icon" aria-hidden="true">
+            <Icon name="plants" size={20} />
+          </span>
+          Add a plant
         </button>
       </Heading>
       <label className="ws-search">
@@ -243,12 +261,15 @@ export function PlantsPage() {
           aria-label="Search your plants"
           placeholder="Find a plant, species, or room…"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setPage(1);
+          }}
         />
       </label>
       {matches.length ? (
         <div className="ws-card-grid">
-          {matches.map((p) => (
+          {visiblePlants.map((p) => (
             <button
               className={`ws-plant-card ${detail === p.id ? "is-selected" : ""}`}
               key={p.id}
@@ -281,6 +302,25 @@ export function PlantsPage() {
             </button>
           )}
         </Empty>
+      )}
+      {pageCount > 1 && (
+        <nav className="ws-pagination" aria-label="Plant pages">
+          <button
+            className="ws-secondary"
+            disabled={currentPage === 1}
+            onClick={() => setPage(currentPage - 1)}
+          >
+            Previous
+          </button>
+          <span role="status">Page {currentPage} of {pageCount}</span>
+          <button
+            className="ws-secondary"
+            disabled={currentPage === pageCount}
+            onClick={() => setPage(currentPage + 1)}
+          >
+            Next
+          </button>
+        </nav>
       )}
       {selected && (
         <section
@@ -373,11 +413,17 @@ export function PlantsPage() {
             onSubmit={(e) => {
               e.preventDefault();
               if (!editing.name.trim() || photoBusy) return;
+              const isNew = !data.plants.some((p) => p.id === editing.id);
+              const newPlantPage = Math.floor(data.plants.length / PLANTS_PER_PAGE) + 1;
               save("plants", {
                 ...editing,
                 name: editing.name.trim(),
                 updatedAt: Date.now(),
               });
+              if (isNew) {
+                setQuery("");
+                setPage(newPlantPage);
+              }
               setDetail(editing.id);
               dialog.current?.close();
             }}
@@ -581,15 +627,14 @@ export function SettingsPage() {
         </button>
       </section>
       <section className="ws-panel">
-        <h2>Your data stays in this browser</h2>
+        <h2>Manage your data</h2>
+        <br />
         <p>
           No account is needed. Chats, plants, and photos are stored on this
           device and do not sync to other browsers. Clearing browser data
-          removes them.
-        </p>
-        <p>
-          When you ask Cactea a question, the text, recent conversation context,
-          and attached photo are sent to the AI service to answer it.
+          removes them. When you ask Cactea a question, the text, recent
+          conversation context, and attached photo are sent to the AI service to
+          answer it.
         </p>
         {storageError && <p role="alert">{storageError}</p>}
         <div className="ws-data-counts">
@@ -645,9 +690,11 @@ export function SettingsPage() {
             }}
           />
         </div>
+        <br />
         <p className="ws-muted">
           Backups include plant photos and conversations. Voice and care
-          preferences are set separately in each browser.
+          preferences are set separately in each browser. Data is saved locally
+          in your browser and is not shared with other browsers or devices.
         </p>
       </section>
       <p role="status" className="ws-notice">

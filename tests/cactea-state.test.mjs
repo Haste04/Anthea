@@ -22,3 +22,9 @@ test("brief response feedback takes precedence over ongoing speech state", () =>
   assert.equal(resolveCacteaState("speaking", "success"), "success");
   assert.equal(resolveCacteaState("speaking", "error"), "error");
 });
+
+test('the off-topic reaction stays visible during speech and restores the current activity when cleared', () => {
+  assert.equal(resolveCacteaState('speaking', 'angry'), 'angry');
+  assert.equal(resolveCacteaState('speaking', null), 'speaking');
+  assert.equal(resolveCacteaState('processing', null), 'thinking');
+});

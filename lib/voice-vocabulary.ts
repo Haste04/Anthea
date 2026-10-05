@@ -2,7 +2,7 @@ import { plantSpeciesVocabulary } from '@/lib/plant-species';
 
 export const MAX_VOICE_TERMS = 100;
 const MAX_TERM_LENGTH = 120;
-const commonNames = ['Aster', 'Cactea', 'orchid', 'cactus', 'rose', 'hibiscus', 'daisy', 'succulent', 'fern', 'Monstera'];
+const commonNames = ['Aster', 'Cactea', 'Lifewood', 'orchid', 'cactus', 'rose', 'hibiscus', 'daisy', 'succulent', 'fern', 'Monstera'];
 
 function normalize(value: string): string {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()

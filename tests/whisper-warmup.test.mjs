@@ -33,6 +33,8 @@ test('warmup and transcription share one loaded pipeline, and failed loading can
 });
 
 const routeSource = await compile('../app/api/transcribe/route.ts');
+const limits = {};
+vm.runInNewContext(await compile('../lib/transcription-limits.ts'), { exports: limits });
 test('warmup uses the transcription route and its existing rate limit', async () => {
   for (const allowed of [true, false]) {
     let warmed = 0;
@@ -41,6 +43,7 @@ test('warmup uses the transcription route and its existing rate limit', async ()
       exports, setTimeout, clearTimeout, console,
       require: name => {
         if (name === 'next/server') return { NextResponse: Response };
+        if (name === '@/lib/transcription-limits') return limits;
         if (name === '@/lib/whisper') return { warmTranscriber: async () => { warmed++; } };
         if (name === '@/lib/recorded-transcription' || name === '@/lib/voice-vocabulary') return {};
         if (name === '@/lib/api-guard') return { enforceApiLimit: async () => ({ allowed }), rateLimitResponse: () => new Response(null, { status: 429 }) };

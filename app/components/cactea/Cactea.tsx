@@ -11,7 +11,7 @@ import mouth from "../../../public/cacthea/mouth.png";
 import smilingMouth from "../../../public/cacthea/Smiling Mouth.png";
 import type { CacteaProps } from "./Cactea.types";
 import styles from "./Cactea.module.css";
-import { ClosedEye, OpenMouth, WorriedBrow } from "./FaceExpressions";
+import { AngryBrow, ClosedEye, FrownMouth, OpenMouth, WorriedBrow } from "./FaceExpressions";
 import useCacteaIdleAnimations from "./useCacteaIdleAnimations";
 import useCacteaSmile from "./useCacteaSmile";
 
@@ -63,7 +63,9 @@ const activityLabels: Partial<Record<CacteaProps["state"], string>> = {
   speaking: "Cactea is speaking",
   success: "Cactea has finished responding",
   error: "Cactea needs you to try again",
+  angry: "Cactea looks angry about an off-topic question",
   sixSeven: "Cactea is doing the six seven gesture",
+  lifewood: "Cactea is waving hello to Lifewood with two fresh leaves",
 };
 
 function Cactea({ state, size = "md", className, ariaLabel, interactive = false, stationary = false, lively = false, chatExpressions = false }: CacteaProps) {
@@ -95,6 +97,7 @@ function Cactea({ state, size = "md", className, ariaLabel, interactive = false,
             {(name === "left-eye" || name === "right-eye") && <>
               <span className={styles.closedEye}><ClosedEye /></span>
               <span className={styles.worriedBrow}><WorriedBrow /></span>
+              <span className={styles.angryBrow}><AngryBrow /></span>
             </>}
             {name === "mouth" && <>
               {pngExpressions && <span className={styles.smilingMouth}>
@@ -102,9 +105,17 @@ function Cactea({ state, size = "md", className, ariaLabel, interactive = false,
               </span>}
               <span className={styles.openMouth}><OpenMouth /></span>
               <span className={styles.roundMouth}><OpenMouth round /></span>
+              <span className={styles.frownMouth}><FrownMouth /></span>
             </>}
           </span>
         ))}
+        {state === "lifewood" && (
+          <svg className={styles.lifewoodSprout} viewBox="0 0 100 60" aria-hidden="true">
+            <path className={styles.sproutStem} d="M50 58V28" />
+            <path className={styles.sproutLeft} d="M50 37C24 40 9 25 10 7C31 6 48 16 50 37Z" />
+            <path className={styles.sproutRight} d="M50 29C52 9 67 0 89 2C88 22 73 35 50 29Z" />
+          </svg>
+        )}
       </div>
     </div>
   );
@@ -119,7 +130,7 @@ function Cactea({ state, size = "md", className, ariaLabel, interactive = false,
         data-chat-expressions={chatExpressions || undefined}
         data-png-smile={pngExpressions || undefined}
         ref={mascotRef}
-        aria-label={ariaLabel ?? "Make Cactea jump"}
+        aria-label={ariaLabel ?? (state === "lifewood" || state === "angry" ? activityLabels[state] : "Make Cactea jump")}
         onClick={(event) => {
           if (livelyMode) {
             jump();

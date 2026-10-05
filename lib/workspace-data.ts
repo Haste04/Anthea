@@ -4,17 +4,18 @@ export type Message = {
   plantId?: string | null;
   pending?: boolean; error?: boolean; retryText?: string;
   spokenText?: string;
+  offTopic?: boolean;
   reminderProposal?: ReminderProposal;
   meta?: { next_check: string | null; species_candidate: string | null; watering_days: number | null; is_estimate: boolean; diagnosis_confidence: string } | null;
 };
-export type Chat = { id: string; title: string; messages: Message[]; updatedAt: number; plantId?: string };
+export type Chat = { id: string; title: string; messages: Message[]; updatedAt: number; plantId?: string; pinned?: boolean };
 export type Plant = { id: string; name: string; species: string; location: string; notes: string; photo?: string; updatedAt: number };
 export type Reminder = { id: string; title: string; plantId?: string; due: string; repeat: number; completed: boolean };
 export type WorkspaceData = { version: 1; chats: Chat[]; plants: Plant[]; reminders: Reminder[] };
 export const emptyWorkspace: WorkspaceData = { version: 1, chats: [], plants: [], reminders: [] };
 export const MAX_PHOTO_LENGTH = 2_800_000;
 export function visibleChats(chats: Chat[], expanded: boolean, query: string): Chat[] {
-  const matches = [...chats].sort((a,b) => b.updatedAt - a.updatedAt).filter(c => c.title.toLowerCase().includes(query.trim().toLowerCase()));
+  const matches = [...chats].sort((a,b) => Number(b.pinned === true) - Number(a.pinned === true) || b.updatedAt - a.updatedAt).filter(c => c.title.toLowerCase().includes(query.trim().toLowerCase()));
   return expanded || query.trim() ? matches : matches.slice(0,8);
 }
 export function applyDraftPhoto(draft: Plant | null, originatingId: string, photo: string): Plant | null {
@@ -67,10 +68,12 @@ export function parseBackup(value: unknown): WorkspaceData {
   const time = (t: unknown) => typeof t === 'number' && Number.isFinite(t) && t >= 0;
   for (const p of data.plants) if (!str(p.name, 120) || !p.name.trim() || !str(p.species, 120) || !str(p.location, 160) || !str(p.notes, 10000) || !time(p.updatedAt) || (p.photo !== undefined && !validPhoto(p.photo))) fail();
   for (const c of data.chats) {
+    if (c.pinned !== undefined && typeof c.pinned !== 'boolean') fail();
     if (!str(c.title, 120) || !time(c.updatedAt) || !link(c.plantId) || !Array.isArray(c.messages) || c.messages.length > 10000) fail();
     identity(c.messages);
     for (const m of c.messages) {
       if (m.spokenText !== undefined && !str(m.spokenText, 4000)) fail();
+      if (m.offTopic !== undefined && typeof m.offTopic !== 'boolean') fail();
       if (m.reminderProposal !== undefined) {
         const p = m.reminderProposal;
         if (!p || typeof p !== 'object' || !str(p.id, 100) || !p.id || !str(p.title, 160) || !['pending','saved','cancelled'].includes(p.status) || typeof p.timeRequested !== 'boolean' || !link(p.plantId) || !(validDate(p.due) || (p.due === '' && p.status !== 'saved'))) fail();

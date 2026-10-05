@@ -16,10 +16,9 @@ Lead with Cactea remembering one saved plant, inspecting a leaf photo, and helpi
 4. Hear Cactea ask one care question at a time. For this example, answer “The soil feels wet,” then “I watered it yesterday,” then “It gets bright indirect light.” Review each transcript before sending. Cactea should gather context before proposing a cause.
 5. Hear the brief care answer. Point out the highlighted **Next step** and expand **Details** in chat, then choose **Hear more** if the audience wants the details. **Replying aloud** appears when the browser starts speech.
 6. Ask “How do I check if the soil is too wet?” Cactea should use the saved plant context, ask whether any earlier observation is still true, and keep the photo visible on its original message. An old photo is not presented as a new observation.
-7. Say “Remind me to check the soil tomorrow.” Review the proposed title, date, and linked Monstera. Show that nothing appears in Reminders until you choose **Confirm reminder**. After confirmation, Cactea gives a brief Monstera-specific spoken acknowledgement and a short happy gesture. Then briefly open Reminders to show the saved action.
-8. In Settings, choose a device voice and use **Preview voice**. Rehearse voice selection before the presentation so the chosen voice is ready on that device.
+7. In Settings, choose a device voice and use **Preview voice**. Rehearse voice selection before the presentation so the chosen voice is ready on that device.
 
-Keep plants out of the main presentation unless they directly help with this care problem. Reminder creation is part of carrying out the advice, rather than a separate feature tour.
+Keep the presentation focused on saved plant context, care guidance, and reliable voice input. The current interface does not create or manage reminders.
 
 ## Recovery rehearsal
 
@@ -28,8 +27,7 @@ Keep plants out of the main presentation unless they directly help with this car
 - Stay silent: verify that the interface offers another attempt instead of sending an empty question.
 - If transcription fails: retry the retained recording or edit any captured words. The recording remains in memory only for this chat session; reload discards it.
 - Check **Stop audio**, **Hear brief answer**, and **Hear more** on an existing reply. If playback does not start, the UI should offer retry guidance rather than stay in the speaking state.
-- Cancel a reminder proposal: no reminder should be created. Try a request without a date: confirmation must stay disabled until you select a valid date. Refresh with a pending proposal and confirm it once; refreshing a saved proposal must not create another reminder.
-- A request with a time such as “tomorrow at 9 AM” must explain that this version stores dates only and sends no timed notifications. Saving remains an explicit choice.
+- Restore a backup containing older reminder drafts: existing records must be retained, and pending drafts must not create reminders automatically.
 - Change the speaking voice in Settings, preview it, and return to chat. Brief and full replies must use that choice. If a saved voice is unavailable on another device, the device default is used.
 
 ## Evidence to record after rehearsal
@@ -38,4 +36,4 @@ Record browser/device, date, permission result, exact question and reviewed tran
 
 The original recording, transcript review, spoken reply, and follow-up loop was reported working by the user on September 29, 2026. The new API triage flow and separate full/brief replies were verified against the running local answer service with `node scripts/verify-voice-conversation.mjs`.
 
-The browser connector still reports no available browsers. The new reminder card, device voice picker/preview, and updated speech summaries need a browser rehearsal on the presentation device. Automated tests and API requests do not establish audible hardware playback.
+Device voice selection and speech summaries need a browser rehearsal on the presentation device. Automated tests and API requests do not establish audible hardware playback.

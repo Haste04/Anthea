@@ -10,6 +10,8 @@ async function compile(file, optional = false) {
   return ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
 }
 const source = await compile('../lib/voice-capture.ts', true);
+const limits = {};
+vm.runInNewContext(await compile('../lib/transcription-limits.ts'), { exports: limits });
 const activity = {};
 vm.runInNewContext(await compile('../lib/voice-activity.ts'), { exports: activity, Date });
 const species = {};
@@ -18,7 +20,7 @@ const vocabularyApi = {};
 vm.runInNewContext(await compile('../lib/voice-vocabulary.ts'), { exports: vocabularyApi, require: () => species });
 const flush = async () => { for (let i = 0; i < 20; i++) await Promise.resolve(); };
 
-function harness({ permission, liveText = 'Water my fern', failedLive = false, fallback, browser = false } = {}) {
+function harness({ permission, liveText = 'Water my fern', failedLive = false, fallback, browser = false, audioSize = 5 } = {}) {
   let now = 0, energy = 0, stopped = 0;
   const recognitionRef = { current: null };
   const intervals = new Set(), timeouts = new Map(), submissions = [], states = [], phases = [], drafts = [];
@@ -36,7 +38,7 @@ function harness({ permission, liveText = 'Water my fern', failedLive = false, f
     static isTypeSupported() { return true; }
     state = 'inactive'; mimeType = 'audio/webm';
     start() { this.state = 'recording'; }
-    stop() { this.state = 'inactive'; queueMicrotask(() => { this.ondataavailable?.({ data: new Blob(['audio']) }); this.onstop?.(); }); }
+    stop() { this.state = 'inactive'; queueMicrotask(() => { this.ondataavailable?.({ data: new Blob([audioSize === 5 ? 'audio' : new Uint8Array(audioSize)]) }); this.onstop?.(); }); }
   }
   class SpeechRecognition {
     constructor() { recognitionRef.current = this; }
@@ -62,6 +64,7 @@ function harness({ permission, liveText = 'Water my fern', failedLive = false, f
     setTimeout: (fn, delay) => { timeouts.set(fn, now + delay); return fn; }, clearTimeout: fn => timeouts.delete(fn),
     require: name => {
       if (name === '@/lib/voice-activity') return activity;
+      if (name === '@/lib/transcription-limits') return limits;
       if (name === '@/lib/voice-vocabulary') return vocabularyApi;
       if (name === '@/lib/live-transcription') return { LiveTranscription };
       if (name === '@/lib/wav') return { blobToWav: async blob => blob };
@@ -93,6 +96,46 @@ test('speech and trailing silence submit directly once with processed microphone
   await app.capture.finish();
   assert.equal(app.submissions.length, 1);
   assert.ok(app.stopped() > 0);
+});
+
+test('oversized recordings offer a shorter recording without uploading or repeating the failed upload', async () => {
+  let uploads = 0;
+  const app = harness({ failedLive: true, audioSize: 4_194_305, fallback: async () => {
+    uploads++;
+    return { ok: true, json: async () => ({ transcript: 'Water my fern' }) };
+  } });
+  await app.capture.start(false);
+  await app.tick(0, 0.1); await app.tick(160, 0.1);
+  await app.capture.finish();
+  assert.equal(uploads, 0);
+  assert.deepEqual(app.submissions, []);
+  assert.match(app.states.at(-1).issue, /shorter/i);
+  assert.equal(app.states.at(-1).canRetry, false);
+  await app.capture.retry();
+  assert.equal(uploads, 0);
+});
+
+test('a host upload rejection asks for a shorter recording instead of retrying the same payload', async () => {
+  const app = harness({ failedLive: true, fallback: async () => ({ ok: false, status: 413 }) });
+  await app.capture.start(false);
+  await app.tick(0, 0.1); await app.tick(160, 0.1);
+  await app.capture.finish();
+  assert.match(app.states.at(-1).issue, /shorter/i);
+  assert.equal(app.states.at(-1).canRetry, false);
+});
+
+test('an unusable accuracy-retry recording preserves saved names for transcript confirmation', async () => {
+  for (const audioSize of [5, 4_194_305]) {
+    const app = harness({ liveText: 'My monsteraaa is dry', audioSize, fallback: async () => ({ ok: false, status: 413 }) });
+    await app.capture.start(false, ['Monsteraa']);
+    await app.tick(0, 0.1); await app.tick(160, 0.1);
+    await app.capture.finish();
+    assert.ok(app.states.at(-1).review.suggestions.includes('Monsteraa'));
+    assert.equal(app.states.at(-1).canRetry, false);
+    app.capture.confirmName('Monsteraa');
+    assert.deepEqual(app.submissions, ['My Monsteraa is dry']);
+    assert.equal(app.states.at(-1).review, null);
+  }
 });
 
 test('an uncertain name retries the recorded audio with vocabulary even when live text exists', async () => {

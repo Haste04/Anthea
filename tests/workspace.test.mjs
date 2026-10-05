@@ -7,6 +7,15 @@ const { outputText } = ts.transpileModule(source, { compilerOptions: { module: t
 const { parseBackup, normalizeStoredWorkspace, nextDueDate, recoverMessages, validPhoto, visibleChats, applyDraftPhoto } = await import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`);
 const empty = { version: 1, chats: [], plants: [], reminders: [] };
 
+test('reply topic survives reload for manual speech while invalid topic flags are rejected', () => {
+  const message = { id: 'a', role: 'assistant', text: 'Ask me about plants.', offTopic: true };
+  const backup = { ...empty, chats: [{ id: 'c', title: 'Chat', updatedAt: 1, messages: [message] }] };
+  assert.equal(normalizeStoredWorkspace(JSON.parse(JSON.stringify(backup))).chats[0].messages[0].offTopic, true);
+  for (const offTopic of ['true', 1, null]) {
+    assert.throws(() => parseBackup({ ...backup, chats: [{ ...backup.chats[0], messages: [{ ...message, offTopic }] }] }));
+  }
+});
+
 test('voice summaries and unsaved reminder proposals survive backup restoration', () => {
   const message = { id: 'a', role: 'assistant', text: 'Review your reminder.', spokenText: 'Review your reminder.', reminderProposal: { id: 'r', title: 'Check soil', due: '', status: 'pending', timeRequested: false } };
   const backup = { ...empty, chats: [{ id: 'c', title: 'Voice reminder', updatedAt: 1, messages: [message] }] };
@@ -50,6 +59,23 @@ test('complete chat history exposes older conversations and search reaches beyon
   assert.equal(visibleChats(chats,false,'').length,8);
   assert.equal(visibleChats(chats,true,'').length,12);
   assert.equal(visibleChats(chats,false,'Plant 0')[0].id,'0');
+});
+
+test('pinned conversations precede newer chats, remain searchable, and do not mutate saved order', () => {
+  const chats = Array.from({ length: 10 }, (_, i) => ({ id: String(i), title: `Plant ${i}`, messages: [], updatedAt: i, ...(i === 0 || i === 2 ? { pinned: true } : {}) }));
+  assert.deepEqual(visibleChats(chats, false, '').map(chat => chat.id), ['2', '0', '9', '8', '7', '6', '5', '4']);
+  assert.equal(visibleChats(chats, true, '').length, 10);
+  assert.deepEqual(visibleChats(chats, false, 'Plant 0').map(chat => chat.id), ['0']);
+  assert.deepEqual(chats.map(chat => chat.id), ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
+});
+
+test('pin choices survive backup and reload while legacy chats and invalid flags are handled', () => {
+  const chat = { id: 'c', title: 'Chat', updatedAt: 1, messages: [{ id: 'u', role: 'user', text: 'Help' }] };
+  for (const pinned of [true, false, undefined]) {
+    const backup = { ...empty, chats: [{ ...chat, ...(pinned === undefined ? {} : { pinned }) }] };
+    assert.equal(normalizeStoredWorkspace(JSON.parse(JSON.stringify(backup))).chats[0].pinned, pinned);
+  }
+  for (const pinned of ['true', 1, null]) assert.throws(() => parseBackup({ ...empty, chats: [{ ...chat, pinned }] }));
 });
 test('photo preparation from a cancelled draft cannot change a newly opened plant', () => {
   const other={id:'b',name:'Fern'};

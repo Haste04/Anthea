@@ -8,6 +8,7 @@ import Icon from "@/app/components/workspace/Icon";
 import { useWorkspace } from "@/app/components/workspace/WorkspaceProvider";
 import { landingPrompts } from "@/lib/landing-prompts";
 import styles from "./Landing.module.css";
+import antheaLogo from "../public/images/Anthea Logo.png";
 
 const topics = [
   { id: "leaves", title: "A leaf looking different?", text: "Talk through yellowing, dry edges, and the changes you notice.", image: "plant-10922365.jpg", position: "50% 55%" },
@@ -37,10 +38,12 @@ export default function VoiceFirstHome() {
     <div className={`landing-page voice-home ${styles.page}`}>
       <a className="skip-link" href="#landing-content">Skip to content</a>
       <header className="landing-header">
-        <Link href="/" className="brand landing-brand" aria-label="Anthea home">Anthea</Link>
+        <Link href="/" className={`brand landing-brand ${styles.brand}`} aria-label="Anthea home">
+          <Image src={antheaLogo} alt="" width={32} height={32} sizes="32px" />
+          Anthea
+        </Link>
         <nav aria-label="Main navigation" className="landing-nav">
           <a href="#how-it-works">How it works</a>
-          <Link href="/home">My garden</Link>
         </nav>
       </header>
 
@@ -64,10 +67,8 @@ export default function VoiceFirstHome() {
           <div className={styles.heroScene}>
             <figure className={styles.heroPhoto}>
               <Image src="/images/plant-10922365.jpg" alt="A potted Monstera beside a softly lit window" fill sizes="(max-width: 700px) 90vw, 46vw" preload />
-              <figcaption><span>EVERY LEAF HAS A STORY</span><strong>Let’s understand yours.</strong></figcaption>
             </figure>
             <div className={styles.companion}><Cactea state="idle" size="md" interactive/><p><strong>Hi, I’m Cactea.</strong>Tell me what you’re noticing.</p></div>
-            <span className={styles.sceneTag}><Icon name="leaf" size={16}/> A little care goes a long way</span>
           </div>
         </section>
 
@@ -88,7 +89,7 @@ export default function VoiceFirstHome() {
           </div>
         </section>
       </main>
-      <footer className="landing-footer"><span className="brand">Anthea</span><p>A little care goes a long way.</p><Link href="/home">Open my garden →</Link><small className={styles.credits}>Plant photography via <a href="https://www.pexels.com/photo/a-potted-swiss-cheese-plant-by-the-window-10922365/">Pexels</a></small></footer>
+      <footer className={`landing-footer ${styles.footer}`}><Link href="/home">Open my garden →</Link></footer>
     </div>
   );
 }

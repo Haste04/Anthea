@@ -25,11 +25,15 @@ export default function useSpeechPlayback(onStart: () => void, onFinish: () => v
     onFinish();
   }, [onFinish]);
 
-  const speak = useCallback((text: string, id: string) => {
+  const speak = useCallback((text: string, id: string, onQueued?: () => void) => {
     stop();
-    if (!window.speechSynthesis) { onError(); return; }
-    const utterance = new SpeechSynthesisUtterance(text);
-    configureSpeechVoice(utterance, window.speechSynthesis.getVoices(), readVoiceChoice());
+    onQueued?.();
+    if (!window.speechSynthesis) { onFinish(); onError(); return; }
+    let utterance: SpeechSynthesisUtterance;
+    try {
+      utterance = new SpeechSynthesisUtterance(text);
+      configureSpeechVoice(utterance, window.speechSynthesis.getVoices(), readVoiceChoice());
+    } catch { onFinish(); onError(); return; }
     utteranceRef.current = utterance;
     const finish = () => {
       if (utteranceRef.current !== utterance) return;

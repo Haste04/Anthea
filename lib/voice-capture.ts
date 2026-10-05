@@ -2,6 +2,7 @@ import { LiveTranscription } from "@/lib/live-transcription";
 import { VoiceActivityDetector, VOICE_AUDIO_CONSTRAINTS, readCalibration, rmsLevel } from "@/lib/voice-activity";
 import { blobToWav } from "@/lib/wav";
 import { microphoneProblem } from "@/lib/voice-feedback";
+import { MAX_AUDIO_BYTES } from "@/lib/transcription-limits";
 import { applyPlantNameSuggestion, buildPlantVocabulary, findPlantNameReview, normalizeVoiceVocabulary, type PlantNameReview } from "@/lib/voice-vocabulary";
 
 type Recognition = {
@@ -229,12 +230,22 @@ export class VoiceCapture {
     let audio = blob;
     try { audio = await blobToWav(blob); } catch { /* The server can decode the original recording. */ }
     if (signal.aborted) return "";
+    if (audio.size > MAX_AUDIO_BYTES) {
+      this.retained = null;
+      // Name review may still need the saved vocabulary without usable audio.
+      throw new Error("This recording is too large. Record a shorter question or type it instead.");
+    }
     const form = new FormData();
     form.append("audio", audio, audio.type.includes("wav") ? "speech.wav" : "speech");
     form.append("vocabulary", JSON.stringify(normalizeVoiceVocabulary(vocabulary)));
     const response = await fetch("/api/transcribe", {
       method: "POST", body: form, signal: AbortSignal.any([signal, AbortSignal.timeout(65000)]),
     });
+    if (signal.aborted) return "";
+    if (response.status === 413) {
+      this.retained = null;
+      throw new Error("This recording is too large. Record a shorter question or type it instead.");
+    }
     if (!response.ok) throw new Error(response.status === 429 ? "Too many voice requests. Wait a minute, then retry transcription." : "Transcription is unavailable. Retry the saved recording or type your question.");
     const data = await response.json();
     return typeof data.transcript === "string" ? data.transcript.trim() : "";
@@ -279,7 +290,7 @@ export class VoiceCapture {
       if (this.session !== session) return;
       this.session = null;
       this.callbacks.onPhase("idle");
-      this.update({ transcribing: false, canRetry: true, issue: error instanceof Error ? error.message : "Transcription failed. Try again." });
+      this.update({ transcribing: false, canRetry: Boolean(this.retained), issue: error instanceof Error ? error.message : "Transcription failed. Try again." });
     }
   }
 

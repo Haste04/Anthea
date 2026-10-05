@@ -1,5 +1,8 @@
 .page { max-width: 84rem; padding-inline: clamp(1.25rem, 5vw, 4.5rem); }
 .page :global(.landing-header) { padding-block: 1.8rem; border-bottom: 1px solid var(--border); }
+.brand { display: inline-flex; align-items: center; gap: 0.65rem; }
+.brand img { flex: none; width: 32px; height: 32px; object-fit: contain; }
+.page .footer { justify-content: center; text-align: center; }
 .page :global(.voice-home-hero) { min-height: 0; grid-template-columns: 1fr 1fr; gap: clamp(2rem, 6vw, 6rem); padding-block: 3.5rem 5rem; }
 .page :global(.voice-home-hero h1) { font-size: clamp(3rem, 5.4vw, 5rem); max-width: 12ch; }
 .page :global(.landing-intro) { max-width: 27rem; }
@@ -14,14 +17,9 @@
 .heroScene { position: relative; padding-bottom: 1.4rem; min-width: 0; }
 .heroPhoto { position: relative; aspect-ratio: 4 / 5; margin: 0; overflow: hidden; border-radius: 48% 48% 1.5rem 1.5rem; background: var(--selected); }
 .heroPhoto img { object-fit: cover; object-position: 50% 65%; }
-.heroPhoto figcaption { position: absolute; top: 17%; left: 0; right: 0; display: grid; gap: 0.35rem; text-align: center; color: var(--lw-forest); }
-.heroPhoto figcaption span { font-size: 0.65rem; letter-spacing: 0.18em; font-weight: 700; }
-.heroPhoto figcaption strong { font-family: var(--font-brand), Georgia, serif; font-size: clamp(1rem, 1.5vw, 1.45rem); }
 .companion { position: absolute; bottom: 0; left: -1.7rem; display: flex; align-items: center; gap: 0.35rem; padding: 0.25rem 1.4rem 0.25rem 0.2rem; max-width: calc(100% + 1rem); background: var(--surface-soft); border: 1px solid var(--border); border-radius: 1.25rem; box-shadow: 0 8px 24px var(--shadow-soft); }
 .companion p { display: grid; gap: 0.25rem; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.35; }
 .companion strong { color: var(--text-primary); font-size: 1rem; }
-.sceneTag { position: absolute; top: 52%; right: -1.2rem; display: flex; gap: 0.35rem; align-items: center; background: var(--lw-forest); color: var(--lw-cream); padding: 0.7rem 0.9rem; border-radius: 0.5rem; font-size: 0.72rem; }
-.sceneTag svg { color: var(--accent); }
 .topics { padding-block: 2.5rem 4rem; border-top: 1px solid var(--border); }
 .sectionHeading { display: flex; justify-content: space-between; align-items: end; gap: 2rem; margin-bottom: 1.8rem; }
 .sectionHeading h2 { margin-bottom: 0 !important; }
@@ -39,7 +37,6 @@
 .topicCopy > span { color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5; }
 .topicCopy .topicAction { display: flex; justify-content: space-between; align-items: center; color: var(--primary); font-weight: 700; margin-top: 0.5rem; }
 .how { background: var(--selected); border: 1px solid var(--border); border-radius: 1.4rem; padding: clamp(1.5rem, 4vw, 3rem); margin-bottom: 3rem; }
-.credits { flex-basis: 100%; font-size: 0.7rem; }
 @media (max-width: 700px) {
   .page :global(.voice-home-hero) { grid-template-columns: 1fr; padding-block: 2.5rem 3rem; gap: 2rem; }
   .page :global(.voice-home-hero h1) { font-size: clamp(2.8rem, 10vw, 4rem); }
@@ -47,10 +44,8 @@
   .quickReturn { justify-content: center; }
   .heroScene { width: min(100%, 26rem); justify-self: center; padding-bottom: 2rem; }
   .heroPhoto { aspect-ratio: 1; }
-  .heroPhoto figcaption { top: 12%; }
   .companion { left: 0; bottom: 0; max-width: 100%; }
   .companion > :first-child { --cactea-size: 5.5rem; }
-  .sceneTag { right: -0.4rem; top: 50%; font-size: 0.65rem; }
   .sectionHeading { display: block; }
   .sectionHeading > p { margin-top: 1rem; }
   .topicGrid { grid-template-columns: 1fr; }
@@ -59,6 +54,5 @@
   .topicCopy { padding: 1.1rem; }
   .topicCopy > strong { font-size: 1.1rem; }
   .topicCopy > span { font-size: 0.88rem; }
-  .credits { text-align: center; }
 }
 @media (prefers-reduced-motion: reduce) { .topic { transition: none; } }
