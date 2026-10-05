@@ -14,6 +14,22 @@ Yellow leaves? Unsure when to water? Anthea helps you turn what you notice into 
 - Perenual API for confirmed care data (watering, sunlight, soil), used only _after_ the LLM already has a species guess — Perenual has no trait-search endpoint
 - Local `data/disease-rules.json` (12 rules, keyword-overlap matched, not exact string match)
 
+## Documentation
+
+The full documentation set lives in the [`docs/`](docs/README.md) folder:
+
+| Guide | What it covers |
+| --- | --- |
+| [Documentation home](docs/README.md) | Overview, purpose, capabilities, quick facts, and the full index. |
+| [Setup guide](docs/setup.md) | Install, environment variables, local run, first conversation, Vercel deploy, troubleshooting. |
+| [Architecture](docs/architecture.md) | Tech stack, voice pipeline, reasoning pipeline, persistence, code map. |
+| [API reference](docs/api-reference.md) | Every endpoint, request/response shapes, limits, and rate limiting. |
+| [Development guide](docs/development.md) | Validation commands, test suite, debugging, and contribution notes. |
+
+Feature walkthroughs also live in [`docs/full-app.md`](docs/full-app.md),
+[`docs/voice-demo.md`](docs/voice-demo.md), and
+[`docs/plant-species.md`](docs/plant-species.md).
+
 ## Meet your plant-care companion
 
 Cactea keeps the conversation approachable: visible listening, thinking, and speaking states; one question at a time; and advice you can act on.
