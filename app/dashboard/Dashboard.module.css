@@ -987,6 +987,13 @@
   .sidebarGreeting p { font-size: 12px; line-height: 1.4; }
 }
 
+/* Use the desktop canvas while keeping individual messages at a reading width. */
+@media (min-width: 1400px) {
+  .shell { max-width: none; }
+  .scroll :global(.msg-row) { max-width: none; }
+  .scroll :global(.msg-col) { max-width: min(86%, 39.5rem); }
+}
+
 /* Expanded controls stay reachable in short windows without scrolling the page. */
 @media (max-height: 500px) {
   .chatArea .summaryHeader { max-height: 40%; overflow: auto; }

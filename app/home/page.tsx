@@ -1,2 +1,2 @@
-import { HomePage } from '../components/workspace/WorkspacePages';
-export default HomePage;
+import HomeGarden from './HomeGarden';
+export default HomeGarden;

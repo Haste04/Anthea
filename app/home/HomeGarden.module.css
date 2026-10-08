@@ -1,0 +1,230 @@
+/* The shell override requires this page's unique class, even after navigation. */
+:global(.ws-app):has(.page) {
+  background: #f6f1e5;
+}
+
+.page {
+  --garden-ivory: #f6f1e5;
+  --garden-sage: #e3ede4;
+  --garden-forest: #075c42;
+  --garden-ink: #203b2c;
+  --garden-muted: #526655;
+  --garden-line: #d5dece;
+  --garden-ease: cubic-bezier(.22, 1, .36, 1);
+  min-width: 0;
+  color: var(--garden-ink);
+  background: radial-gradient(ellipse at 92% 5%, #e3ede480, transparent 42%), var(--garden-ivory);
+  font-family: var(--font-display), sans-serif;
+  overflow: clip;
+}
+
+.inner { max-width: 1400px; margin-inline: auto; padding: 32px clamp(24px, 4vw, 72px) 0; }
+.page h1, .page h2, .page h3, .page p { margin: 0; }
+.page :is(h1, h2, h3) { font-family: var(--font-brand), Georgia, serif; font-weight: 600; }
+.page :is(a, button):focus-visible { outline: 3px solid var(--garden-forest); outline-offset: 6px; }
+.page .eyebrow { display: flex; align-items: center; gap: 8px; font-size: 10px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; line-height: 1.7; color: var(--garden-forest); }
+
+.hero { position: relative; display: grid; grid-template-columns: 48% 52%; align-items: center; min-height: 675px; padding-block: 32px 70px; }
+.heroCopy { position: relative; z-index: 5; padding-block: 20px; padding-right: 16px; }
+.page .hero h1 { max-width: 580px; font-size: clamp(46px, 4.8vw, 76px); line-height: 1.04; letter-spacing: -.06em; text-wrap: balance; }
+.hero h1 em { display: block; color: var(--garden-forest); font-weight: inherit; }
+.page .intro { max-width: 355px; font-size: 17px; line-height: 1.65; margin-top: 24px; color: var(--garden-muted); }
+.page .hero h2 { font-size: 19px; letter-spacing: -.025em; line-height: 1.45; margin-top: 28px; }
+.page .description { font-size: 15px; line-height: 1.65; color: var(--garden-muted); margin-top: 9px; max-width: 345px; }
+.page .primary { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 54px; padding: 14px 23px; margin-top: 28px; border: 1px solid var(--garden-forest); border-radius: 100px; background: var(--garden-forest); color: #fffdf5; font-weight: 600; box-shadow: 0 5px 16px #075c4210; transition: transform 240ms var(--garden-ease), background 240ms, box-shadow 240ms; }
+.primary > svg:last-child { margin-left: 14px; transition: transform 240ms var(--garden-ease); }
+.scene { position: relative; isolation: isolate; width: 100%; min-height: 570px; perspective: 900px; }
+.depthLayer { position: absolute; pointer-events: none; translate: var(--garden-pointer-x, 0px) var(--garden-pointer-y, 0px); transform: translate3d(0, var(--garden-scroll-y, 0px), 0); transition: translate 600ms var(--garden-ease); }
+.depthLayer > svg { display: block; width: 100%; height: auto; }
+.habitat { z-index: -2; width: 104%; height: 88%; left: -1%; bottom: 8%; border-radius: 49% 49% 44% 47%; background: radial-gradient(ellipse at 44% 25%, #f0f4e7 0%, #e1ebd9 37%, #c8dabc 78%, #b8ccac 100%); box-shadow: inset 0 0 90px #f6f1e560; }
+.habitat::before { content: ""; position: absolute; inset: 20px; border: 1px solid #fffdf566; border-radius: inherit; }
+.backBranch { color: #698568; opacity: .18; width: 39%; right: -6%; top: 5%; z-index: -1; }
+.backBranch svg { rotate: -18deg; }
+.midLeaf { color: #90ac7e; width: 31%; left: -6%; top: 34%; z-index: -1; }
+.midLeaf svg { rotate: -30deg; }
+.sun { color: #7f9271; width: 58px; left: 16%; top: 8%; opacity: .65; }
+.mascotStage { position: absolute; z-index: 3; top: 46%; left: 50%; width: 106%; max-width: 580px; transform: translate(-50%, -50%) rotateX(var(--garden-tilt-x, 0deg)) rotateY(var(--garden-tilt-y, 0deg)); transform-origin: 50% 75%; transition: transform 600ms var(--garden-ease); }
+.mascotFloat { width: 100%; animation: garden-float 6500ms ease-in-out infinite; }
+.page .mascot { --cactea-size: 100%; width: 100%; margin: 0; filter: drop-shadow(0 14px 12px #45613a0d); }
+.page .mascot::after { height: 3%; background: radial-gradient(ellipse, #355c3e32, #355c3e00 72%); left: 22%; width: 56%; bottom: 8%; animation: garden-shadow 6500ms ease-in-out infinite; }
+.frontBranch { color: #577a4d; width: 33%; right: -11%; bottom: 18%; z-index: 2; }
+.frontBranch svg { rotate: -20deg; }
+.frontLeaf { color: #759865; width: 27%; left: -8%; bottom: 12%; z-index: 2; }
+.frontLeaf svg { rotate: -38deg; }
+.mascotCaption { position: absolute; bottom: 2%; left: 50%; transform: translateX(-50%); display: flex; align-items: center; justify-content: center; flex-wrap: wrap; column-gap: 8px; width: 100%; font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+.mascotCaption > span:last-child { flex-basis: 100%; text-align: center; font-weight: 400; color: var(--garden-muted); font-size: 12px; margin-top: 4px; }
+.presenceDot { width: 6px; height: 6px; background: var(--garden-forest); border-radius: 50%; box-shadow: 0 0 0 4px #075c4209; }
+
+.gallerySection { position: relative; padding-block: 46px 64px; scroll-margin-top: 80px; }
+.gallerySection::before { content: ""; position: absolute; inset: 0 calc(-1 * clamp(24px, 4vw, 72px)); pointer-events: none; z-index: 0; background: linear-gradient(#f6f1e500, var(--garden-ivory) 90px); }
+.gallerySection > * { position: relative; }
+.sectionHeading { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 32px; }
+.page .sectionHeading h2 { font-size: clamp(36px, 3.4vw, 48px); line-height: 1.15; letter-spacing: -.045em; margin-top: 8px; }
+.galleryTitle { display: flex; align-items: center; gap: 24px; margin-top: 8px; }
+.page .galleryTitle h2 { margin-top: 0; }
+.page .sectionDescription { color: var(--garden-muted); font-size: 15px; line-height: 1.6; margin-top: 10px; }
+.page .textLink { display: inline-flex; align-items: center; gap: 12px; min-height: 44px; flex-shrink: 0; font-size: 14px; font-weight: 600; color: var(--garden-forest); }
+.textLink > svg { transition: transform 240ms var(--garden-ease); }
+.galleryActions { display: flex; align-items: center; gap: 24px; flex-shrink: 0; }
+.galleryControls { display: flex; gap: 8px; }
+.page .galleryControls button { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid #b5c7ac; border-radius: 50%; background: transparent; color: var(--garden-forest); transition: background 200ms, color 200ms; }
+.page .galleryControls button:disabled { opacity: .35; }
+.galleryControls button:not(:disabled):hover { background: var(--garden-sage); }
+.previousPlants > svg { rotate: 180deg; }
+.gallery { --gallery-gap: clamp(18px, 2.4vw, 34px); display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - 2 * var(--gallery-gap)) / 3); gap: var(--gallery-gap); overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding-inline: 6px; scrollbar-width: none; padding: 8px 6px; margin-inline: -6px; }
+.gallery::-webkit-scrollbar { display: none; }
+.gallery:focus-visible { outline: 3px solid var(--garden-forest); outline-offset: 4px; }
+.plantReveal { min-width: 0; scroll-snap-align: start; }
+.page .plant { display: block; border-radius: 120px 120px 4px 4px; transition: transform 350ms var(--garden-ease); }
+.page .plant:focus-visible { outline-offset: 2px; }
+.plantPhoto { position: relative; aspect-ratio: 4 / 5; overflow: hidden; border-radius: 46% 46% 6px 6px; background: linear-gradient(145deg, #e4e9d9, #d4dfc8); border: 1px solid #afc09f66; isolation: isolate; }
+.plantReveal:nth-child(2) .plantPhoto { background: linear-gradient(145deg, #eae5d6, #e0d9c7); }
+.plantReveal:nth-child(3) .plantPhoto { background: linear-gradient(145deg, #e1e9df, #cadbca); }
+.plantPhoto > img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 700ms var(--garden-ease); }
+.photoIndex { position: absolute; left: 16px; bottom: 16px; display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid #fffdf595; border-radius: 50%; background: #f6f1e5e6; color: var(--garden-ink); font-size: 10px; letter-spacing: .06em; }
+.plantArrow { position: absolute; right: 14px; bottom: 14px; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--garden-ivory); color: var(--garden-forest); box-shadow: 0 2px 6px #203b2c0c; transition: background 250ms, color 250ms; }
+.plantInfo { padding: 19px 0 20px; border-bottom: 1px solid var(--garden-line); min-width: 0; overflow-wrap: anywhere; }
+.page .plantInfo h3 { font-size: 23px; line-height: 1.25; letter-spacing: -.03em; }
+.page .plantInfo p { margin-top: 6px; color: var(--garden-muted); font-size: 14px; line-height: 1.5; }
+.plantInfo > span { display: block; color: var(--garden-muted); font-size: 12px; font-style: italic; line-height: 1.5; margin-top: 3px; }
+.plantIllustration { display: block; width: 80%; height: 100%; margin: auto; filter: drop-shadow(0 15px 10px #203b2c12); }
+.emptyGarden { display: flex; align-items: center; gap: 40px; padding: 36px 48px; background: #e3ede466; border-block: 1px solid var(--garden-line); border-radius: 4px 100px 4px 4px; }
+.emptyArt { flex: 0 0 150px; height: 180px; }
+.page .emptyGarden h3 { font-size: 27px; letter-spacing: -.03em; margin-top: 8px; line-height: 1.3; }
+.page .emptyGarden p:not(.eyebrow) { color: var(--garden-muted); font-size: 15px; line-height: 1.6; margin: 10px 0; }
+
+.overview { display: grid; grid-template-columns: 1.05fr 1fr 1fr; align-items: center; border-block: 1px solid var(--garden-line); padding-block: 25px; gap: 24px; }
+.page .overview h2 { font-size: 23px; letter-spacing: -.035em; margin-top: 5px; line-height: 1.3; }
+.page .stat { display: flex; align-items: center; gap: 14px; min-width: 0; min-height: 72px; padding: 8px 16px; border-left: 1px solid var(--garden-line); border-radius: 0 8px 8px 0; transition: background 200ms; }
+.statIcon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: #e3ede4; flex-shrink: 0; color: var(--garden-forest); }
+.stat > div { display: flex; flex-direction: column; min-width: 0; }
+.stat strong { font-family: var(--font-brand), serif; font-size: 32px; font-weight: 600; line-height: 1.1; letter-spacing: -.05em; }
+.stat div > span { color: var(--garden-muted); font-size: 13px; margin-top: 3px; }
+.stat > svg { margin-left: auto; width: 16px; flex-shrink: 0; color: var(--garden-forest); }
+.supporting { display: grid; grid-template-columns: 1.35fr 1fr; gap: 48px; padding-block: 56px 40px; align-items: start; }
+.supportHeading { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-bottom: 18px; }
+.page .supportHeading h2 { font-size: 25px; line-height: 1.25; letter-spacing: -.035em; margin-top: 8px; }
+.page .conversation { width: 100%; display: flex; align-items: center; gap: 14px; min-height: 82px; border: 0; border-bottom: 1px solid var(--garden-line); background: transparent; padding: 15px 8px; color: var(--garden-ink); text-align: left; transition: background 240ms, padding 240ms var(--garden-ease); }
+.conversationIcon { flex-shrink: 0; color: #638266; }
+.conversationText { flex: 1; min-width: 0; }
+.conversationText strong { display: block; font-size: 15px; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
+.conversationText small { display: block; margin-top: 4px; color: var(--garden-muted); font-size: 12px; }
+.conversation > svg { width: 16px; flex-shrink: 0; color: var(--garden-muted); transition: transform 250ms var(--garden-ease); }
+.page .emptyConversation { color: var(--garden-muted); border-block: 1px solid var(--garden-line); padding-block: 22px; font-size: 15px; line-height: 1.6; }
+.tip { position: relative; isolation: isolate; overflow: hidden; padding: 30px; background: #e3ede4; border: 1px solid #ceddcc; border-radius: 4px 58px 4px 4px; }
+.tipDecoration { position: absolute; pointer-events: none; color: #a3bda0; opacity: .35; width: 125px; right: -44px; bottom: -54px; z-index: -1; rotate: -25deg; }
+.page .tip h2 { max-width: 275px; font-size: 27px; line-height: 1.2; letter-spacing: -.035em; margin-top: 20px; }
+.page .tip > p:not(.eyebrow) { font-size: 14px; line-height: 1.7; color: var(--garden-muted); margin-top: 18px; }
+
+/* Motion targets wrappers; all text remains visible before enhancement. */
+.page[data-garden-motion="on"] [data-garden-pending="true"] { opacity: 0; transform: translateY(24px); transition: opacity 700ms var(--garden-ease), transform 700ms var(--garden-ease); transition-delay: var(--reveal-delay, 0ms); }
+.page[data-garden-motion="on"] [data-garden-visible="true"] { opacity: 1; transform: translateY(0); }
+@keyframes garden-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes garden-shadow { 0%, 100% { opacity: 1; scale: 1 1; } 50% { opacity: .7; scale: .94 .9; } }
+
+@media (hover: hover) and (pointer: fine) {
+  .primary:hover { background: #034b36; box-shadow: 0 8px 22px #075c421b; transform: translateY(-2px); }
+  .primary:hover > svg:last-child { transform: translate(2px, -2px); }
+  .textLink:hover > svg { transform: translateX(4px); }
+  .plant:hover { transform: translateY(-5px); }
+  .plant:hover .plantPhoto > img { transform: scale(1.045); }
+  .plant:hover .plantArrow { background: var(--garden-forest); color: #fffdf5; }
+  .stat:hover { background: #e3ede480; }
+  .conversation:hover { background: #e3ede480; padding-inline: 12px; }
+  .conversation:hover > svg { transform: translate(2px, -2px); }
+}
+
+@media (min-width: 1700px) {
+  .hero { min-height: 740px; }
+  .scene { min-height: 640px; }
+  .page .hero h1 { font-size: 82px; }
+}
+@media (min-width: 801px) and (max-width: 1100px) {
+  .inner { padding-inline: 28px; }
+  .hero { grid-template-columns: 47% 53%; min-height: 610px; }
+  .scene { min-height: 480px; }
+  .page .hero h1 { font-size: 48px; }
+  .page .intro { font-size: 16px; }
+  .page .description { font-size: 14px; }
+  .page .hero h2 { font-size: 18px; }
+  .overview { grid-template-columns: .9fr 1fr 1fr; gap: 10px; }
+  .page .stat { padding-inline: 12px; gap: 10px; }
+  .statIcon { width: 32px; height: 32px; }
+  .stat > svg { display: none; }
+  .supporting { gap: 24px; }
+  .tip { padding: 24px; }
+}
+@media (max-width: 800px) {
+  .inner { padding-top: 22px; padding-inline: 28px; }
+  .hero { grid-template-columns: 1fr 1fr; min-height: 600px; padding-block: 28px 56px; }
+  .heroCopy { padding-right: 0; }
+  .page .hero h1 { font-size: clamp(40px, 6.8vw, 54px); }
+  .scene { min-height: 470px; }
+  .mascotStage { width: 114%; }
+  .gallerySection { padding-block: 35px 44px; }
+  .gallery { --gallery-gap: 20px; grid-auto-columns: calc((100% - var(--gallery-gap)) / 2); }
+  .sectionHeading { flex-wrap: wrap; }
+  .page .plantInfo h3 { font-size: 21px; }
+  .overview { grid-template-columns: 1fr 1fr; gap: 18px; }
+  .overview > div { grid-column: 1 / -1; }
+  .page .stat { border: 0; padding-inline: 0; }
+  .supporting { gap: 28px; padding-top: 40px; }
+  .page .supportHeading h2 { font-size: 23px; }
+  .tip { padding: 24px; }
+}
+@media (max-width: 600px) {
+  .inner { padding-inline: 22px; }
+  .hero { display: flex; flex-direction: column; align-items: stretch; padding-block: 30px 54px; gap: 8px; min-height: 0; }
+  .heroCopy { padding: 0; }
+  .page .hero h1 { font-size: clamp(43px, 11.5vw, 64px); max-width: 440px; line-height: 1.03; }
+  .page .intro { font-size: 16px; max-width: 330px; margin-top: 18px; }
+  .page .hero h2 { margin-top: 22px; font-size: 18px; }
+  .page .description { font-size: 14px; max-width: 360px; }
+  .page .primary { margin-top: 22px; min-height: 52px; }
+  .scene { min-height: 0; height: clamp(345px, 98vw, 510px); max-width: 480px; margin: 6px auto 0; }
+  .mascotStage { width: 110%; top: 43%; }
+  .habitat { height: 83%; width: 98%; bottom: 13%; left: 1%; }
+  .backBranch { width: 34%; right: -2%; top: 0; }
+  .frontBranch { bottom: 20%; width: 32%; right: -5%; }
+  .frontLeaf { bottom: 17%; width: 26%; left: -2%; }
+  .midLeaf { width: 27%; left: -1%; top: 28%; }
+  .sun { top: 7%; width: 42px; }
+  .mascotCaption { bottom: 5%; }
+  .gallerySection { padding-top: 32px; }
+  .sectionHeading { align-items: flex-start; gap: 14px; flex-wrap: wrap; margin-bottom: 25px; }
+  .page .sectionHeading h2 { font-size: clamp(32px, 9vw, 38px); }
+  .galleryTitle { gap: 12px; }
+  .galleryTitle .textLink { gap: 8px; }
+  .sectionHeading .textLink { min-height: 38px; border-bottom: 1px solid #9cb393; }
+  .page .sectionDescription { font-size: 14px; }
+  .galleryActions { width: 100%; justify-content: flex-end; gap: 16px; }
+  .gallery { --gallery-gap: 16px; grid-auto-columns: 100%; }
+  .plantPhoto { aspect-ratio: 5 / 4; border-radius: 42% 42% 6px 6px; }
+  .page .plantInfo h3 { font-size: 26px; }
+  .plantInfo { padding-top: 14px; padding-bottom: 14px; }
+  .page .plantInfo p { font-size: 13px; }
+  .plantInfo > span { font-size: 11px; }
+  .plantArrow { width: 32px; height: 32px; right: 10px; bottom: 10px; }
+  .photoIndex { left: 10px; bottom: 10px; width: 24px; height: 24px; font-size: 9px; }
+  .emptyGarden { flex-direction: column; align-items: flex-start; gap: 12px; padding: 24px; border-radius: 4px 48px 4px 4px; }
+  .emptyArt { flex-basis: auto; width: 130px; height: 135px; align-self: center; }
+  .page .emptyGarden h3 { font-size: 26px; }
+  .overview { gap: 16px 12px; padding-block: 24px; }
+  .page .stat { gap: 10px; }
+  .statIcon { width: 34px; height: 34px; }
+  .stat > svg { display: none; }
+  .stat strong { font-size: 30px; }
+  .stat div > span { font-size: 12px; line-height: 1.4; }
+  .supporting { grid-template-columns: 1fr; gap: 32px; padding-block: 36px 10px; }
+  .supportHeading { gap: 14px; }
+  .supportHeading .eyebrow { font-size: 9px; }
+  .page .supportHeading h2 { font-size: 25px; }
+  .page .tip h2 { font-size: 29px; max-width: 300px; }
+  .tip { padding: 28px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .page *, .page *::after { animation: none !important; transition: none !important; }
+  .page .depthLayer, .page .mascotFloat, .page .plant, .page [data-garden-reveal] { transform: none !important; opacity: 1 !important; }
+  .page .depthLayer { translate: none !important; }
+  .page .mascotStage { transform: translate(-50%, -50%); }
+}
