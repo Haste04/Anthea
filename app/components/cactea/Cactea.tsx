@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { memo } from "react";
+import { memo, useEffect, useRef } from "react";
 import body from "../../../public/cacthea/body.png";
 import leftArm from "../../../public/cacthea/left-arm.png";
 import rightArm from "../../../public/cacthea/right-arm.png";
@@ -11,7 +11,7 @@ import mouth from "../../../public/cacthea/mouth.png";
 import smilingMouth from "../../../public/cacthea/Smiling Mouth.png";
 import type { CacteaProps } from "./Cactea.types";
 import styles from "./Cactea.module.css";
-import { AngryBrow, ClosedEye, FrownMouth, OpenMouth, WorriedBrow } from "./FaceExpressions";
+import { AngryBrow, ClosedEye, FrownMouth, OpenMouth, ThoughtfulMouth, WorriedBrow } from "./FaceExpressions";
 import useCacteaIdleAnimations from "./useCacteaIdleAnimations";
 import useCacteaSmile from "./useCacteaSmile";
 
@@ -68,14 +68,21 @@ const activityLabels: Partial<Record<CacteaProps["state"], string>> = {
   lifewood: "Cactea is waving hello to Lifewood with two fresh leaves",
 };
 
-function Cactea({ state, size = "md", className, ariaLabel, interactive = false, stationary = false, lively = false, chatExpressions = false }: CacteaProps) {
+function Cactea({ state, size = "md", className, ariaLabel, interactive = false, stationary = false, lively = false, chatExpressions = false, barrelRoll = false }: CacteaProps) {
   const livelyMode = lively && !stationary && state === "idle";
   const pngExpressions = chatExpressions || livelyMode;
-  const { mascotRef, jump } = useCacteaIdleAnimations(livelyMode, {
-    barrelRoll: livelyMode,
+  const rollMode = barrelRoll && interactive && !stationary && state === "idle";
+  const { mascotRef, jump, tryBarrelRoll } = useCacteaIdleAnimations(livelyMode || rollMode, {
+    barrelRoll: rollMode,
     independentSmile: livelyMode,
+    idleGestures: livelyMode,
   });
   useCacteaSmile(mascotRef, pngExpressions && !stationary && state === "idle");
+  const clickJumpRef = useRef<Animation | null>(null);
+  useEffect(() => () => {
+    clickJumpRef.current?.cancel();
+    clickJumpRef.current = null;
+  }, [state]);
   const classes = `${styles.mascot} ${styles[size]} ${interactive || livelyMode ? styles.interactive : ""} ${className ?? ""} ${CACTEA_DEBUG ? styles.debug : ""}`.trim();
   const artwork = (
     <div className={styles.bounce}>
@@ -106,6 +113,7 @@ function Cactea({ state, size = "md", className, ariaLabel, interactive = false,
               <span className={styles.openMouth}><OpenMouth /></span>
               <span className={styles.roundMouth}><OpenMouth round /></span>
               <span className={styles.frownMouth}><FrownMouth /></span>
+              <span className={styles.thoughtfulMouth}><ThoughtfulMouth /></span>
             </>}
           </span>
         ))}
@@ -132,8 +140,14 @@ function Cactea({ state, size = "md", className, ariaLabel, interactive = false,
         ref={mascotRef}
         aria-label={ariaLabel ?? (state === "lifewood" || state === "angry" ? activityLabels[state] : "Make Cactea jump")}
         onClick={(event) => {
+          if (state === "thinking") return;
           if (livelyMode) {
             jump();
+            return;
+          }
+          if (tryBarrelRoll()) {
+            clickJumpRef.current?.cancel();
+            clickJumpRef.current = null;
             return;
           }
           const bounce = event.currentTarget.firstElementChild;
@@ -142,13 +156,13 @@ function Cactea({ state, size = "md", className, ariaLabel, interactive = false,
           const current = getComputedStyle(bounce).transform;
           bounce.getAnimations().forEach((animation) => animation.cancel());
           if (reducedMotion) {
-            bounce.animate([{ opacity: 1 }, { opacity: 0.72 }, { opacity: 1 }], { duration: 180, easing: "ease-out" });
+            clickJumpRef.current = bounce.animate([{ opacity: 1 }, { opacity: 0.72 }, { opacity: 1 }], { duration: 180, easing: "ease-out" });
             return;
           }
           const resting = window.matchMedia("(hover: hover) and (pointer: fine)").matches && event.currentTarget.matches(":hover")
             ? "translateY(-2%) rotate(-2deg)"
             : "none";
-          bounce.animate([
+          clickJumpRef.current = bounce.animate([
             { transform: current, offset: 0 },
             { transform: "translateY(0) scale(1.04, .96)", offset: 0.16 },
             { transform: "translateY(-12%) scale(.97, 1.03)", offset: 0.48 },

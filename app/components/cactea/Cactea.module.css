@@ -32,7 +32,7 @@
 .interactive { padding: 0; border: 0; background: transparent; cursor: pointer; appearance: none; touch-action: manipulation; }
 .interactive:focus-visible { outline: 3px solid var(--primary); outline-offset: 5px; border-radius: 50%; }
 @media (hover: hover) and (pointer: fine) {
-  .interactive:hover .bounce { transform: translateY(-2%) rotate(-2deg); }
+  .interactive:not([data-state="thinking"]):hover .bounce { transform: translateY(-2%) rotate(-2deg); }
 }
 
 /* Limbs share one canvas. The ground shadow stays planted during a hop. */
@@ -42,7 +42,8 @@
   height: 100%;
   z-index: 1;
   transform-origin: 50% 85%;
-  transition: transform 240ms var(--ease-out);
+  rotate: 0deg;
+  transition: transform 240ms var(--ease-out), rotate 520ms var(--ease-out);
 }
 .mascot::after {
   content: "";
@@ -71,7 +72,7 @@
   transition: transform 240ms var(--ease-out);
 }
 .leftArm { left: var(--left-arm-left); transform-origin: 78% 58%; }
-.rightArm { left: var(--right-arm-left); transform-origin: 22% 58%; }
+.rightArm { left: var(--right-arm-left); transform-origin: 22% 58%; rotate: 0deg; translate: 0 0; transition: transform 240ms var(--ease-out), rotate 520ms var(--ease-out), translate 520ms var(--ease-out), z-index 0s 520ms; }
 .body {
   top: calc((100% - var(--body-width)) / 2);
   left: calc((100% - var(--body-width)) / 2);
@@ -82,21 +83,24 @@
 .leftEye { top: var(--eyes-top); left: var(--left-eye-left); width: var(--left-eye-width); }
 .rightEye { top: var(--eyes-top); left: var(--right-eye-left); width: var(--right-eye-width); }
 .mouth { top: var(--mouth-top); left: var(--mouth-left); width: var(--mouth-width); }
+.mouth > img { transition: opacity 240ms ease; }
 .smilingMouth { position: absolute; top: 24%; left: 0; right: 0; opacity: 0; transition: opacity 180ms ease; }
 .smilingMouth > img { display: block; width: 100%; height: auto; }
 .mascot[data-png-smile][data-state="idle"] .mouth > img { transition: opacity 180ms ease; }
 .mascot[data-png-smile][data-state="idle"][data-smiling] .mouth > img { opacity: 0; }
 .mascot[data-png-smile][data-state="idle"][data-smiling] .smilingMouth { opacity: 1; }
-.mascot[data-chat-expressions] .leftEye > img,
-.mascot[data-chat-expressions] .rightEye > img { translate: var(--home-eye-x, 0px) var(--home-eye-y, 0px); }
-.leftEye, .rightEye { transition: transform 240ms var(--ease-out); }
+.mascot[data-chat-expressions]:not([data-state="thinking"]) .leftEye > img,
+.mascot[data-chat-expressions]:not([data-state="thinking"]) .rightEye > img { translate: var(--home-eye-x, 0px) var(--home-eye-y, 0px); }
+.leftEye, .rightEye { translate: 0 0; transition: transform 240ms var(--ease-out), translate 480ms var(--ease-out); }
+.leftEye > img, .rightEye > img { transition: translate 350ms var(--ease-out); }
 
-.closedEye, .worriedBrow, .angryBrow, .openMouth, .roundMouth, .frownMouth {
+.closedEye, .worriedBrow, .angryBrow, .openMouth, .roundMouth, .frownMouth, .thoughtfulMouth {
   position: absolute;
   inset: 0;
   display: block;
   opacity: 0;
 }
+.thoughtfulMouth { transition: opacity 240ms ease; }
 .layer svg { display: block; width: 100%; height: 100%; }
 .rightEye .worriedBrow { transform: scaleX(-1); }
 .rightEye .angryBrow { transform: scaleX(-1); }
@@ -115,11 +119,27 @@
 .mascot[data-state="listening"] .leftEye,
 .mascot[data-state="listening"] .rightEye { transform: scale(1.08); }
 .mascot[data-state="listening"] .rightArm { animation: listening-arm 2400ms var(--ease-in-out) infinite; }
-.mascot[data-state="thinking"] .rig { transform: rotate(-4deg); }
+/* The pose lives in static properties; pausing motion keeps the hand at the chin. */
+.mascot[data-state="thinking"] .rig { animation: none; rotate: -6deg; }
+.mascot[data-state="thinking"] .bounce { animation: thinking-float 5400ms ease-in-out infinite; }
 .mascot[data-state="thinking"] .leftEye,
-.mascot[data-state="thinking"] .rightEye { transform: translate(7%, -12%); }
-.mascot[data-state="thinking"] .rightArm { transform: rotate(-15deg); }
-.mascot[data-state="thinking"] .mouth { transform: scale(0.85); }
+.mascot[data-state="thinking"] .rightEye { translate: 14% -22%; }
+.mascot[data-state="thinking"] .rightArm { animation: none; rotate: 135deg; translate: -56% 12%; z-index: 4; transition-delay: 0s; }
+.mascot[data-state="thinking"] .leftEye > img,
+.mascot[data-state="thinking"] .rightEye > img { translate: none; animation: eyes-open 7000ms steps(1, end) infinite, thinking-glance 8200ms ease-in-out infinite; }
+.mascot[data-state="thinking"] .rightEye .worriedBrow { opacity: 0.7; }
+.mascot[data-state="thinking"] .mouth > img { opacity: 0; animation: none; }
+.mascot[data-state="thinking"] .thoughtfulMouth { opacity: 1; }
+
+@keyframes thinking-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-0.7%); }
+}
+@keyframes thinking-glance {
+  0%, 38%, 50%, 82%, 100% { transform: translate(0, 0); }
+  44% { transform: translate(4%, -2%); }
+  88% { transform: translate(-3%, 1%); }
+}
 
 /* Speaking uses three drawings. These gestures are not phoneme lip sync. */
 .mascot[data-state="speaking"] .mouth > img { animation: speech-smile 1200ms steps(1, end) infinite; }
@@ -270,9 +290,11 @@
 @media (prefers-reduced-motion: reduce) {
   .bounce { transition: none; }
   .smilingMouth { transition: none; }
-  .mascot[data-chat-expressions] .leftEye > img,
-  .mascot[data-chat-expressions] .rightEye > img { translate: none; }
-  .interactive:hover .bounce { transform: none; }
+  .thoughtfulMouth, .mouth > img, .leftEye > img, .rightEye > img { transition: none; }
+  .mascot[data-chat-expressions]:not([data-state="thinking"]) .leftEye > img,
+  .mascot[data-chat-expressions]:not([data-state="thinking"]) .rightEye > img { translate: none; }
+  .interactive:not([data-state="thinking"]):hover .bounce { transform: none; }
+  .mascot[data-state] .bounce,
   .mascot[data-state] .rig,
   .mascot[data-state] .leftArm,
   .mascot[data-state] .rightArm,

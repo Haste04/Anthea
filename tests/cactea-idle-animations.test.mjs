@@ -9,7 +9,7 @@ try { source = await readFile(new URL('../app/components/cactea/useCacteaIdleAni
 catch (error) { if (error.code !== 'ENOENT') throw error; }
 const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
 
-function harness({ enabled = true, reduced = false, hidden = false, barrelRoll = false, independentSmile = false } = {}) {
+function harness({ enabled = true, reduced = false, hidden = false, barrelRoll = false, independentSmile = false, idleGestures = true } = {}) {
   const document = new EventTarget();
   document.hidden = hidden;
   const media = new EventTarget();
@@ -53,10 +53,10 @@ function harness({ enabled = true, reduced = false, hidden = false, barrelRoll =
     },
   });
   assert.equal(typeof exports.default, 'function', 'The idle animation controller must exist');
-  const controller = exports.default(enabled, { barrelRoll, independentSmile });
+  const controller = exports.default(enabled, { barrelRoll, independentSmile, idleGestures });
   function event(target, type) { target.dispatchEvent(new Event(type)); }
   return {
-    calls, timers, jump: controller.jump,
+    calls, timers, jump: controller.jump, tryBarrelRoll: controller.tryBarrelRoll,
     finish: call => call.animation.onfinish?.(),
     next: () => {
       const [id, timer] = [...timers.entries()][0];
@@ -98,6 +98,28 @@ test('idle jumps and smiles are spaced apart with fresh randomized delays', () =
   app.finish(smile);
   assert.ok(app.delay() > 15000 && app.delay() < 25000);
   app.cleanup();
+});
+
+test('chat click counting preserves its own jump and never schedules homepage idle gestures', () => {
+  const app = harness({ barrelRoll: true, idleGestures: false });
+  assert.equal(app.timers.size, 0);
+  for (let i = 0; i < 14; i++) {
+    assert.equal(app.tryBarrelRoll(), false);
+    app.advance(100);
+  }
+  assert.equal(app.calls.length, 0);
+  assert.equal(app.tryBarrelRoll(), true);
+  const roll = app.calls[0];
+  assert.match(roll.frames.at(-1).transform, /rotate\(360deg\)/);
+  assert.equal(app.tryBarrelRoll(), true);
+  assert.equal(app.calls.length, 1);
+  app.finish(roll);
+  assert.equal(app.timers.size, 0);
+  assert.equal(app.tryBarrelRoll(), false);
+  for (let i = 0; i < 14; i++) app.tryBarrelRoll();
+  assert.equal(app.calls.length, 2);
+  app.cleanup();
+  assert.equal(app.calls[1].animation.cancelled, true);
 });
 
 test('fifteen rapid clicks replace the jump with one barrel roll and ignore clicks until it finishes', () => {

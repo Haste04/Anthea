@@ -45,3 +45,11 @@ export function FrownMouth() {
     </svg>
   );
 }
+
+export function ThoughtfulMouth() {
+  return (
+    <svg viewBox="0 0 1280 1280" aria-hidden="true" focusable="false">
+      <path d="M 465 610 Q 595 575 740 620 Q 655 670 530 660" fill="none" stroke="#173c26" strokeWidth="65" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}

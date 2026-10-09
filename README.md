@@ -45,6 +45,29 @@ Cactea keeps the conversation approachable: visible listening, thinking, and spe
 | Keep your garden organized | Save plants, link conversations and reminders, revisit chats. |
 | Make the voice your own | Turn spoken replies on or off, select an available device voice, and preview it in Settings. |
 
+### Cactea's animations
+
+Cactea uses layered artwork so its eyes, mouth, arms, and body can move independently.
+
+| Page / state | Animation and trigger |
+| --- | --- |
+| Home — idle | Gentle floating with a moving shadow, breathing, blinking, an occasional right-arm wave, and a recurring smile. Small automatic hops occur about every 15–25 seconds. |
+| Home — interaction | Its eyes smoothly follow the mouse and return to center when the pointer leaves the window. Click or tap Cactea to make it hop. |
+| Home — drag and toss | Drag the large mascot with a mouse or touch, then release to toss it. It falls and bounces within the window, settles, and automatically returns to its starting spot. Press **Escape** to bring it back sooner. |
+| Chat — idle | Blinking, a subtle bounce and wave, recurring smiles, and mouse-following eyes. Hovering lifts and tilts the mascot; clicking or tapping makes it jump. |
+| Chat — listening | An attentive body tilt, slightly enlarged eyes, and an arm movement. The surrounding aura responds to microphone volume. |
+| Chat — thinking | A slow float with a tilted body, a hand-to-face pose, upward glances, and a thoughtful mouth while an assistant reply is pending. Eye tracking and click-to-jump pause during this state. |
+| Chat — speaking | Alternating mouth shapes and a right-arm gesture accompany spoken playback. |
+| Chat — feedback poses | The model supports a success hop with raised arms and closed eyes; request errors trigger a questioning tilt with worried brows. |
+| Chat — off-topic reply | An angry shake, angled brows, and a frown reinforce the prompt to return to plant questions. |
+| Chat — “six seven” | Recognizing “six seven,” “6 7,” or “67” in a voice transcript triggers a brief body sway with alternating arm movements. |
+| Chat — “Lifewood” | Recognizing “Lifewood” in a voice transcript triggers a smiling wave and two growing leaves. |
+| Chat — barrel-roll Easter egg | While idle, click or tap Cactea 15 times within five seconds, with no gap longer than 800 ms, to trigger a full 360° roll. |
+
+Animations respect the device's **Reduce motion** preference: continuous motion and eye tracking are disabled, conversation states retain readable poses, and click-triggered jumps or rolls become a brief opacity pulse. Dragging remains available, with toss physics and the animated return disabled. Timed smiles, automatic hops, and eye tracking pause when the tab is hidden.
+
+The shared implementation lives in [`app/components/cactea/`](app/components/cactea/), with the home scene and drag physics in [`app/home/`](app/home/), mouse tracking in [`useHomeMascotFollow.ts`](app/components/workspace/useHomeMascotFollow.ts), and chat state selection in [`ChatDashboard.tsx`](app/dashboard/ChatDashboard.tsx).
+
 ### Your first conversation
 
 1. Check `https://ai.google.dev/gemini-api/docs/models` for the current Stable list.

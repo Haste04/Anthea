@@ -11,6 +11,7 @@ import { useWorkspace } from "../components/workspace/WorkspaceProvider";
 import useHomeMascotFollow from "../components/workspace/useHomeMascotFollow";
 import useHomeGardenMotion from "./useHomeGardenMotion";
 import usePlantGallery from "./usePlantGallery";
+import HomeMascotDrag from "./HomeMascotDrag";
 import styles from "./HomeGarden.module.css";
 
 function Arrow({ diagonal = false }: { diagonal?: boolean }) {
@@ -78,7 +79,9 @@ export default function HomeGarden() {
             </div>
             <div className={styles.mascotStage} data-garden-stage>
               <div className={styles.mascotFloat}>
-                <Cactea state="idle" size="hero" className={`ws-home-mascot ${styles.mascot}`} lively />
+                <HomeMascotDrag>
+                  <Cactea state="idle" size="hero" className={`ws-home-mascot ${styles.mascot}`} lively />
+                </HomeMascotDrag>
               </div>
             </div>
             <div className={`${styles.depthLayer} ${styles.frontBranch}`} data-garden-depth="-150" data-garden-pointer="24"><Foliage branch /></div>

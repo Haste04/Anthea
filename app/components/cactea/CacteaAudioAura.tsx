@@ -15,9 +15,11 @@ export default function CacteaAudioAura({
   ariaLabel,
   volumeRef,
   chatExpressions,
+  barrelRoll,
 }: CacteaAudioAuraProps) {
   const isListening = state === "listening";
   const isSpeaking = state === "speaking";
+  const isThinking = state === "thinking";
   const ringRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -53,10 +55,10 @@ export default function CacteaAudioAura({
 
   return (
     <div
-      className={`cactea-aura-wrapper ${className ?? ""} ${isListening ? "cactea-aura-active" : ""} ${isSpeaking ? "cactea-aura-speaking" : ""}`.trim()}
+      className={`cactea-aura-wrapper ${className ?? ""} ${isListening ? "cactea-aura-active" : ""} ${isSpeaking ? "cactea-aura-speaking" : ""} ${isThinking ? "cactea-aura-thinking" : ""}`.trim()}
     >
       <div ref={ringRef} className="cactea-aura-ring" aria-hidden="true" />
-      <Cactea state={state} size={size} ariaLabel={ariaLabel} interactive chatExpressions={chatExpressions} />
+      <Cactea state={state} size={size} ariaLabel={ariaLabel ?? (isThinking ? "Cactea is thinking" : undefined)} interactive chatExpressions={chatExpressions} barrelRoll={barrelRoll} />
     </div>
   );
 }

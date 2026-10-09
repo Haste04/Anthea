@@ -3,13 +3,14 @@
 import { useEffect, useRef } from "react";
 
 export default function useHomeMascotFollow() {
-  return useMascotEyeFollow(".ws-home-mascot");
+  return useMascotEyeFollow(".ws-home-mascot", 6, "%", true, "home-mascot-position");
 }
 
-export function useMascotEyeFollow(selector: string, maxOffset = 6, unit: "%" | "px" = "%") {
+export function useMascotEyeFollow(selector: string, maxOffset = 6, unit: "%" | "px" = "%", enabled = true, positionEvent?: string) {
   const heroRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
+    if (!enabled) return;
     const hero = heroRef.current;
     const mascot = hero?.querySelector<HTMLElement>(selector);
     if (!hero || !mascot) return;
@@ -110,6 +111,7 @@ export function useMascotEyeFollow(selector: string, maxOffset = 6, unit: "%" | 
     }
 
     window.addEventListener("pointermove", move, { passive: true });
+    if (positionEvent) mascot.addEventListener(positionEvent, invalidateBounds);
     window.addEventListener("pointerout", leaveWindow);
     window.addEventListener("blur", returnHome);
     window.addEventListener("resize", invalidateBounds);
@@ -126,6 +128,7 @@ export function useMascotEyeFollow(selector: string, maxOffset = 6, unit: "%" | 
       reset();
       observer?.disconnect();
       window.removeEventListener("pointermove", move);
+      if (positionEvent) mascot.removeEventListener(positionEvent, invalidateBounds);
       window.removeEventListener("pointerout", leaveWindow);
       window.removeEventListener("blur", returnHome);
       window.removeEventListener("resize", invalidateBounds);
@@ -134,7 +137,7 @@ export function useMascotEyeFollow(selector: string, maxOffset = 6, unit: "%" | 
       document.removeEventListener("visibilitychange", visibilityChanged);
       reducedMotion.removeEventListener("change", motionChanged);
     };
-  }, [selector, maxOffset, unit]);
+  }, [selector, maxOffset, unit, enabled, positionEvent]);
 
   return heroRef;
 }

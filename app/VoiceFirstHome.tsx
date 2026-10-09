@@ -34,33 +34,26 @@ export default function VoiceFirstHome() {
   const pageRef = useLandingMotion();
   const heroRef = useMascotEyeFollow("[data-landing-mascot]", 5, "%");
   const router = useRouter();
-  const { data, ready, newChat, setActiveChatId } = useWorkspace();
-  const recentChat = [...data.chats].filter(chat => chat.messages.length > 0).sort((a, b) => b.updatedAt - a.updatedAt)[0];
+  const { ready, newChat } = useWorkspace();
 
   const startConversation = (voice: boolean, prompt?: keyof typeof landingPrompts) => {
     newChat();
     router.push(voice ? "/dashboard?startVoice=1" : prompt ? `/dashboard?starter=${prompt}` : "/dashboard");
   };
 
-  const resumeConversation = () => {
-    if (!recentChat) return;
-    setActiveChatId(recentChat.id);
-    router.push("/dashboard");
-  };
-
-  const talkButton = (closing = false) => (
-    <button className={`${styles.talkButton} ${closing ? styles.closingTalk : ""}`} type="button" onClick={() => startConversation(true)} disabled={!ready}>
+  const talkButton = () => (
+    <button className={styles.talkButton} type="button" onClick={() => startConversation(true)} disabled={!ready}>
       <span className={styles.micIcon}><Icon name="microphone" size={22} /></span>
       <span>Talk to Cactea</span><span className={styles.buttonArrow} aria-hidden="true">↗</span>
     </button>
   );
 
   return (
-    <div ref={pageRef} className={`anthea-landing ${styles.page}`}>
+    <div id="landing-top" ref={pageRef} className={`anthea-landing ${styles.page}`}>
       <a className="skip-link" href="#landing-content">Skip to content</a>
       <header className={styles.header}>
         <Link href="/" className={styles.brand} aria-label="Anthea home">
-          <Image src={antheaLogo} alt="" width={38} height={38} sizes="38px" />Anthea<span className={styles.brandDot} aria-hidden="true">.</span>
+          <Image src={antheaLogo} alt="" width={38} height={38} sizes="38px" />Anthea
         </Link>
         <nav aria-label="Main navigation"><a href="#how-it-works" className={styles.textLink}>How it works <span aria-hidden="true">↗</span></a></nav>
       </header>
@@ -88,13 +81,11 @@ export default function VoiceFirstHome() {
             <p className={styles.intro}>Ask Cactea out loud. Describe what you see, and work out one helpful next step together.</p>
             <div className={styles.actions}>
               {talkButton()}
-              <button className={styles.typeButton} type="button" onClick={() => startConversation(false)} disabled={!ready}>I’d rather type <span aria-hidden="true">→</span></button>
             </div>
             <p className={styles.instruction}>Your microphone starts after you choose Talk. Pause when finished and your question sends automatically.</p>
           </div>
           <p className={styles.heroGreeting}><strong>Hi, I’m Cactea.</strong><span>Tell me what you’re noticing.</span></p>
           <div className={styles.heroFootnote}>
-            {ready && recentChat ? <button className={styles.returnButton} type="button" onClick={resumeConversation} title={recentChat.title} aria-label={`Continue last chat: ${recentChat.title}`}><Icon name="chat" size={18} /><span>Continue last chat</span><span aria-hidden="true">↗</span></button> : <p><Icon name="leaf" size={18} /><span>One question. A little more confidence.</span></p>}
             <a href="#topics-title" className={styles.scrollHint} aria-label="Explore plant questions"><span aria-hidden="true">↓</span></a>
           </div>
         </section>
@@ -150,10 +141,10 @@ export default function VoiceFirstHome() {
         <section className={styles.closing} data-scroll-section="closing" aria-labelledby="closing-title">
           <div className={`${styles.layer} ${styles.closingGarden}`} data-parallax-y="160" data-parallax-scale="0.14" aria-hidden="true"><Image src="/images/welcome-garden.webp" alt="" fill sizes="100vw" /></div>
           <div className={`${styles.layer} ${styles.closingLeaf}`} data-parallax-y="-200" data-parallax-x="100" data-parallax-rotate="20" aria-hidden="true"><BotanicalLeaf /></div>
-          <div className={styles.closingCopy} data-reveal><p className={styles.eyebrow}>Your plant-care companion</p><h2 id="closing-title">One question.<br /><em>A little more confidence.</em></h2><div className={styles.closingActions}>{talkButton(true)}<Link href="/home" className={styles.gardenLink}>Open my garden <span aria-hidden="true">↗</span></Link></div></div>
+          <div className={styles.closingCopy} data-reveal><p className={styles.eyebrow}>Your plant-care companion</p><h2 id="closing-title">One question.<br /><em>A little more confidence.</em></h2><div className={styles.closingActions}><Link href="/home" className={`${styles.talkButton} ${styles.closingHome}`}>Open Home <span className={styles.buttonArrow} aria-hidden="true">↗</span></Link></div></div>
         </section>
       </main>
-      <footer className={styles.footer}><Link href="/" className={styles.footerBrand}>Anthea<span aria-hidden="true">.</span></Link><span>Your plant-care companion</span><a href="#landing-content" className={styles.textLink}>Back to the plants <span aria-hidden="true">↑</span></a></footer>
+      <footer className={styles.footer}><a href="#landing-top" className={styles.textLink}>Back to top <span aria-hidden="true">↑</span></a></footer>
     </div>
   );
 }

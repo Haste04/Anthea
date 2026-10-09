@@ -155,12 +155,12 @@ const mascot = {};
 vm.runInNewContext(await compile('../app/components/cactea/Cactea.tsx'), {
   exports: mascot,
   require: name => {
-    if (name === 'react') return { memo: component => component };
+    if (name === 'react') return { memo: component => component, useRef: value => ({ current: value }), useEffect() {} };
     if (name === 'react/jsx-runtime') return { jsx, jsxs: jsx };
     if (name.endsWith('.css')) return styles;
     if (name === './useCacteaIdleAnimations') return { default: () => ({ mascotRef: { current: null }, jump() {} }) };
     if (name === './useCacteaSmile') return { default() {} };
-    return { default: name, ClosedEye: 'closed-eye', OpenMouth: 'open-mouth', WorriedBrow: 'worried-brow', AngryBrow: 'angry-brow', FrownMouth: 'frown-mouth' };
+    return { default: name, ClosedEye: 'closed-eye', OpenMouth: 'open-mouth', WorriedBrow: 'worried-brow', AngryBrow: 'angry-brow', FrownMouth: 'frown-mouth', ThoughtfulMouth: 'thoughtful-mouth' };
   },
 });
 

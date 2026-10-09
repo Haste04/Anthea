@@ -10,7 +10,8 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import Cactea from "@/app/components/cactea/Cactea";
+import CacteaAudioAura from "@/app/components/cactea/CacteaAudioAura";
+import useQueuedMascotReaction from "./useQueuedMascotReaction";
 import AudioWaveformCanvas from "@/app/components/workspace/AudioWaveformCanvas";
 import Icon from "@/app/components/workspace/Icon";
 import { useWorkspace } from "@/app/components/workspace/WorkspaceProvider";
@@ -209,6 +210,15 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
     }, 1400);
   }, []);
 
+  const playVoiceGesture = useCallback((text: string) => {
+    triggerSixSeven(text);
+    triggerLifewood(text);
+  }, [triggerSixSeven, triggerLifewood]);
+  const { queue: queueVoiceGesture, clear: clearVoiceGesture } = useQueuedMascotReaction(
+    mode === "processing" || mascotFeedback !== null,
+    playVoiceGesture,
+  );
+
   useEffect(() => {
     return () => {
       if (sixSevenTimerRef.current) clearTimeout(sixSevenTimerRef.current);
@@ -283,6 +293,7 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
       }
       requestBusyRef.current = true;
       clearMascotFeedback();
+      clearVoiceGesture();
       const controller = new AbortController();
       requestRef.current = controller;
 
@@ -412,6 +423,7 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
         } else if (data.off_topic === true) {
           showMascotFeedback("angry");
         }
+        return true;
       } catch (err) {
         if (controller.signal.aborted) return;
         console.error("assistant fetch failed", err);
@@ -444,6 +456,7 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
     [
       changeMode,
       clearMascotFeedback,
+      clearVoiceGesture,
       linkCurrentChat,
       showMascotFeedback,
       speakText,
@@ -480,15 +493,17 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
         );
         return;
       }
-      triggerSixSeven(text);
-      triggerLifewood(text);
       const reviewedDraft = voiceReviewDraftRef.current;
       setTypedInput((current) => (current === reviewedDraft ? "" : current));
       voiceReviewDraftRef.current = null;
       followConversationRef.current = true;
       setHasNewMessages(false);
       setStatusHint("");
-      void submitTranscript(text);
+      // Defer gestures until the answer and any higher-priority feedback finish.
+      void submitTranscript(text).then((answered) => {
+        if (!answered) return;
+        queueVoiceGesture(text);
+      });
     },
   });
   const {
@@ -504,12 +519,13 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
   } = voice;
   const resetVoiceFeedback = useCallback(() => {
     resetLifewood();
+    clearVoiceGesture();
     voiceReviewDraftRef.current = null;
     sixSevenPlayedRef.current = false;
     if (sixSevenTimerRef.current) clearTimeout(sixSevenTimerRef.current);
     setSixSevenActive(false);
     setStatusHint("");
-  }, [resetLifewood]);
+  }, [resetLifewood, clearVoiceGesture]);
   const onStartListen = useCallback(() => {
     if (
       (modeRef.current !== "idle" && modeRef.current !== "speaking") ||
@@ -613,13 +629,16 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
     liveAvailable,
     liveCaption,
   );
-  const cacteaState = mascotFeedback === "angry"
+  const awaitingReply = visibleMode === "processing" && messages.some(message => message.role === "assistant" && message.pending);
+  const cacteaState = awaitingReply
+    ? "thinking"
+    : mascotFeedback === "angry"
     ? "angry"
     : lifewoodActive
     ? "lifewood"
     : sixSevenActive
     ? "sixSeven"
-    : resolveCacteaState(visibleMode, mascotFeedback);
+    : resolveCacteaState(visibleMode === "processing" ? "idle" : visibleMode, mascotFeedback);
   const latestPlantSummary = useMemo(() => {
     for (let index = messages.length - 1; index >= 0; index--) {
       const message = messages[index];
@@ -871,7 +890,7 @@ export default function ChatDashboard({ chat }: { chat: Chat }) {
                 <div key={m.id} className={`msg-row msg-row--${m.role}`}>
                   {m.role === "assistant" && (
                     <div className="ws-chat-avatar">
-                      <Cactea state="idle" size="sm" />
+                      <CacteaAudioAura state={m.pending ? "thinking" : "idle"} size="sm" />
                     </div>
                   )}
                   <div className="msg-col">

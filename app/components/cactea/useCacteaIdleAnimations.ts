@@ -7,9 +7,11 @@ type Gesture = "jump" | "smile" | "roll";
 export default function useCacteaIdleAnimations(enabled: boolean, {
   barrelRoll = false,
   independentSmile = false,
-}: { barrelRoll?: boolean; independentSmile?: boolean } = {}) {
+  idleGestures = true,
+}: { barrelRoll?: boolean; independentSmile?: boolean; idleGestures?: boolean } = {}) {
   const mascotRef = useRef<HTMLButtonElement>(null);
   const jumpRef = useRef<(() => void) | null>(null);
+  const rollRef = useRef<(() => boolean) | null>(null);
 
   useEffect(() => {
     const mascot = mascotRef.current;
@@ -32,7 +34,7 @@ export default function useCacteaIdleAnimations(enabled: boolean, {
     }
 
     function schedule() {
-      if (!alive || document.hidden || reducedMotion.matches || timer || active.size) return;
+      if (!idleGestures || !alive || document.hidden || reducedMotion.matches || timer || active.size) return;
       const delay = nextGesture === "jump"
         ? 15000 + Math.random() * 10000
         : 8000 + Math.random() * 6000;
@@ -106,8 +108,9 @@ export default function useCacteaIdleAnimations(enabled: boolean, {
       schedule();
     }
 
-    jumpRef.current = () => {
-      if (!alive || document.hidden || active.has("roll")) return;
+    rollRef.current = () => {
+      if (!alive || document.hidden) return false;
+      if (active.has("roll")) return true;
       if (barrelRoll) {
         const now = Date.now();
         // A pause or a slow series of clicks starts a new burst.
@@ -120,10 +123,13 @@ export default function useCacteaIdleAnimations(enabled: boolean, {
         if (clickCount === 15) {
           stop();
           play("roll");
-          return;
+          return true;
         }
       }
-      play("jump");
+      return false;
+    };
+    jumpRef.current = () => {
+      if (!rollRef.current?.()) play("jump");
     };
     document.addEventListener("visibilitychange", availabilityChanged);
     reducedMotion.addEventListener("change", availabilityChanged);
@@ -132,11 +138,12 @@ export default function useCacteaIdleAnimations(enabled: boolean, {
     return () => {
       alive = false;
       jumpRef.current = null;
+      rollRef.current = null;
       stop();
       document.removeEventListener("visibilitychange", availabilityChanged);
       reducedMotion.removeEventListener("change", availabilityChanged);
     };
-  }, [enabled, barrelRoll, independentSmile]);
+  }, [enabled, barrelRoll, independentSmile, idleGestures]);
 
-  return { mascotRef, jump: () => jumpRef.current?.() };
+  return { mascotRef, jump: () => jumpRef.current?.(), tryBarrelRoll: () => rollRef.current?.() ?? false };
 }

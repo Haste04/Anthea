@@ -9,7 +9,7 @@ try { source = await readFile(new URL('../app/components/workspace/useHomeMascot
 catch (error) { if (error.code !== 'ENOENT') throw error; }
 const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
 
-function harness({ reduced = false, edge = false, chat = false } = {}) {
+function harness({ reduced = false, edge = false, chat = false, enabled = true } = {}) {
   const window = new EventTarget();
   const document = new EventTarget();
   document.documentElement = new EventTarget();
@@ -29,14 +29,14 @@ function harness({ reduced = false, edge = false, chat = false } = {}) {
   window.requestAnimationFrame = callback => { frames.set(++nextId, callback); return nextId; };
   window.cancelAnimationFrame = id => frames.delete(id);
   const position = () => ({ x: parseFloat(styles.get('--home-eye-x') || '0'), y: parseFloat(styles.get('--home-eye-y') || '0') });
-  const mascot = {
+  const mascot = Object.assign(new EventTarget(), {
     querySelectorAll: () => [mascot, mascot],
     style: { setProperty: (name, value) => styles.set(name, value), removeProperty: name => styles.delete(name) },
     getBoundingClientRect() {
       reads++;
       return { ...base };
     },
-  };
+  });
   const hero = { querySelector: () => mascot, getBoundingClientRect: () => ({ left: 100, right: 900, top: 100, bottom: 500 }) };
   const exports = {};
   vm.runInNewContext(code, { exports, window, document, require: name => {
@@ -46,7 +46,7 @@ function harness({ reduced = false, edge = false, chat = false } = {}) {
   assert.equal(typeof exports.default, 'function', 'Home cursor-follow hook must exist');
   if (chat) {
     assert.equal(typeof exports.useMascotEyeFollow, 'function', 'Chat must reuse the eye-follow controller');
-    exports.useMascotEyeFollow('.cactea-aura-wrapper', 4, 'px');
+    exports.useMascotEyeFollow('.cactea-aura-wrapper', 4, 'px', enabled);
   } else exports.default();
   function event(target, type, props = {}) {
     const message = new Event(type);
@@ -69,9 +69,44 @@ function harness({ reduced = false, edge = false, chat = false } = {}) {
     reduce: value => { media.matches = value; event(media, 'change'); },
     hide: value => { document.hidden = value; event(document, 'visibilitychange'); },
     resize: value => { base = value; event(window, 'resize'); },
-    cleanup: () => cleanup(),
+    reposition: value => { base = value; event(mascot, 'home-mascot-position'); },
+    enable: value => {
+      cleanup?.();
+      exports.useMascotEyeFollow('.cactea-aura-wrapper', 4, 'px', value);
+    },
+    cleanup: () => cleanup?.(),
   };
 }
+
+test('thinking suspends cursor tracking, cancels queued frames, and restores tracking after the reply', () => {
+  const app = harness({ chat: true });
+  app.move(1200, 800);
+  app.step();
+  assert.ok(app.position().x > 0);
+  const lateFrame = [...app.frames.values()][0];
+  app.enable(false);
+  assert.equal(app.frames.size, 0);
+  assert.equal(app.styles.has('--home-eye-x'), false);
+  app.move(0, 0);
+  lateFrame(1000);
+  assert.equal(app.frames.size, 0);
+  assert.deepEqual(app.position(), { x: 0, y: 0 });
+  app.enable(true);
+  app.move(0, 0);
+  app.settle();
+  assert.ok(app.position().x < 0 && app.position().y < 0);
+  app.cleanup();
+});
+
+test('mounting during thinking schedules no tracking or pointer response', () => {
+  const app = harness({ chat: true, enabled: false });
+  app.move(1200, 800);
+  app.settle();
+  assert.equal(app.frames.size, 0);
+  assert.deepEqual(app.position(), { x: 0, y: 0 });
+  assert.equal(app.reads(), 0);
+  app.cleanup();
+});
 
 test('mouse tracking eases toward a bounded offset using one frame loop and no continuous layout reads', () => {
   const app = harness();
@@ -179,4 +214,18 @@ test('chat eye tracking uses pixel offsets clamped to four pixels', () => {
   app.settle();
   assert.deepEqual(app.position(), { x: 0, y: 0 });
   app.cleanup();
+});
+
+test('homepage eye tracking refreshes its center while the mascot moves; Chat ignores this event', () => {
+  for (const chat of [false, true]) {
+    const app = harness({ chat });
+    app.move(1000, 300); app.settle();
+    assert.ok(app.position().x > 0);
+    app.reposition({ left: 1200, right: 1400, top: 200, bottom: 400 });
+    app.settle();
+    assert.equal(app.position().x < 0, !chat, 'only Home should track wrapper position changes');
+    app.cleanup();
+    app.reposition({ left: 0, right: 200, top: 200, bottom: 400 });
+    assert.equal(app.frames.size, 0);
+  }
 });

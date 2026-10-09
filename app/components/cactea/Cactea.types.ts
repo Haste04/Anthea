@@ -12,4 +12,5 @@ export type CacteaProps = {
   stationary?: boolean;
   lively?: boolean;
   chatExpressions?: boolean;
+  barrelRoll?: boolean;
 };

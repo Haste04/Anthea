@@ -32,7 +32,7 @@ const idleSuggestions = [
 ] as const;
 
 export default function CompanionPanel({ mode, state, children, onChooseSuggestion, actionsDisabled, transcribing, volumeRef }: CompanionPanelProps) {
-  const companionRef = useMascotEyeFollow(".cactea-aura-wrapper", 4, "px");
+  const companionRef = useMascotEyeFollow(".cactea-aura-wrapper", 4, "px", state !== "thinking");
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -52,7 +52,7 @@ export default function CompanionPanel({ mode, state, children, onChooseSuggesti
     <aside ref={companionRef} className={styles.companion} aria-labelledby="companion-title" data-greeting={reaction ? state : undefined}>
       <section className={styles.companionGarden}>
         <p className={styles.eyebrow}>Your growing companion</p>
-        <CacteaAudioAura state={state} size="lg" volumeRef={volumeRef} className={styles.companionMascot} chatExpressions />
+        <CacteaAudioAura state={state} size="lg" volumeRef={volumeRef} className={styles.companionMascot} chatExpressions barrelRoll />
         <h2 id="companion-title">Cactea</h2>
         <p className={styles.companionSubtitle}>Anthea’s AI voice assistant</p>
         <div className={styles.companionStatus} data-suggestion={showSuggestion}
