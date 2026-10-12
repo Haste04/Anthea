@@ -151,6 +151,27 @@
 .page .tip h2 { font-family: var(--font-manrope), "Segoe UI", sans-serif; max-width: 275px; color: var(--lw-cream); font-size: var(--type-headline); line-height: 1.25; letter-spacing: var(--tracking); margin-top: 20px; font-weight: 500; }
 .page .tip > p:not(.eyebrow) { font-size: 14px; line-height: 1.7; color: color-mix(in srgb, var(--lw-cream) 88%, var(--lw-white)); margin-top: 18px; }
 
+/* Dark mode preserves the garden artwork while adapting its reading surfaces. */
+:global(html[data-theme="dark"]) :global(.ws-app):has(.page) { background: var(--background); }
+:global(html[data-theme="dark"]) .page {
+  --garden-ivory: var(--background);
+  --garden-sage: var(--selected);
+  --garden-forest: var(--primary);
+  --garden-ink: var(--text-primary);
+  --garden-muted: var(--text-muted);
+  --garden-line: var(--border);
+  background: radial-gradient(ellipse at 92% 5%, rgb(53 91 68 / 30%), transparent 42%), var(--garden-ivory);
+}
+:global(html[data-theme="dark"]) .page .primary { color: var(--background); }
+:global(html[data-theme="dark"]) .page .primary:hover { background: var(--primary-hover); }
+:global(html[data-theme="dark"]) .habitat { background: radial-gradient(ellipse at 44% 25%, var(--selected-strong), var(--surface) 80%); box-shadow: inset 0 0 90px var(--shadow-soft); }
+:global(html[data-theme="dark"]) .gallerySection::before { background: linear-gradient(transparent, var(--garden-ivory) 90px); }
+:global(html[data-theme="dark"]) :is(.emptyGarden, .statIcon) { background: var(--surface); }
+:global(html[data-theme="dark"]) .page :is(.stat, .conversation):hover { background: var(--selected); }
+:global(html[data-theme="dark"]) .photoIndex { background: var(--surface); }
+:global(html[data-theme="dark"]) .page .galleryControls button { border-color: var(--border); }
+:global(html[data-theme="dark"]) .plant:hover .plantArrow { color: var(--background); }
+
 /* Motion targets wrappers; all text remains visible before enhancement. */
 .page[data-garden-motion="on"] [data-garden-pending="true"] { opacity: 0; transform: translateY(24px); transition: opacity 700ms var(--garden-ease), transform 700ms var(--garden-ease); transition-delay: var(--reveal-delay, 0ms); }
 .page[data-garden-motion="on"] [data-garden-visible="true"] { opacity: 1; transform: translateY(0); }

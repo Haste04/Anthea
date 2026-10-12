@@ -68,6 +68,10 @@
 .summary > div { padding: 0.65rem 0; display: flex; justify-content: space-between; gap: 1rem; }
 .summary dt { color: var(--muted); }
 .summary dd { margin: 0; font-weight: 600; text-align: right; }
+:global(html[data-theme="dark"]) :is(.option, .summary) { background: var(--surface); }
+:global(html[data-theme="dark"]) .continue { color: var(--background); box-shadow: 0 4px 0 var(--border); }
+:global(html[data-theme="dark"]) .continue:disabled { color: var(--text-muted); }
+:global(html[data-theme="dark"]) .shell::before { background: linear-gradient(rgb(14 28 22 / 82%), rgb(14 28 22 / 92%)), url('/images/welcome-garden.webp') center / cover no-repeat; }
 @media (max-width: 600px) {
   .introContent { grid-template-columns: 1fr; }
   .introContent .message { text-align: center; }

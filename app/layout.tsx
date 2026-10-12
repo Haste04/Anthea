@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Fraunces, Manrope, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
 import "./workspace.css";
+import "./theme.css";
+import { THEME_INIT_SCRIPT } from "@/lib/theme";
+import { ThemeSync } from "./components/ThemeSettings";
 import { WorkspaceProvider } from "./components/workspace/WorkspaceProvider";
 import WorkspaceShell from "./components/workspace/WorkspaceShell";
 
@@ -35,9 +38,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${brand.variable} ${display.variable} ${preservedFont.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col"><WorkspaceProvider><WorkspaceShell>{children}</WorkspaceShell></WorkspaceProvider></body>
+      <head><script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} /></head>
+      <body className="min-h-full flex flex-col"><ThemeSync /><WorkspaceProvider><WorkspaceShell>{children}</WorkspaceShell></WorkspaceProvider></body>
     </html>
   );
 }

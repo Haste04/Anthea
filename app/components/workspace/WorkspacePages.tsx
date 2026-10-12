@@ -9,6 +9,7 @@ import Icon from "./Icon";
 import Cactea from "../cactea/Cactea";
 import VoiceSettings from "../VoiceSettings";
 import VoiceCalibration from "../VoiceCalibration";
+import ThemeSettings from "../ThemeSettings";
 import PlantSpeciesFields from "./PlantSpeciesFields";
 import useHomeMascotFollow from "./useHomeMascotFollow";
 import { applyDraftPhoto, localDate, type Plant } from "@/lib/workspace-data";
@@ -560,6 +561,7 @@ export function SettingsPage() {
         title="Settings"
         description="Your preferences, your plants, your space."
       />
+      <ThemeSettings />
       <section className="ws-panel">
         <h2>Conversation & voice</h2>
         <label className="ws-setting-row">

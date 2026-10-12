@@ -382,6 +382,38 @@
   .inputDock { border-radius: 0 0 18px 18px; padding: 9px 12px 10px; }
 }
 
+/* Dark surfaces replace the local paper palette without changing the layout. */
+:global(html[data-theme="dark"]) .shell { --paper-line: var(--border); }
+:global(html[data-theme="dark"]) :is(.chatArea, .inputDock, .composerBox, .transcriptReview, .companionStatus, .companionStatus::after) {
+  background: var(--surface-soft);
+  border-color: var(--border);
+  box-shadow: 0 8px 24px var(--shadow-soft);
+}
+:global(html[data-theme="dark"]) .shell :is(.plantCard, .starterLabel, .heardTranscript, .transcriptReview textarea, .reviewActions button, .dialogActions button, .voiceSettings summary, .voiceSettings > div, .plantContext, .toolbarChatIcon) { background: var(--surface); border-color: var(--border); box-shadow: none; color: var(--text-primary); }
+:global(html[data-theme="dark"]) .welcome .starters { background: var(--surface); border-color: var(--border); box-shadow: none; }
+:global(html[data-theme="dark"]) .shell :global(.dashboard-starter) { background: var(--surface); border-color: var(--border); box-shadow: none; }
+:global(html[data-theme="dark"]) .shell :global(.dashboard-starter:hover) { background: var(--selected); }
+:global(html[data-theme="dark"]) .shell :global(.dashboard-starter--primary) { background: var(--selected); border-color: var(--primary); }
+:global(html[data-theme="dark"]) .inputDock .composer { background: var(--surface); box-shadow: none; }
+:global(html[data-theme="dark"]) .inputDock .composerBox .composer { background: transparent; }
+:global(html[data-theme="dark"]) .inputDock .voiceDock { background: transparent; }
+:global(html[data-theme="dark"]) .shell :is(.questionTitle, .starterHeader h3, .starterChoice, .toolbarIdentity strong, .plantContext select, .voiceSettings > div label, .suggestionQuestion) { color: var(--text-primary); }
+:global(html[data-theme="dark"]) .shell :is(.welcomeCopy .description, .welcomeReassurance, .welcome .demoGuide, .starterText small, .starterNote, .starterNumber, .toolbarEyebrow, .plantContextLabel, .suggestionFooter, .resetSuggestions) { color: var(--text-muted); }
+:global(html[data-theme="dark"]) .shell :is(.welcomeKicker, .welcomeType, .welcome .demoGuide summary, .starterHeader span, .starterArrow, .plantContext > svg, .greetingIntro > svg, .suggestionQuestion span, .suggestionNext) { color: var(--primary); }
+:global(html[data-theme="dark"]) .shell :is(.starterChoice, .suggestionFooter, .reviewActions) { border-color: var(--border); }
+:global(html[data-theme="dark"]) .shell :is(.starterChoice:hover, .plantContext:hover, .voiceSettings summary:hover, .voiceSettings[open] summary, .reviewAlternatives button:hover:not(:disabled)) { background: var(--selected); color: var(--text-primary); border-color: var(--border); }
+:global(html[data-theme="dark"]) .shell :is(.welcomeTalk, .voiceStart, .sendTranscript) { background: var(--primary); border-color: var(--primary); color: var(--background); box-shadow: none; }
+:global(html[data-theme="dark"]) .shell :is(.welcomeTalk, .voiceStart, .sendTranscript):hover:not(:disabled) { background: var(--primary-hover); }
+:global(html[data-theme="dark"]) .shell :is(.welcomeTalk, .voiceStart, .sendTranscript):active:not(:disabled) { background: var(--primary-active); }
+:global(html[data-theme="dark"]) .voiceCopy small { color: var(--background); }
+:global(html[data-theme="dark"]) .voiceIcon { background: var(--background); color: var(--primary); }
+:global(html[data-theme="dark"]) .reviewMark { background: var(--selected); color: var(--primary); border-color: var(--border); }
+:global(html[data-theme="dark"]) .companionGarden { background: radial-gradient(ellipse at 50% 69%, rgb(53 91 68 / 40%), transparent 66%); }
+:global(html[data-theme="dark"]) .scroll :global(.msg-bubble--assistant) { background: var(--surface); color: var(--text-primary); border-color: var(--border); }
+:global(html[data-theme="dark"]) .scroll :global(.msg-bubble--user) { background: var(--primary); color: var(--background); }
+:global(html[data-theme="dark"]) .companionStatus::after { background: var(--surface-soft); border-color: var(--border); }
+:global(html[data-theme="dark"]) .suggestionEyebrow { color: var(--text-muted); }
+
 /* A focused decision point after voice transcription. */
 .transcriptReview {
   width: min(100%, 760px);

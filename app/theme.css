@@ -1,0 +1,50 @@
+:root { color-scheme: light; }
+
+/* The same semantic palette covers pages with their own local light tokens. */
+:root[data-theme="dark"],
+:root[data-theme="dark"] .ws-app--chat,
+:root[data-theme="dark"] .ws-app :is(.ws-sidebar, .ws-drawer, .ws-mobile-bar) {
+  color-scheme: dark;
+  --background: #0e1c16;
+  --surface: #1b3025;
+  --surface-soft: #16271e;
+  --surface-glass: rgb(27 48 37 / 94%);
+  --text-primary: #f5eedb;
+  --text-secondary: #ccd9cc;
+  --text-muted: #a9bdaa;
+  --border: #496451;
+  --border-soft: #314b3b;
+  --primary: #8fd5ae;
+  --primary-hover: #b1e6c6;
+  --primary-active: #79c599;
+  --selected: #284735;
+  --selected-strong: #355b44;
+  --accent-soft: #3d301e;
+  --accent-text: #ffcf8f;
+  --danger: #ffb4a4;
+  --shadow-soft: rgb(0 0 0 / 24%);
+}
+
+:root[data-theme="dark"] .ws-app {
+  background: linear-gradient(90deg, rgb(14 28 22 / 98%), rgb(14 28 22 / 90%)), url('/images/workspace-garden.webp') center right / cover fixed;
+}
+:root[data-theme="dark"] .ws-app .ws-greeting {
+  background: var(--surface);
+  border-color: var(--border);
+  box-shadow: 0 8px 24px var(--shadow-soft);
+}
+:root[data-theme="dark"] .ws-app .ws-greeting :is(h1, p, svg) { color: var(--text-primary); }
+:root[data-theme="dark"] .ws-app--chat .ws-chat-toolbar select { background: var(--surface); border-color: var(--border); }
+:root[data-theme="dark"] .ws-app :is(.ws-primary, .ws-new) { color: var(--surface); }
+:root[data-theme="dark"] :is(.dashboard-starter, .conversation-controls button, .new-response) { background: var(--surface); }
+:root[data-theme="dark"] .conversation-controls .control-primary { background: var(--primary); color: var(--surface); }
+:root[data-theme="dark"] :is(a, button, input, select, textarea, summary):focus-visible { outline-color: var(--primary); }
+
+.ws-appearance > p { color: var(--text-secondary); margin: 8px 0 18px; }
+.ws-theme-options { display: flex; flex-wrap: wrap; gap: 12px; }
+.ws-theme-options button { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; min-width: 120px; padding: 10px 20px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text-primary); font: inherit; font-weight: 600; cursor: pointer; }
+.ws-theme-options button:hover { background: var(--selected); border-color: var(--primary); }
+.ws-theme-options button[aria-pressed="true"] { background: var(--selected); border: 2px solid var(--primary); padding: 9px 19px; }
+.ws-theme-options button span { font-size: 22px; line-height: 1; }
+.ws-theme-options button:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
+.ws-appearance .ws-theme-notice { font-size: 13px; margin: 12px 0 0; min-height: 20px; }

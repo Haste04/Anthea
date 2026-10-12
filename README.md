@@ -44,6 +44,7 @@ Cactea keeps the conversation approachable: visible listening, thinking, and spe
 | Follow through on advice | Say “Remind me to check the soil tomorrow,” review the care action, and choose **Confirm reminder**. |
 | Keep your garden organized | Save plants, link conversations and reminders, revisit chats. |
 | Make the voice your own | Turn spoken replies on or off, select an available device voice, and preview it in Settings. |
+| Choose a comfortable appearance | Open **Settings → Appearance** and choose **Light** or **Dark**. Light is the default; your choice is saved in this browser and applies across pages. If browser storage is blocked, it applies for the current visit. |
 
 ### Cactea's animations
 

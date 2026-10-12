@@ -9,6 +9,13 @@
 .page h1, .page h2, .page h3 { font-family: var(--font-brand), Georgia, serif; font-weight: 600; letter-spacing: -0.055em; }
 .page em { font-style: italic; font-weight: inherit; }
 .page button, .page a { -webkit-tap-highlight-color: transparent; }
+
+/* Inverted story sections stay dark instead of inheriting the light text token. */
+:global(html[data-theme="dark"]) :is(.droopingStory, .conversation, .footer) { background: var(--surface-soft); color: var(--text-primary); }
+:global(html[data-theme="dark"]) .droopingStory .askButton { color: var(--primary); }
+:global(html[data-theme="dark"]) .droopingStory .storyLeaf { color: var(--selected-strong); }
+:global(html[data-theme="dark"]) .talkButton { color: var(--background); }
+:global(html[data-theme="dark"]) .microphoneIllustration { color: var(--background); }
 .page button { font: inherit; cursor: pointer; }
 .page button:disabled { opacity: 0.5; cursor: wait; }
 .page :is(a, button):focus-visible { outline: 3px solid var(--accent); outline-offset: 7px; }
