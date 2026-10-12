@@ -7,7 +7,7 @@
 .ws-sidebar { width:260px; position:fixed; inset:0 auto 0 0; padding:32px 22px 20px; background:color-mix(in srgb, var(--surface-soft) 90%, transparent); border-right:1px solid var(--border); display:flex; flex-direction:column; overflow-y:auto; z-index:20; }
 .ws-sidebar > :not(.ws-recents), .ws-drawer > :not(.ws-recents) { flex-shrink:0; }
 .ws-sidebar-header { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:20px; }
-.ws-brand { display:flex; align-items:center; gap:9px; font:600 35px/1.2 var(--font-brand),serif; color:var(--ws-green)!important; }
+.ws-brand { display:flex; align-items:center; gap:9px; font:600 35px/1.2 var(--font-brand), "Segoe UI", sans-serif; color:var(--ws-green)!important; }
 .ws-brand img { display:block; flex-shrink:0; border-radius:7px; }
 .ws-new { display:flex; align-items:center; justify-content:center; gap:8px; padding:0 16px; background:var(--ws-green); color:white; border:0; min-height:46px; border-radius:30px; width:100%; font-weight:600!important; margin-bottom:24px; box-shadow:0 4px 10px var(--shadow-soft); }
 .ws-new .ws-new-icon { display:block; font-size:22px; line-height:1; }
@@ -48,7 +48,7 @@
 .ws-chat-photo { display:block; width:min(280px,100%); max-height:240px; object-fit:cover; border-radius:12px; margin-bottom:10px; }.ws-attach { border:0; background:transparent; color:var(--primary); padding:8px; display:flex; align-items:center; justify-content:center; }.ws-attachment { display:flex; gap:10px; align-items:center; margin:0 20px; color:var(--primary); font-size:13px; }.ws-attachment img { width:55px; height:55px; object-fit:cover; border-radius:9px; }.ws-attachment button { margin-left:auto; background:transparent; border:0; font-size:22px; color:var(--primary); }.ws-time { display:block; font-size:11px; color:var(--text-secondary); margin-top:5px; }.ws-chat-avatar { width:38px; height:38px; border:1px solid var(--border); background:var(--selected); border-radius:50%; display:grid; place-items:center; overflow:visible; flex-shrink:0; }.ws-chat-avatar>div { --cactea-size:48px; margin-top:-4px; }.ws-chat-avatar > :not(.cactea-aura-thinking) * { animation:none!important; }
 @media(min-width:1700px) { .ws-sidebar { width:280px; padding:40px 28px; }.ws-content { margin-left:280px; width:calc(100% - 280px); } }
 @media(max-width:1150px) { .ws-sidebar { width:225px; padding:28px 17px; }.ws-content { margin-left:225px; width:calc(100% - 225px); }.ws-card-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }.ws-home-hero { padding:30px; }.ws-home-hero .ws-home-mascot { --cactea-size:220px; }.ws-home-columns { grid-template-columns:1fr; }.ws-stats { gap:10px; }.ws-stats a { padding:15px; } }
-@media(max-width:800px) { .ws-app { background:linear-gradient(color-mix(in srgb, var(--surface-soft) 93%, transparent),color-mix(in srgb, var(--surface-soft) 88%, transparent)),url('/images/workspace-garden.webp') right top/auto 100dvh fixed; display:block; padding-top:60px; }.ws-sidebar { display:none; }.ws-content { margin-left:0; width:100%; }.ws-mobile-bar { display:flex; align-items:center; justify-content:space-between; height:60px; position:fixed; inset:0 0 auto; background:color-mix(in srgb, var(--surface-soft) 95%, transparent); backdrop-filter:blur(14px); border-bottom:1px solid var(--ws-border); padding:0 16px; z-index:25; }.ws-mobile-bar>a { font:600 27px var(--font-brand),serif; color:var(--ws-green); }.ws-mobile-bar button { background:transparent; border:0; color:var(--ws-green); font-size:25px; min-width:44px; min-height:44px; }.ws-drawer[open] { display:flex; flex-direction:column; position:fixed; inset:0 auto 0 0; height:100dvh; max-height:100dvh; width:290px; max-width:90vw; margin:0; padding:38px 22px 22px; background:var(--surface-soft); border:0; color:var(--ws-ink); }.ws-drawer-close { position:absolute; right:12px; top:6px; border:0; background:none; font-size:28px; color:var(--ws-green); }.ws-page { padding:30px 22px 45px; }.ws-page-heading { align-items:flex-start; flex-wrap:wrap; gap:18px; }.ws-home-hero { padding:27px; }.ws-reminder { gap:10px; flex-wrap:wrap; }.ws-reminder>.ws-chip { margin-left:38px; }.ws-reminder>div { flex-basis:calc(100% - 45px); }.ws-greeting h1 { font-size:22px; }.ws-greeting p { font-size:13px; } }
+@media(max-width:800px) { .ws-app { background:linear-gradient(color-mix(in srgb, var(--surface-soft) 93%, transparent),color-mix(in srgb, var(--surface-soft) 88%, transparent)),url('/images/workspace-garden.webp') right top/auto 100dvh fixed; display:block; padding-top:60px; }.ws-sidebar { display:none; }.ws-content { margin-left:0; width:100%; }.ws-mobile-bar { display:flex; align-items:center; justify-content:space-between; height:60px; position:fixed; inset:0 0 auto; background:color-mix(in srgb, var(--surface-soft) 95%, transparent); backdrop-filter:blur(14px); border-bottom:1px solid var(--ws-border); padding:0 16px; z-index:25; }.ws-mobile-bar>a { font:600 27px var(--font-brand), "Segoe UI", sans-serif; color:var(--ws-green); }.ws-mobile-bar button { background:transparent; border:0; color:var(--ws-green); font-size:25px; min-width:44px; min-height:44px; }.ws-drawer[open] { display:flex; flex-direction:column; position:fixed; inset:0 auto 0 0; height:100dvh; max-height:100dvh; width:290px; max-width:90vw; margin:0; padding:38px 22px 22px; background:var(--surface-soft); border:0; color:var(--ws-ink); }.ws-drawer-close { position:absolute; right:12px; top:6px; border:0; background:none; font-size:28px; color:var(--ws-green); }.ws-page { padding:30px 22px 45px; }.ws-page-heading { align-items:flex-start; flex-wrap:wrap; gap:18px; }.ws-home-hero { padding:27px; }.ws-reminder { gap:10px; flex-wrap:wrap; }.ws-reminder>.ws-chip { margin-left:38px; }.ws-reminder>div { flex-basis:calc(100% - 45px); }.ws-greeting h1 { font-size:22px; }.ws-greeting p { font-size:13px; } }
 @media(max-width:520px) { .ws-home-hero { min-height:0; padding:25px; }.ws-home-hero .ws-home-mascot { --cactea-size:155px; position:absolute; right:-25px; bottom:-25px; opacity:.8; }.ws-home-hero p { max-width:80%; }.ws-home-hero .ws-primary { margin-top:4px; }.ws-card-grid { grid-template-columns:1fr; }.ws-stats { grid-template-columns:1fr; gap:9px; margin-bottom:25px; }.ws-stats a { grid-template-columns:35px 28px 1fr; align-items:center; }.ws-stats svg { grid-row:auto; }.ws-stats strong { font-size:20px; }.ws-stats span { font-size:14px; }.ws-home-hero h2 { font-size:29px; }.ws-form-grid { grid-template-columns:1fr; gap:0; }.ws-page { padding-inline:18px; }.ws-panel { padding:21px; }.ws-modal { padding:24px; }.ws-chat-toolbar { flex-wrap:wrap; gap:7px; }.ws-chat-toolbar select { max-width:180px; } }
 @media(prefers-reduced-motion:reduce) { .ws-app *, .ws-app *::before,.ws-app *::after { scroll-behavior:auto!important; }.ws-plant-card { transition:none; }.ws-plant-card:hover { transform:none; } }
 .ws-chat-search { width:100%; min-width:0; border:1px solid var(--border); border-radius:8px; background:color-mix(in srgb, var(--surface) 56%, transparent); padding:8px 10px; margin-bottom:8px; font-size:13px!important; color:var(--ws-ink); }
@@ -129,19 +129,27 @@
   }
 }
 
+/* Keep the original wordmark font outside the navigation's Manrope scope. */
+.ws-app { --font-wordmark: var(--font-brand); }
+.ws-brand { font-family: var(--font-wordmark), Georgia, serif; }
+
 /* Navigation owns its palette so page themes cannot change it. */
 .ws-app :is(.ws-sidebar, .ws-drawer, .ws-mobile-bar) {
-  --surface: #fffdf8;
-  --surface-soft: #f5f1e7;
-  --text-primary: #243b2d;
-  --text-secondary: #475b4b;
-  --text-muted: #5e705f;
-  --primary: #315c43;
-  --primary-hover: #254b36;
-  --primary-active: #1e3c2c;
-  --selected: #e8f3ee;
-  --border: #dce1d3;
-  --shadow-soft: rgb(53 63 42 / 12%);
+  --font-brand: var(--font-manrope);
+  --font-display: var(--font-manrope);
+  --surface: #ffffff;
+  --surface-soft: #f9f7f7;
+  --text-primary: var(--lw-forest);
+  --text-secondary: color-mix(in srgb, var(--lw-forest) 85%, var(--lw-cream));
+  --text-muted: color-mix(in srgb, var(--lw-forest) 72%, var(--lw-cream));
+  --primary: var(--lw-green);
+  --primary-hover: var(--lw-forest);
+  --primary-active: var(--lw-forest);
+  --selected: color-mix(in srgb, var(--lw-green) 10%, #ffffff);
+  --selected-strong: color-mix(in srgb, var(--lw-green) 18%, #ffffff);
+  --border: color-mix(in srgb, var(--lw-forest) 22%, #ffffff);
+  --border-soft: color-mix(in srgb, var(--lw-forest) 12%, #ffffff);
+  --shadow-soft: rgb(19 48 32 / 9%);
   --ws-green: var(--primary);
   --ws-ink: var(--text-primary);
   --ws-muted: var(--text-muted);
@@ -149,6 +157,7 @@
   background: var(--surface-soft);
   color: var(--ws-ink);
   font: 400 16px/1.5 var(--font-display), sans-serif;
+  letter-spacing: 0.015em;
 }
 .ws-app :is(.ws-sidebar, .ws-drawer) .ws-nav-item { font-size:14px; font-weight:400; line-height:1.5; color:var(--ws-ink); }
 .ws-app :is(.ws-sidebar, .ws-drawer) .ws-nav-item.is-active { background:var(--selected); color:var(--primary); font-weight:600; }
@@ -231,3 +240,6 @@
 .ws-recents .ws-chat-actions button { gap:8px; min-height:36px; padding:7px 9px; font-size:13px; }
 .ws-recents .ws-chat-actions button > span { font-size:13px; }
 .ws-recents .ws-chat-delete, .ws-recents .ws-chat-delete svg { color:var(--danger); }
+
+/* Preserve the current navigation hierarchy independently of page headings. */
+.ws-app :is(.ws-sidebar, .ws-drawer) h2 { font-family:var(--font-manrope), "Segoe UI", sans-serif; font-weight:500; }

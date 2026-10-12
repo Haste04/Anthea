@@ -80,11 +80,12 @@
 .floatingQuestion p { margin: 0; font-size: 1rem; line-height: 1.5; }
 .leafDetail { position: absolute; z-index: 3; left: 13%; top: 15%; width: 8.5%; color: var(--accent); --base-rotation: 34deg; pointer-events: none; }
 .droopingStory { min-height: max(48rem, 100svh); margin-top: 5rem; background: var(--text-primary); color: var(--background); }
+.droopingStory .askButton { color: var(--surface); }
 .droopingStory .storyPhoto { left: auto; right: -4%; top: 7%; width: 56%; height: 94%; border-radius: 45% 0 0 52% / 50% 0 0 50%; }
 .droopingStory .storyCopy { max-width: 35%; margin-left: 8%; padding-top: 15%; }
 .droopingStory .floatingQuestion { left: auto; right: 28%; bottom: 8%; }
 .droopingStory .storyNumber { right: auto; left: 5%; top: 1%; opacity: 0.08; }
-.droopingStory .storyLeaf { left: -5%; bottom: -9%; width: 20%; color: var(--selected-strong); }
+.droopingStory .storyLeaf { left: -5%; bottom: -9%; width: 20%; color: var(--primary-hover); }
 .wateringStory { min-height: max(58rem, 120svh); background: var(--selected); padding-top: 1px; }
 .wateringStory .storyCopy { max-width: 30%; margin-left: var(--gutter); padding-top: 6rem; }
 .wateringStory .storyCopy h3 { width: 54vw; font-size: clamp(4rem, 7.4vw, 8.5rem); max-width: 12ch; }
