@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Fraunces, Manrope, Source_Sans_3 } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import "./workspace.css";
 import "./theme.css";
@@ -8,23 +8,27 @@ import { ThemeSync } from "./components/ThemeSettings";
 import { WorkspaceProvider } from "./components/workspace/WorkspaceProvider";
 import WorkspaceShell from "./components/workspace/WorkspaceShell";
 
-const brand = Fraunces({
+// Keep fonts in the repo so builds do not depend on Google Fonts responses.
+const brand = localFont({
+  src: "./fonts/Fraunces.woff2",
   variable: "--font-brand",
-  subsets: ["latin"],
-  weight: ["600", "700"],
+  weight: "600 700",
+  display: "swap",
+  adjustFontFallback: "Times New Roman",
 });
 
-const display = Source_Sans_3({
+const display = localFont({
+  src: "./fonts/SourceSans3.woff2",
   variable: "--font-display",
-  subsets: ["latin"],
-  weight: ["400", "600", "700"],
+  weight: "400 700",
+  display: "swap",
 });
 
 // Manrope stays scoped to the preserved navigation and home care card.
-const preservedFont = Manrope({
+const preservedFont = localFont({
+  src: "./fonts/Manrope.woff2",
   variable: "--font-manrope",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: "400 600",
   display: "swap",
 });
 

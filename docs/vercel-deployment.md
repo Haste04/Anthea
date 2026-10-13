@@ -2,6 +2,8 @@
 
 Import this repository with the **Next.js** framework preset and the repository root as the root directory. Use the default output directory and `npm run build`. Commit `package-lock.json` so the dependency versions are reproducible. Keep Fluid Compute enabled; the assistant and recorded transcription routes declare a 60-second function duration.
 
+The layout uses bundled fonts in `app/fonts` through `next/font/local`. Commit those files and their licenses along with layout changes; builds do not need to download Google Fonts.
+
 Set these secrets in Vercel for **Production** and **Preview**, then redeploy:
 
 | Environment variable | Required for |
