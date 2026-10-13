@@ -41,7 +41,7 @@
 .voiceStage p { display:flex; flex-direction:column; gap:5px; margin:0; color:var(--primary); font-size:14px; }.voiceStage strong { font-size:16px; }.voiceStage span { color:var(--primary); line-height:1.4; }
 @keyframes voice-stage-in { from { opacity:0; transform:translateY(9px) scale(.98); } to { opacity:1; transform:translateY(0) scale(1); } }
 .starters .starter-heading { font-size:13px; color:var(--text-secondary); }
-.starterLabel { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 0.75rem; padding: 0.25rem 0.4rem; background: white; border-radius: 0.35rem; }
+.starterLabel { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 0.75rem; padding: 0.25rem 0.4rem; background: var(--surface-soft); border-radius: 0.35rem; }
 .inputDock { background: var(--surface-glass); flex-shrink: 0; padding-top: 0.5rem; border-top: 1px solid var(--border); }
 .inputDock :global(.new-response) { display: block; margin-inline: auto; }
 .inputDock .composer { border-top: 0; max-width: none; padding: 0.7rem 1.25rem 0.8rem; }
@@ -54,7 +54,7 @@
 .companionGarden h2 { margin: 0; font-family: var(--font-brand), Georgia, serif; font-size: 1.75rem; line-height: 1.15; color: var(--leaf-deep); }
 .companionSubtitle { font-size: 0.82rem; color: var(--muted); margin: 0.35rem 0 1rem; }
 .companionStatus p { margin: 0.6rem 0 0; font-size: 0.8rem; color: var(--muted); line-height: 1.4; }
-.plantCard { background: white; border: 1px solid var(--border); border-radius: 1.25rem; padding: 1.1rem; }
+.plantCard { background: var(--surface); border: 1px solid var(--border); border-radius: 1.25rem; padding: 1.1rem; }
 .cardHeading { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; }
 .cardHeading h2 { font-size: 1rem; color: var(--leaf-deep); margin: 0; white-space: nowrap; }
 .sourceBadge { font-size: 0.65rem; color: var(--leaf-deep); background: var(--mist); border-radius: 0.35rem; padding: 0.25rem 0.4rem; text-align: center; }
@@ -84,10 +84,10 @@
 .reviewHeading { display: flex; justify-content: space-between; gap: 1rem; align-items: center; margin-bottom: 0.6rem; }
 .reviewHeading h2 { color: var(--leaf-deep); font-size: 0.95rem; margin: 0; }
 .reviewHeading span { color: var(--muted); font-size: 0.75rem; white-space: nowrap; }
-.transcriptReview textarea { width: 100%; resize: vertical; min-height: 80px; max-height: 160px; padding: 0.75rem; border: 1px solid var(--border); border-radius: 0.7rem; font: inherit; line-height: 1.45; background: white; color: var(--ink); }
+.transcriptReview textarea { width: 100%; resize: vertical; min-height: 80px; max-height: 160px; padding: 0.75rem; border: 1px solid var(--border); border-radius: 0.7rem; font: inherit; line-height: 1.45; background: var(--surface); color: var(--ink); }
 .reviewActions, .dialogActions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 0.65rem; margin-top: 0.75rem; }
-.reviewActions button, .dialogActions button { border: 1px solid var(--border); border-radius: 0.65rem; background: white; color: var(--leaf-deep); padding: 0.6rem 0.85rem; font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
-.reviewActions .sendTranscript, .dialogActions .sendTranscript { background: var(--leaf); border-color: var(--leaf); color: white; }
+.reviewActions button, .dialogActions button { border: 1px solid var(--border); border-radius: 0.65rem; background: var(--surface); color: var(--leaf-deep); padding: 0.6rem 0.85rem; font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+.reviewActions .sendTranscript, .dialogActions .sendTranscript { background: var(--leaf); border-color: var(--leaf); color: var(--on-primary); }
 .reviewActions button:disabled, .nextCheck button:disabled { opacity: 0.5; cursor: not-allowed; }
 .reviewLimit { color: var(--danger); font-size: 0.8rem; margin: 0.5rem 0; }
 .resetDialog { margin: auto; width: min(90vw, 30rem); border: 1px solid var(--border); border-radius: 1.25rem; padding: 1.5rem; background: var(--cream); color: var(--ink); box-shadow: 0 20px 80px color-mix(in srgb, var(--lw-forest) 20%, transparent); }
@@ -291,91 +291,90 @@
 }
 
 /* Botanical light continues from the photograph through the conversation. */
-.shell { --paper-line: rgb(109 126 95 / 18%); }
+.shell { --paper-line: var(--border); }
 .chatArea {
   overflow: visible;
   border: 1px solid var(--paper-line);
   border-radius: 24px;
   background:
-    radial-gradient(ellipse at 8% 0, rgb(255 251 225 / 70%), transparent 43%),
-    linear-gradient(150deg, rgb(250 247 236 / 90%), rgb(244 240 225 / 83%) 64%, rgb(238 236 219 / 79%));
-  box-shadow: inset 0 1px rgb(255 255 255 / 70%), 0 18px 48px rgb(67 77 51 / 10%);
+    var(--surface);
+  box-shadow: inset 0 1px color-mix(in srgb, var(--lw-white) 70%, transparent), 0 18px 48px color-mix(in srgb, var(--lw-forest) 10%, transparent);
   backdrop-filter: blur(14px);
 }
 .chatArea .scroll {
   padding-inline: clamp(16px, 2.1vw, 32px);
-  scrollbar-color: #b9c6b4 transparent;
+  scrollbar-color: var(--border) transparent;
 }
 .chatArea .welcome { padding-inline: 10px; }
-.questionTitle { color: #294632; }
+.questionTitle { color: var(--text-primary); }
 .welcomeCopy .description { color: var(--text-secondary); }
 .shell :global(.dashboard-starter) {
-  background: linear-gradient(110deg, rgb(255 253 245 / 78%), rgb(245 247 235 / 60%));
-  border-color: rgb(107 132 103 / 29%);
+  background: var(--surface);
+  border-color: var(--border);
   color: var(--text-primary);
-  box-shadow: inset 0 1px rgb(255 255 255 / 79%), 0 3px 10px rgb(67 77 51 / 4%);
+  box-shadow: inset 0 1px color-mix(in srgb, var(--lw-white) 79%, transparent), 0 3px 10px color-mix(in srgb, var(--lw-forest) 4%, transparent);
 }
-.shell :global(.dashboard-starter:hover) { background: #e9edde; }
+.shell :global(.dashboard-starter:hover) { background: var(--selected); }
 .shell :global(.dashboard-starter--primary) {
-  background: linear-gradient(110deg, rgb(219 233 212 / 83%), rgb(236 238 220 / 74%));
-  border-color: #89a68c;
+  background: var(--selected);
+  border-color: var(--border);
 }
-.starterLabel { background: rgb(255 253 245 / 78%); }
+.starterLabel { background: var(--surface-soft); }
 .inputDock {
   border-top: 1px solid var(--paper-line);
   border-radius: 0 0 24px 24px;
-  background: linear-gradient(180deg, rgb(249 246 235 / 80%), rgb(245 241 226 / 94%));
+  background: var(--surface-soft);
   padding: 10px clamp(14px, 2vw, 28px) 12px;
 }
 .inputDock .composer {
-  background: linear-gradient(130deg, rgb(255 254 247 / 88%), rgb(246 248 237 / 82%));
-  border-color: rgb(106 131 103 / 35%);
-  box-shadow: inset 0 1px rgb(255 255 255 / 90%), 0 5px 16px rgb(55 74 49 / 8%);
+  background: var(--surface);
+  border-color: var(--border);
+  box-shadow: inset 0 1px color-mix(in srgb, var(--lw-white) 90%, transparent), 0 5px 16px color-mix(in srgb, var(--lw-forest) 8%, transparent);
 }
 .composerHelp { color: var(--text-muted); }
 .voiceDock {
-  background: linear-gradient(105deg, rgb(232 237 218 / 83%), rgb(245 241 222 / 79%));
-  border-color: rgb(118 139 103 / 28%);
-  box-shadow: inset 0 1px rgb(255 255 255 / 67%);
+  background: var(--surface-soft);
+  border-color: var(--border);
+  box-shadow: inset 0 1px color-mix(in srgb, var(--lw-white) 67%, transparent);
 }
 .voiceStart {
-  background: linear-gradient(125deg, #3f694c, #2f5b42);
-  border-color: #315b42;
-  box-shadow: inset 0 1px rgb(255 255 255 / 18%), 0 6px 16px rgb(49 84 57 / 15%);
+  background: var(--primary);
+  border-color: var(--primary);
+  box-shadow: inset 0 1px color-mix(in srgb, var(--lw-white) 18%, transparent), 0 6px 16px color-mix(in srgb, var(--lw-forest) 15%, transparent);
 }
-.voiceIcon { background: #edf1e7; color: #315b42; }
-.voiceCopy small { color: #e4eadd; }
+.voiceIcon { background: var(--selected); color: var(--primary); }
+.voiceCopy small { color: var(--on-primary); }
 .voiceStatus span { color: var(--text-secondary); }
 .scroll :global(.msg-bubble--assistant) {
-  background: linear-gradient(140deg, rgb(255 253 245 / 87%), rgb(245 248 238 / 72%));
+  background: var(--surface);
   border-color: var(--paper-line);
-  box-shadow: 0 4px 13px rgb(58 72 49 / 6%);
+  box-shadow: 0 4px 13px color-mix(in srgb, var(--lw-forest) 6%, transparent);
 }
-.scroll :global(.msg-bubble--user) { background: #365e45; }
+.scroll :global(.msg-bubble--user) { background: var(--primary); }
 .companion {
   position: relative;
   padding-inline: 12px;
 }
 .companionGarden {
-  background: radial-gradient(ellipse at 50% 69%, rgb(255 248 211 / 48%), transparent 66%);
+  background: radial-gradient(ellipse at 50% 69%, var(--accent-glow), transparent 66%);
 }
 .companion .companionMascot {
-  filter: drop-shadow(0 18px 15px rgb(53 65 37 / 20%));
+  filter: drop-shadow(0 18px 15px color-mix(in srgb, var(--lw-forest) 20%, transparent));
 }
 .companionStatus {
-  background: linear-gradient(145deg, rgb(255 252 240 / 87%), rgb(242 242 224 / 79%));
-  border-color: rgb(115 132 101 / 28%);
-  box-shadow: inset 0 1px rgb(255 255 255 / 75%), 0 9px 28px rgb(62 72 49 / 12%);
+  background: var(--surface);
+  border-color: var(--border);
+  box-shadow: inset 0 1px color-mix(in srgb, var(--lw-white) 75%, transparent), 0 9px 28px color-mix(in srgb, var(--lw-forest) 12%, transparent);
   backdrop-filter: blur(12px);
 }
-.companionStatus::after { background: #f5f3e6; border-color: rgb(115 132 101 / 28%); }
+.companionStatus::after { background: var(--surface); border-color: var(--border); }
 .companion .plantCard {
-  background: linear-gradient(130deg, rgb(251 248 236 / 77%), rgb(238 240 221 / 65%));
-  border: 1px solid rgb(113 130 100 / 24%);
-  box-shadow: inset 0 1px rgb(255 255 255 / 62%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: inset 0 1px color-mix(in srgb, var(--lw-white) 62%, transparent);
   backdrop-filter: blur(9px);
 }
-.voiceSettings summary { background: rgb(250 248 238 / 48%); border-radius: 11px; }
+.voiceSettings summary { background: var(--surface); border-radius: 11px; }
 @media(max-width:800px) {
   .chatArea { border-radius: 18px; }
   .chatArea .scroll { padding-inline: 14px; }
@@ -387,7 +386,7 @@
 :global(html[data-theme="dark"]) :is(.chatArea, .inputDock, .composerBox, .transcriptReview, .companionStatus, .companionStatus::after) {
   background: var(--surface-soft);
   border-color: var(--border);
-  box-shadow: 0 8px 24px var(--shadow-soft);
+  box-shadow: var(--shadow-card);
 }
 :global(html[data-theme="dark"]) .shell :is(.plantCard, .starterLabel, .heardTranscript, .transcriptReview textarea, .reviewActions button, .dialogActions button, .voiceSettings summary, .voiceSettings > div, .plantContext, .toolbarChatIcon) { background: var(--surface); border-color: var(--border); box-shadow: none; color: var(--text-primary); }
 :global(html[data-theme="dark"]) .welcome .starters { background: var(--surface); border-color: var(--border); box-shadow: none; }
@@ -398,8 +397,8 @@
 :global(html[data-theme="dark"]) .inputDock .composerBox .composer { background: transparent; }
 :global(html[data-theme="dark"]) .inputDock .voiceDock { background: transparent; }
 :global(html[data-theme="dark"]) .shell :is(.questionTitle, .starterHeader h3, .starterChoice, .toolbarIdentity strong, .plantContext select, .voiceSettings > div label, .suggestionQuestion) { color: var(--text-primary); }
-:global(html[data-theme="dark"]) .shell :is(.welcomeCopy .description, .welcomeReassurance, .welcome .demoGuide, .starterText small, .starterNote, .starterNumber, .toolbarEyebrow, .plantContextLabel, .suggestionFooter, .resetSuggestions) { color: var(--text-muted); }
-:global(html[data-theme="dark"]) .shell :is(.welcomeKicker, .welcomeType, .welcome .demoGuide summary, .starterHeader span, .starterArrow, .plantContext > svg, .greetingIntro > svg, .suggestionQuestion span, .suggestionNext) { color: var(--primary); }
+:global(html[data-theme="dark"]) .shell :is(.welcomeCopy .description, .welcomeReassurance, .welcome .demoGuide, .starterText small, .starterNote, .toolbarEyebrow, .plantContextLabel, .suggestionFooter, .resetSuggestions) { color: var(--text-muted); }
+:global(html[data-theme="dark"]) .shell :is(.welcomeKicker, .welcomeType, .welcome .demoGuide summary, .starterHeader span, .starterArrow, .plantContext > svg, .greetingIntro > svg, .suggestionQuestion span) { color: var(--primary); }
 :global(html[data-theme="dark"]) .shell :is(.starterChoice, .suggestionFooter, .reviewActions) { border-color: var(--border); }
 :global(html[data-theme="dark"]) .shell :is(.starterChoice:hover, .plantContext:hover, .voiceSettings summary:hover, .voiceSettings[open] summary, .reviewAlternatives button:hover:not(:disabled)) { background: var(--selected); color: var(--text-primary); border-color: var(--border); }
 :global(html[data-theme="dark"]) .shell :is(.welcomeTalk, .voiceStart, .sendTranscript) { background: var(--primary); border-color: var(--primary); color: var(--background); box-shadow: none; }
@@ -408,23 +407,37 @@
 :global(html[data-theme="dark"]) .voiceCopy small { color: var(--background); }
 :global(html[data-theme="dark"]) .voiceIcon { background: var(--background); color: var(--primary); }
 :global(html[data-theme="dark"]) .reviewMark { background: var(--selected); color: var(--primary); border-color: var(--border); }
-:global(html[data-theme="dark"]) .companionGarden { background: radial-gradient(ellipse at 50% 69%, rgb(53 91 68 / 40%), transparent 66%); }
+:global(html[data-theme="dark"]) .companionGarden { background: radial-gradient(ellipse at 50% 69%, var(--accent-glow), transparent 66%); }
 :global(html[data-theme="dark"]) .scroll :global(.msg-bubble--assistant) { background: var(--surface); color: var(--text-primary); border-color: var(--border); }
 :global(html[data-theme="dark"]) .scroll :global(.msg-bubble--user) { background: var(--primary); color: var(--background); }
 :global(html[data-theme="dark"]) .companionStatus::after { background: var(--surface-soft); border-color: var(--border); }
 :global(html[data-theme="dark"]) .suggestionEyebrow { color: var(--text-muted); }
+:global(html[data-theme="dark"]) .inputDock .composerBox { background: var(--surface-raised); border: 1px solid var(--control-border); }
+:global(html[data-theme="dark"]) .inputDock .composerBox .composer,
+:global(html[data-theme="dark"]) .inputDock .composerBox textarea { background: transparent; }
+:global(html[data-theme="dark"]) .inputDock .composerBox:focus-within { border-color: var(--focus-outline); box-shadow: var(--focus-ring); outline: 1px solid var(--focus-outline); }
+:global(html[data-theme="dark"]) .shell :is(.starterChoice:hover, .plantContext:hover, .voiceSettings summary:hover, .voiceSettings[open] summary, .reviewAlternatives button:hover:not(:disabled)) { background: var(--surface-raised); }
+:global(html[data-theme="dark"]) .shell :is(.starterNumber, .suggestionNext, .suggestionEyebrow) { color: var(--warning); }
+:global(html[data-theme="dark"]) .shell :is(.suggestionNext:hover, .suggestionQuestion:hover, .resetSuggestions:hover, .welcomeType:hover) { color: var(--primary-hover); }
+:global(html[data-theme="dark"]) .shell :is(.plantContext, .voiceSettings summary, .reviewActions button, .dialogActions button, .transcriptReview textarea, .heardTranscript) { background: var(--surface-raised); border-color: var(--control-border); }
+:global(html[data-theme="dark"]) .shell :is(.starterChoice, .suggestionFooter, .reviewActions) { border-color: var(--border-subtle); }
+:global(html[data-theme="dark"]) .shell .sendTranscript { background: var(--primary); border-color: var(--primary); color: var(--background); }
+:global(html[data-theme="dark"]) .shell .reviewLimit,
+:global(html[data-theme="dark"]) .reviewActions .reviewAlternatives .reviewDiscard:hover:not(:disabled) { color: var(--danger-text); }
+:global(html[data-theme="dark"]) .toolbar .voiceSettings > div input { accent-color: var(--primary); }
+:global(html[data-theme="dark"]) .scroll :global(.msg-bubble--error) { color: var(--danger-text); border-color: var(--danger); }
+:global(html[data-theme="dark"]) .inputDock .composerBox textarea:focus-visible { outline: none; box-shadow: none; }
 
 /* A focused decision point after voice transcription. */
 .transcriptReview {
   width: min(100%, 760px);
   margin: 6px auto 12px;
   padding: 18px 20px 16px;
-  border: 1px solid rgb(111 132 102 / 33%);
+  border: 1px solid var(--border);
   border-radius: 19px;
   background:
-    radial-gradient(ellipse at 0 0, rgb(255 252 229 / 75%), transparent 55%),
-    linear-gradient(135deg, rgb(250 248 237 / 96%), rgb(239 241 225 / 94%));
-  box-shadow: inset 0 1px rgb(255 255 255 / 84%), 0 9px 24px rgb(54 75 50 / 8%);
+    var(--surface);
+  box-shadow: inset 0 1px color-mix(in srgb, var(--lw-white) 84%, transparent), 0 9px 24px color-mix(in srgb, var(--lw-forest) 8%, transparent);
 }
 .reviewHeading { justify-content: flex-start; gap: 11px; margin-bottom: 13px; }
 .reviewMark {
@@ -433,10 +446,10 @@
   width: 38px;
   height: 38px;
   flex: none;
-  border: 1px solid rgb(83 125 81 / 20%);
+  border: 1px solid var(--border);
   border-radius: 12px;
-  background: rgb(221 233 212 / 76%);
-  color: #356747;
+  background: var(--selected);
+  color: var(--primary);
 }
 .reviewHeading > div { min-width: 0; }
 .reviewEyebrow { display: block; margin-bottom: 2px; color: var(--text-muted); font-size: 10px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; white-space: normal; }
@@ -450,10 +463,10 @@
   margin: 0;
   padding: 13px 15px;
   overflow: auto;
-  border: 1px solid rgb(117 138 106 / 28%);
+  border: 1px solid var(--control-border);
   border-radius: 12px;
-  background: rgb(255 254 247 / 78%);
-  box-shadow: inset 0 1px 3px rgb(61 75 52 / 5%);
+  background: var(--surface);
+  box-shadow: inset 0 1px 3px color-mix(in srgb, var(--lw-forest) 5%, transparent);
   color: var(--text-primary);
   font: 400 16px/1.5 var(--font-display), sans-serif;
   white-space: pre-wrap;
@@ -467,20 +480,20 @@
   gap: 16px;
   margin-top: 14px;
   padding-top: 14px;
-  border-top: 1px solid rgb(113 132 102 / 20%);
+  border-top: 1px solid var(--border);
 }
 .reviewAlternatives { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
 .reviewActions .reviewAlternatives button {
   min-height: 40px;
   padding: 8px 12px;
-  border: 1px solid rgb(111 132 102 / 31%);
+  border: 1px solid var(--control-border);
   border-radius: 10px;
-  background: rgb(255 253 244 / 60%);
+  background: var(--surface);
   color: var(--text-secondary);
   font-size: 12px;
-  box-shadow: inset 0 1px rgb(255 255 255 / 64%);
+  box-shadow: inset 0 1px color-mix(in srgb, var(--lw-white) 64%, transparent);
 }
-.reviewActions .reviewAlternatives button:hover:not(:disabled) { border-color: #78957a; background: #eef2e5; color: var(--text-primary); }
+.reviewActions .reviewAlternatives button:hover:not(:disabled) { border-color: var(--control-border); background: var(--selected); color: var(--text-primary); }
 .reviewActions .reviewAlternatives .reviewDiscard { border-color: transparent; background: transparent; box-shadow: none; color: var(--text-muted); }
 .reviewActions .reviewAlternatives .reviewDiscard:hover:not(:disabled) { border-color: transparent; background: transparent; color: var(--danger); }
 .reviewActions .sendTranscript {
@@ -491,16 +504,16 @@
   min-height: 42px;
   margin-left: auto;
   padding: 9px 16px;
-  border: 1px solid #315d43;
+  border: 1px solid var(--primary);
   border-radius: 11px;
-  background: linear-gradient(125deg, #3d694b, #2f5a41);
-  color: #fffdf4;
+  background: var(--primary);
+  color: var(--on-primary);
   font-size: 13px;
   white-space: nowrap;
-  box-shadow: inset 0 1px rgb(255 255 255 / 17%), 0 4px 12px rgb(37 70 44 / 15%);
+  box-shadow: inset 0 1px color-mix(in srgb, var(--lw-white) 17%, transparent), 0 4px 12px color-mix(in srgb, var(--lw-forest) 15%, transparent);
 }
-.reviewActions .sendTranscript:hover:not(:disabled) { background: #285239; }
-.reviewActions .sendTranscript:active:not(:disabled) { background: #21452f; }
+.reviewActions .sendTranscript:hover:not(:disabled) { background: var(--primary-hover); }
+.reviewActions .sendTranscript:active:not(:disabled) { background: var(--primary-active); }
 @media(max-width:650px) {
   .transcriptReview { padding: 15px; border-radius: 15px; }
   .reviewActions { align-items: stretch; flex-direction: column; gap: 9px; }
@@ -513,22 +526,22 @@
   width: min(100%, 290px);
   max-width: none;
   padding: 10px 12px;
-  border: 1.5px solid #789477;
+  border: 1.5px solid var(--border);
   border-radius: 16px;
-  background: #fffdf2;
-  box-shadow: 0 13px 32px rgb(49 75 46 / 22%), inset 0 1px #fff;
+  background: var(--surface);
+  box-shadow: 0 13px 32px color-mix(in srgb, var(--lw-forest) 22%, transparent), inset 0 1px var(--lw-white);
   z-index: 1;
 }
 .companionStatus[data-suggestion="true"] { min-height: 0; text-align: left; }
 .companionStatus::after {
   right: 58px;
   bottom: -9px;
-  background: #fffdf2;
-  border-color: #789477;
+  background: var(--surface);
+  border-color: var(--border);
 }
 .suggestionEyebrow {
   display: block;
-  color: #527452;
+  color: var(--text-muted);
   font-size: 10px;
   font-weight: 750;
   letter-spacing: .08em;
@@ -545,13 +558,13 @@
   padding: 0;
   border: 0;
   background: none;
-  color: #274a33;
+  color: var(--text-primary);
   font: 600 12px/1.35 var(--font-display), sans-serif;
   text-align: left;
   cursor: pointer;
 }
-.suggestionQuestion span { color: #537e59; font: 600 12px/1.2 var(--font-display), sans-serif; }
-.suggestionQuestion:hover { color: #08704b; }
+.suggestionQuestion span { color: var(--primary); font: 600 12px/1.2 var(--font-display), sans-serif; }
+.suggestionQuestion:hover { color: var(--primary-hover); }
 .suggestionFooter {
   display: flex;
   align-items: center;
@@ -559,8 +572,8 @@
   gap: 6px;
   margin-top: 6px;
   padding-top: 4px;
-  border-top: 1px solid #d7e2d2;
-  color: #526854;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
   font-size: 10px;
 }
 .suggestionNext {
@@ -568,14 +581,14 @@
   padding: 2px 0 2px 4px;
   border: 0;
   background: none;
-  color: #246545;
+  color: var(--primary);
   font: inherit;
   font-weight: 700;
   cursor: pointer;
 }
-.suggestionNext:hover { color: #074d31; text-decoration: underline; text-underline-offset: 3px; }
+.suggestionNext:hover { color: var(--primary-hover); text-decoration: underline; text-underline-offset: 3px; }
 .suggestionQuestion:focus-visible,
-.suggestionNext:focus-visible { outline: 2px solid #16744a; outline-offset: 3px; border-radius: 4px; }
+.suggestionNext:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; border-radius: 4px; }
 
 /* A compact first step for a new conversation. */
 .chatArea .welcome {
@@ -597,7 +610,7 @@
   align-items: center;
   gap: 8px;
   margin: 0 0 14px;
-  color: #28714d;
+  color: var(--primary);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: .075em;
@@ -606,7 +619,7 @@
 .welcomeKicker svg { flex: none; }
 .welcome .questionTitle {
   max-width: 12ch;
-  color: #294b37;
+  color: var(--text-primary);
   font-size: clamp(34px, 3.3vw, 47px);
   line-height: 1.07;
   letter-spacing: -.035em;
@@ -614,7 +627,7 @@
 .welcomeCopy .description {
   max-width: 33ch;
   margin: 17px 0 0;
-  color: #506451;
+  color: var(--text-muted);
   font-size: 16px;
   line-height: 1.55;
 }
@@ -632,25 +645,25 @@
   gap: 10px;
   min-height: 48px;
   padding: 10px 16px;
-  border: 1px solid #275c3c;
+  border: 1px solid var(--primary);
   border-radius: 12px;
-  background: #2d6945;
-  box-shadow: 0 5px 14px rgb(42 88 56 / 16%), inset 0 1px rgb(255 255 255 / 18%);
-  color: #fffdf3;
+  background: var(--primary);
+  box-shadow: 0 5px 14px color-mix(in srgb, var(--lw-forest) 16%, transparent), inset 0 1px color-mix(in srgb, var(--lw-white) 18%, transparent);
+  color: var(--on-primary);
   font: inherit;
   font-size: 14px;
   font-weight: 750;
   cursor: pointer;
 }
 .welcomeTalk span:last-child { margin-left: 3px; }
-.welcomeTalk:hover:not(:disabled) { background: #24583a; }
-.welcomeTalk:active:not(:disabled) { background: #1b4930; }
+.welcomeTalk:hover:not(:disabled) { background: var(--primary-hover); }
+.welcomeTalk:active:not(:disabled) { background: var(--primary-active); }
 .welcomeType {
   min-height: 44px;
   padding: 7px 0;
   border: 0;
   background: none;
-  color: #315d42;
+  color: var(--primary);
   font: inherit;
   font-size: 13px;
   font-weight: 700;
@@ -659,25 +672,25 @@
 .welcomeType span { margin-left: 4px; }
 .welcomeType:hover:not(:disabled) { text-decoration: underline; text-underline-offset: 4px; }
 .welcomeActions button:disabled { opacity: .5; cursor: not-allowed; }
-.welcomeReassurance { margin: 12px 0 0; color: #667662; font-size: 12px; line-height: 1.45; }
-.welcome .demoGuide { margin: 17px 0 0; color: #536953; font-size: 12px; }
-.welcome .demoGuide summary { width: fit-content; color: #3c6449; font-weight: 600; }
+.welcomeReassurance { margin: 12px 0 0; color: var(--text-muted); font-size: 12px; line-height: 1.45; }
+.welcome .demoGuide { margin: 17px 0 0; color: var(--text-muted); font-size: 12px; }
+.welcome .demoGuide summary { width: fit-content; color: var(--primary); font-weight: 600; }
 .welcome .demoGuide ol { max-width: 32ch; margin-bottom: 0; }
 .welcome .starters {
   display: block;
   min-width: 0;
   margin: 0;
   padding: 22px 24px 17px;
-  border: 1px solid rgb(105 129 101 / 29%);
+  border: 1px solid var(--border);
   border-radius: 20px;
-  background: linear-gradient(145deg, rgb(255 253 243 / 92%), rgb(242 246 232 / 87%));
-  box-shadow: inset 0 1px rgb(255 255 255 / 83%), 0 10px 28px rgb(70 83 58 / 8%);
+  background: var(--surface);
+  box-shadow: inset 0 1px color-mix(in srgb, var(--lw-white) 83%, transparent), 0 10px 28px color-mix(in srgb, var(--lw-forest) 8%, transparent);
 }
 .starterHeader { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding-bottom: 13px; }
-.starterHeader span { color: #547459; font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-.starterHeader h3 { margin: 4px 0 0; color: #294b37; font: 600 23px/1.1 var(--font-brand), Georgia, serif; }
-.resetSuggestions { padding: 5px 0; border: 0; background: none; color: #617661; font: inherit; font-size: 11px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
-.resetSuggestions:hover { color: #225a3b; }
+.starterHeader span { color: var(--primary); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.starterHeader h3 { margin: 4px 0 0; color: var(--text-primary); font: 600 23px/1.1 var(--font-brand), Georgia, serif; }
+.resetSuggestions { padding: 5px 0; border: 0; background: none; color: var(--text-muted); font: inherit; font-size: 11px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.resetSuggestions:hover { color: var(--primary-hover); }
 .starterList { display: grid; }
 .starterChoice {
   display: grid;
@@ -688,26 +701,26 @@
   min-height: 68px;
   padding: 10px 2px;
   border: 0;
-  border-top: 1px solid rgb(114 139 111 / 22%);
+  border-top: 1px solid var(--border);
   background: transparent;
-  color: #294b37;
+  color: var(--text-primary);
   font: inherit;
   text-align: left;
   cursor: pointer;
 }
-.starterChoice:hover:not(:disabled) { background: rgb(222 237 218 / 42%); }
-.starterChoice:active:not(:disabled) { background: rgb(211 230 207 / 63%); }
+.starterChoice:hover:not(:disabled) { background: var(--selected); }
+.starterChoice:active:not(:disabled) { background: var(--selected); }
 .starterChoice:disabled { opacity: .5; cursor: not-allowed; }
-.starterNumber { align-self: start; padding-top: 4px; color: #759176; font-size: 11px; font-weight: 750; }
+.starterNumber { align-self: start; padding-top: 4px; color: var(--text-muted); font-size: 11px; font-weight: 750; }
 .starterText { display: grid; gap: 3px; }
 .starterText strong { font-size: 14px; font-weight: 720; }
-.starterText small { color: #607461; font-size: 11px; line-height: 1.35; }
-.starterArrow { color: #4e7b57; font-size: 16px; }
-.starterNote { margin: 11px 0 0; color: #617461; font-size: 11px; }
+.starterText small { color: var(--text-muted); font-size: 11px; line-height: 1.35; }
+.starterArrow { color: var(--primary); font-size: 16px; }
+.starterNote { margin: 11px 0 0; color: var(--text-muted); font-size: 11px; }
 .welcomeTalk:focus-visible,
 .welcomeType:focus-visible,
 .starterChoice:focus-visible,
-.resetSuggestions:focus-visible { outline: 2px solid #1c7048; outline-offset: 3px; }
+.resetSuggestions:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 @media (max-width: 760px) {
   .chatArea .welcome { padding: 24px 12px 28px; }
   .welcomeGrid { grid-template-columns: minmax(0, 1fr); gap: 25px; }
@@ -736,7 +749,7 @@
   margin-bottom: 0;
 }
 .greetingIntro { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 190px; }
-.greetingIntro > svg { flex: none; color: #517a56; }
+.greetingIntro > svg { flex: none; color: var(--primary); }
 .greetingCopy { min-width: 0; flex: 1; }
 .chatGreeting h1 { font-size: 23px; }
 .chatGreeting p { font-size: 13px; line-height: 1.4; }
@@ -760,18 +773,18 @@
 }
 .toolbarIdentity { display: flex; align-items: center; gap: 8px; min-width: 0; max-width: 170px; }
 .toolbarIdentity > div { display: grid; gap: 2px; min-width: 0; }
-.toolbarIdentity strong { overflow: hidden; color: #294b37; font-size: 12px; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
-.toolbarEyebrow { color: #69806b; font-size: 10px; font-weight: 750; letter-spacing: .075em; text-transform: uppercase; }
+.toolbarIdentity strong { overflow: hidden; color: var(--text-primary); font-size: 12px; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+.toolbarEyebrow { color: var(--text-muted); font-size: 10px; font-weight: 750; letter-spacing: .075em; text-transform: uppercase; }
 .toolbarChatIcon {
   display: grid;
   place-items: center;
   width: 32px;
   height: 32px;
   flex: none;
-  border: 1px solid #cbdcc8;
+  border: 1px solid var(--border);
   border-radius: 12px;
-  background: #eaf2e6;
-  color: #36704b;
+  background: var(--selected);
+  color: var(--primary);
 }
 .toolbarControls { display: contents; }
 .plantContext,
@@ -781,22 +794,22 @@
   gap: 8px;
   min-height: 36px;
   margin: 0;
-  border: 1px solid #cddbc8;
+  border: 1px solid var(--control-border);
   border-radius: 11px;
-  background: rgb(255 254 248 / 78%);
-  box-shadow: inset 0 1px rgb(255 255 255 / 80%);
-  color: #315b41;
+  background: var(--surface);
+  box-shadow: inset 0 1px color-mix(in srgb, var(--lw-white) 80%, transparent);
+  color: var(--primary);
 }
 .plantContext { padding: 0 10px 0 12px; }
-.plantContext > svg { flex: none; color: #4b8058; }
-.plantContextLabel { color: #677969; font-size: 12px; font-weight: 650; white-space: nowrap; }
+.plantContext > svg { flex: none; color: var(--primary); }
+.plantContextLabel { color: var(--text-muted); font-size: 12px; font-weight: 650; white-space: nowrap; }
 .plantContext select {
   width: min(160px, 21vw);
   min-width: 110px;
   padding: 7px 2px;
   border: 0;
   background: transparent;
-  color: #294b37;
+  color: var(--text-primary);
   font: inherit;
   font-size: 12px;
   font-weight: 700;
@@ -807,13 +820,13 @@
 .toolbar .voiceSettings summary { padding: 0 13px; font-size: 12px; font-weight: 700; white-space: nowrap; }
 .toolbar .voiceSettings summary { list-style: none; cursor: pointer; }
 .toolbar .voiceSettings summary::-webkit-details-marker { display: none; }
-.toolbar .voiceSettings > div { top: calc(100% + 8px); background: #fffdf4; }
-.toolbar .voiceSettings > div label { display: flex; align-items: center; gap: 9px; color: #294b37; font-size: 13px; }
-.toolbar .voiceSettings > div input { width: 16px; height: 16px; accent-color: #2d6945; }
+.toolbar .voiceSettings > div { top: calc(100% + 8px); background: var(--surface); }
+.toolbar .voiceSettings > div label { display: flex; align-items: center; gap: 9px; color: var(--text-primary); font-size: 13px; }
+.toolbar .voiceSettings > div input { width: 16px; height: 16px; accent-color: var(--primary); }
 .toolbar .plantContext:hover,
 .toolbar .voiceSettings summary:hover,
-.toolbar .voiceSettings[open] summary { border-color: #91b296; background: #f0f5e9; }
-.toolbar :is(select,summary,button,a,input):focus-visible { outline: 2px solid #1e7048; outline-offset: 3px; }
+.toolbar .voiceSettings[open] summary { border-color: var(--control-border); background: var(--selected); }
+.toolbar :is(select,summary,button,a,input):focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 @media (max-width: 700px) {
   .chatArea .chatGreeting { padding: 12px 14px; gap: 8px; }
   .toolbarInner { flex-wrap: wrap; gap: 6px; }
@@ -831,10 +844,10 @@
 
 /* Voice options expand inside the same border as the text composer. */
 .composerBox {
-  border: 1px solid rgb(106 131 103 / 35%);
+  border: 1px solid var(--control-border);
   border-radius: 26px;
   background: var(--surface);
-  box-shadow: inset 0 1px rgb(255 255 255 / 90%), 0 5px 16px rgb(55 74 49 / 8%);
+  box-shadow: inset 0 1px color-mix(in srgb, var(--lw-white) 90%, transparent), 0 5px 16px color-mix(in srgb, var(--lw-forest) 8%, transparent);
 }
 .composerBox:focus-within { border-color: var(--primary); }
 .inputDock .composerBox .composer { border: 0; background: transparent; box-shadow: none; }

@@ -70,15 +70,15 @@ function PlantArt({ kind = "monstera" }: { kind?: string }) {
         <path
           d="M100 142V55M100 108 65 73M100 91l35-43"
           fill="none"
-          stroke="#3c6944"
+          stroke="var(--lw-forest)"
           strokeWidth="4"
         />
-        <path d="M100 99C51 101 43 55 54 36c38 3 50 30 46 63Z" fill="#47774e" />
-        <path d="M102 79c-9-47 19-61 47-61 9 41-13 64-47 61Z" fill="#719450" />
-        <path d="M98 113c-41 23-63-2-64-25 30-14 51-4 64 25Z" fill="#88a95f" />
-        <path d="M103 113c36-36 66-17 65 11-29 16-51 9-65-11Z" fill="#315e41" />
-        <path d="m75 137 9 37h34l9-37Z" fill="#d0ae8d" />
-        <path d="M72 135h58v8H72Z" fill="#dfc3a3" />
+        <path d="M100 99C51 101 43 55 54 36c38 3 50 30 46 63Z" fill="var(--lw-green)" />
+        <path d="M102 79c-9-47 19-61 47-61 9 41-13 64-47 61Z" fill="var(--lw-green)" />
+        <path d="M98 113c-41 23-63-2-64-25 30-14 51-4 64 25Z" fill="var(--lw-green)" />
+        <path d="M103 113c36-36 66-17 65 11-29 16-51 9-65-11Z" fill="var(--lw-forest)" />
+        <path d="m75 137 9 37h34l9-37Z" fill="var(--lw-earth-yellow)" />
+        <path d="M72 135h58v8H72Z" fill="var(--lw-amber)" />
       </svg>
     </div>
   );
@@ -280,7 +280,7 @@ export function PlantsPage() {
               <div>
                 <h2>{p.name}</h2>
                 <p>{p.species || "Species not recorded"}</p>
-                <span className="ws-chip">
+                <span className={`ws-chip${p.location ? "" : " ws-chip--attention"}`}>
                   {p.location || "Add a location"}
                 </span>
               </div>

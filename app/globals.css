@@ -1,29 +1,49 @@
 @import "tailwindcss";
 
 :root {
+  /* Official Lifewood colors. Supporting tints are derived from these tokens. */
   --lw-forest: #133020;
   --lw-green: #046241;
   --lw-amber: #ffb347;
   --lw-cream: #f5eedb;
+  --lw-white: #ffffff;
+  --lw-sea-salt: #f9f7f7;
+  --lw-earth-yellow: #ffc370;
   --background: var(--lw-cream);
-  --surface: #ffffff;
-  --surface-soft: #fbf8ef;
-  --surface-glass: rgb(255 255 255 / 88%);
+  --surface: var(--lw-white);
+  --surface-soft: var(--lw-sea-salt);
+  --surface-raised: var(--lw-white);
+  --surface-glass: var(--surface);
+  --card: var(--surface);
   --text-primary: var(--lw-forest);
-  --text-secondary: #3e5948;
-  --text-muted: #516858;
-  --border: #c5d4c7;
-  --border-soft: #dce5dc;
+  --text-secondary: color-mix(in srgb, var(--lw-forest) 88%, var(--surface));
+  --text-muted: color-mix(in srgb, var(--lw-forest) 78%, var(--surface));
+  --border: color-mix(in srgb, var(--lw-forest) 24%, var(--surface));
+  --border-soft: color-mix(in srgb, var(--lw-forest) 14%, var(--surface));
+  --border-subtle: var(--border-soft);
+  --control-border: var(--lw-green);
+  --tag-border: var(--border);
   --primary: var(--lw-green);
-  --primary-hover: #034f35;
-  --primary-active: #023d2a;
-  --selected: #e8f1e9;
-  --selected-strong: #d9e9dc;
+  --primary-hover: var(--lw-forest);
+  --primary-active: var(--lw-forest);
+  --on-primary: var(--lw-white);
+  --selected: color-mix(in srgb, var(--lw-green) 9%, var(--surface));
+  --selected-strong: color-mix(in srgb, var(--lw-green) 16%, var(--surface));
   --accent: var(--lw-amber);
-  --accent-soft: #fff2db;
-  --accent-text: #65420b;
-  --danger: #8d463a;
-  --shadow-soft: rgb(19 48 32 / 9%);
+  --accent-soft: color-mix(in srgb, var(--lw-earth-yellow) 32%, var(--lw-cream));
+  --accent-text: var(--lw-forest);
+  --accent-tint: color-mix(in srgb, var(--accent) 12%, transparent);
+  --accent-glow: color-mix(in srgb, var(--lw-earth-yellow) 12%, transparent);
+  --warm-tint: var(--accent-tint);
+  --success: var(--lw-green);
+  --warning: var(--lw-amber);
+  --info: var(--lw-green);
+  --danger: var(--lw-forest);
+  --danger-text: var(--lw-forest);
+  --focus-outline: var(--primary);
+  --focus-ring: 0 0 0 2px color-mix(in srgb, var(--primary) 35%, transparent);
+  --shadow-soft: color-mix(in srgb, var(--lw-forest) 9%, transparent);
+  --shadow-card: 0 8px 24px color-mix(in srgb, var(--lw-forest) 12%, transparent);
   /* Existing component names inherit the Lifewood system. */
   --leaf-deep: var(--text-primary);
   --leaf: var(--primary);
@@ -200,7 +220,7 @@ body {
   border: 1px solid var(--leaf-deep);
   border-radius: 999px;
   background: var(--leaf-deep);
-  color: var(--surface);
+  color: var(--on-primary);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
@@ -404,7 +424,7 @@ body {
   border-radius: 50%;
   border: none;
   background: var(--leaf-deep);
-  color: var(--surface);
+  color: var(--on-primary);
   font-size: 1.05rem;
   cursor: pointer;
   display: flex;
@@ -452,7 +472,7 @@ body {
   height: 2.75rem;
   border-radius: 50%;
   background: var(--leaf);
-  color: var(--surface);
+  color: var(--on-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -510,7 +530,7 @@ body {
 }
 
 /* Lifewood states shared by the landing page and legacy chat controls. */
-.welcome-cta { background: var(--primary); border-color: var(--primary); color: var(--surface); }
+.welcome-cta { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
 .welcome-cta:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
 .welcome-cta:active { background: var(--primary-active); border-color: var(--primary-active); }
 .status-pill { background: var(--surface); color: var(--text-primary); border-color: var(--border); }
@@ -518,10 +538,10 @@ body {
 .status-pill--processing .status-dot { background: var(--accent); }
 .status-pill--speaking .status-dot { background: var(--lw-forest); }
 .msg-bubble--assistant { background: var(--surface); border-color: var(--border); color: var(--text-primary); }
-.msg-bubble--user { background: var(--primary); color: var(--surface); }
+.msg-bubble--user { background: var(--primary); color: var(--on-primary); }
 .composer-input { background: var(--surface); border-color: var(--border); color: var(--text-primary); }
 .composer-input::placeholder { color: var(--text-muted); opacity: 1; }
-.composer-send, .composer-mic .mic-btn { background: var(--primary); color: var(--surface); }
+.composer-send, .composer-mic .mic-btn { background: var(--primary); color: var(--on-primary); }
 .composer-send:hover:not(:disabled), .composer-mic .mic-btn:hover:not(:disabled) { background: var(--primary-hover); }
 .composer-mic .mic-btn--active { background: var(--primary); box-shadow: 0 0 0 3px var(--accent); }
 .dashboard-starter--primary { background: var(--selected); border-color: var(--primary); }
@@ -630,7 +650,7 @@ body {
 
 .dashboard-header-actions { flex-wrap: wrap; }
 .dashboard-preferences { display: grid; gap: 0.75rem; margin-top: 1rem; }
-.dashboard-starter { border: 1px solid var(--border); border-radius: 1rem; padding: 0.9rem 1rem; background: white; color: var(--leaf-deep); font: inherit; cursor: pointer; }
+.dashboard-starter { border: 1px solid var(--border); border-radius: 1rem; padding: 0.9rem 1rem; background: var(--surface); color: var(--leaf-deep); font: inherit; cursor: pointer; }
 .dashboard-clear { border: 0; background: none; color: var(--muted); font: inherit; font-size: 0.85rem; padding: 0.65rem; text-decoration: underline; cursor: pointer; }
 .dashboard-starter:focus-visible, .dashboard-clear:focus-visible { outline: 2px solid var(--leaf); outline-offset: 3px; }
 
@@ -644,8 +664,8 @@ body {
 .dashboard-starter--primary { background: var(--selected); border-color: var(--primary); font-weight: 600; }
 .conversation-controls { display: flex; justify-content: center; gap: 0.75rem; padding: 0.4rem 1rem; }
 .conversation-controls:empty { display: none; }
-.conversation-controls button, .new-response { font: inherit; color: var(--leaf-deep); border: 1px solid var(--border); background: white; border-radius: 999px; padding: 0.6rem 1rem; cursor: pointer; }
-.conversation-controls .control-primary { background: var(--leaf); color: white; border-color: var(--leaf); }
+.conversation-controls button, .new-response { font: inherit; color: var(--leaf-deep); border: 1px solid var(--border); background: var(--surface); border-radius: 999px; padding: 0.6rem 1rem; cursor: pointer; }
+.conversation-controls .control-primary { background: var(--leaf); color: var(--on-primary); border-color: var(--leaf); }
 .conversation-controls button:disabled { opacity: 0.5; cursor: wait; }
 .conversation-controls button:focus-visible, .new-response:focus-visible, .message-actions button:focus-visible, .read-aloud-toggle input:focus-visible { outline: 2px solid var(--leaf); outline-offset: 3px; }
 .new-response { align-self: center; margin-bottom: 0.5rem; }
@@ -692,7 +712,7 @@ body {
 .cactea-aura-active .cactea-aura-ring { opacity: var(--aura-opacity, 0.55); transform: scale(var(--aura-scale, 1.02)); }
 .cactea-aura-speaking .cactea-aura-ring { animation: cactea-round-pulse 1800ms cubic-bezier(0.77, 0, 0.175, 1) infinite; }
 .cactea-aura-thinking .cactea-aura-ring {
-  background: radial-gradient(circle, rgb(162 218 114 / 16%) 20%, rgb(110 193 87 / 38%) 48%, rgb(62 153 86 / 28%) 65%, transparent 76%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--lw-earth-yellow) 16%, transparent) 20%, color-mix(in srgb, var(--primary) 38%, transparent) 48%, color-mix(in srgb, var(--primary) 28%, transparent) 65%, transparent 76%);
   filter: blur(8px);
   animation: cactea-thinking-pulse 2800ms ease-in-out infinite;
 }

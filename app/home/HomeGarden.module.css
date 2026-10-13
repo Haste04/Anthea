@@ -1,19 +1,19 @@
 /* The shell override requires this page's unique class, even after navigation. */
 :global(.ws-app):has(.page) {
-  background: #f6f1e5;
+  background: var(--background);
 }
 
 .page {
-  --garden-ivory: #f6f1e5;
-  --garden-sage: #e3ede4;
-  --garden-forest: #075c42;
-  --garden-ink: #203b2c;
-  --garden-muted: #526655;
-  --garden-line: #d5dece;
+  --garden-ivory: var(--background);
+  --garden-sage: var(--selected);
+  --garden-forest: var(--primary);
+  --garden-ink: var(--text-primary);
+  --garden-muted: var(--text-muted);
+  --garden-line: var(--border);
   --garden-ease: cubic-bezier(.22, 1, .36, 1);
   min-width: 0;
   color: var(--garden-ink);
-  background: radial-gradient(ellipse at 92% 5%, #e3ede480, transparent 42%), var(--garden-ivory);
+  background: radial-gradient(ellipse at 92% 5%, color-mix(in srgb, var(--selected) 50%, transparent), transparent 42%), var(--garden-ivory);
   font-family: var(--font-display), sans-serif;
   overflow: clip;
 }
@@ -31,18 +31,18 @@
 .page .intro { max-width: 355px; font-size: 17px; line-height: 1.65; margin-top: 24px; color: var(--garden-muted); }
 .page .hero h2 { font-size: 19px; letter-spacing: -.025em; line-height: 1.45; margin-top: 28px; }
 .page .description { font-size: 15px; line-height: 1.65; color: var(--garden-muted); margin-top: 9px; max-width: 345px; }
-.page .primary { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 54px; padding: 14px 23px; margin-top: 28px; border: 1px solid var(--garden-forest); border-radius: 100px; background: var(--garden-forest); color: #fffdf5; font-weight: 600; box-shadow: 0 5px 16px #075c4210; transition: transform 240ms var(--garden-ease), background 240ms, box-shadow 240ms; }
+.page .primary { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 54px; padding: 14px 23px; margin-top: 28px; border: 1px solid var(--garden-forest); border-radius: 100px; background: var(--garden-forest); color: var(--on-primary); font-weight: 600; box-shadow: 0 5px 16px color-mix(in srgb, var(--lw-forest) 6%, transparent); transition: transform 240ms var(--garden-ease), background 240ms, box-shadow 240ms; }
 .primary > svg:last-child { margin-left: 14px; transition: transform 240ms var(--garden-ease); }
 .scene { position: relative; isolation: isolate; width: 100%; min-height: 570px; perspective: 900px; }
 .depthLayer { position: absolute; pointer-events: none; translate: var(--garden-pointer-x, 0px) var(--garden-pointer-y, 0px); transform: translate3d(0, var(--garden-scroll-y, 0px), 0); transition: translate 600ms var(--garden-ease); }
 .depthLayer > svg { display: block; width: 100%; height: auto; }
-.habitat { z-index: -2; width: 104%; height: 88%; left: -1%; bottom: 8%; border-radius: 49% 49% 44% 47%; background: radial-gradient(ellipse at 44% 25%, #f0f4e7 0%, #e1ebd9 37%, #c8dabc 78%, #b8ccac 100%); box-shadow: inset 0 0 90px #f6f1e560; }
-.habitat::before { content: ""; position: absolute; inset: 20px; border: 1px solid #fffdf566; border-radius: inherit; }
-.backBranch { color: #698568; opacity: .18; width: 39%; right: -6%; top: 5%; z-index: -1; }
+.habitat { z-index: -2; width: 104%; height: 88%; left: -1%; bottom: 8%; border-radius: 49% 49% 44% 47%; background: radial-gradient(ellipse at 44% 25%, var(--surface-soft) 0%, var(--selected) 37%, var(--selected-strong) 78%, var(--selected-strong) 100%); box-shadow: inset 0 0 90px color-mix(in srgb, var(--lw-cream) 38%, transparent); }
+.habitat::before { content: ""; position: absolute; inset: 20px; border: 1px solid color-mix(in srgb, var(--lw-white) 40%, transparent); border-radius: inherit; }
+.backBranch { color: var(--lw-forest); opacity: .18; width: 39%; right: -6%; top: 5%; z-index: -1; }
 .backBranch svg { rotate: -18deg; }
-.midLeaf { color: #90ac7e; width: 31%; left: -6%; top: 34%; z-index: -1; }
+.midLeaf { color: var(--selected-strong); width: 31%; left: -6%; top: 34%; z-index: -1; }
 .midLeaf svg { rotate: -30deg; }
-.sun { color: #7f9271; width: 58px; left: 16%; top: 8%; opacity: .65; }
+.sun { color: var(--lw-green); width: 58px; left: 16%; top: 8%; opacity: .65; }
 .mascotStage { position: absolute; z-index: 3; top: 46%; left: 50%; width: 106%; max-width: 580px; transform: translate(-50%, -50%) rotateX(var(--garden-tilt-x, 0deg)) rotateY(var(--garden-tilt-y, 0deg)); transform-origin: 50% 75%; transition: transform 600ms var(--garden-ease); }
 .mascotFloat { width: 100%; animation: garden-float 6500ms ease-in-out infinite; }
 .mascotAnchor { width: 100%; }
@@ -51,18 +51,18 @@
 .mascotDrag[data-home-mascot-motion] { position: fixed; inset: auto; max-width: none; max-height: none; transition: none; }
 .mascotDrag[data-home-mascot-motion="dragging"] > button { cursor: grabbing; }
 .mascotDrag::backdrop { background: transparent; pointer-events: none; }
-.page .mascot { --cactea-size: 100%; width: 100%; margin: 0; filter: drop-shadow(0 14px 12px #45613a0d); }
-.page .mascot::after { height: 3%; background: radial-gradient(ellipse, #355c3e32, #355c3e00 72%); left: 22%; width: 56%; bottom: 8%; animation: garden-shadow 6500ms ease-in-out infinite; }
-.frontBranch { color: #577a4d; width: 33%; right: -11%; bottom: 18%; z-index: 2; }
+.page .mascot { --cactea-size: 100%; width: 100%; margin: 0; filter: drop-shadow(0 14px 12px color-mix(in srgb, var(--lw-forest) 5%, transparent)); }
+.page .mascot::after { height: 3%; background: radial-gradient(ellipse, color-mix(in srgb, var(--lw-forest) 20%, transparent), transparent 72%); left: 22%; width: 56%; bottom: 8%; animation: garden-shadow 6500ms ease-in-out infinite; }
+.frontBranch { color: var(--lw-green); width: 33%; right: -11%; bottom: 18%; z-index: 2; }
 .frontBranch svg { rotate: -20deg; }
-.frontLeaf { color: #759865; width: 27%; left: -8%; bottom: 12%; z-index: 2; }
+.frontLeaf { color: var(--lw-green); width: 27%; left: -8%; bottom: 12%; z-index: 2; }
 .frontLeaf svg { rotate: -38deg; }
 .mascotCaption { position: absolute; bottom: 2%; left: 50%; transform: translateX(-50%); display: flex; align-items: center; justify-content: center; flex-wrap: wrap; column-gap: 8px; width: 100%; font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
 .mascotCaption > span:last-child { flex-basis: 100%; text-align: center; font-weight: 400; color: var(--garden-muted); font-size: 12px; margin-top: 4px; }
-.presenceDot { width: 6px; height: 6px; background: var(--garden-forest); border-radius: 50%; box-shadow: 0 0 0 4px #075c4209; }
+.presenceDot { width: 6px; height: 6px; background: var(--garden-forest); border-radius: 50%; box-shadow: 0 0 0 4px color-mix(in srgb, var(--lw-forest) 4%, transparent); }
 
 .gallerySection { position: relative; padding-block: 46px 64px; scroll-margin-top: 80px; }
-.gallerySection::before { content: ""; position: absolute; inset: 0 calc(-1 * clamp(24px, 4vw, 72px)); pointer-events: none; z-index: 0; background: linear-gradient(#f6f1e500, var(--garden-ivory) 90px); }
+.gallerySection::before { content: ""; position: absolute; inset: 0 calc(-1 * clamp(24px, 4vw, 72px)); pointer-events: none; z-index: 0; background: linear-gradient(transparent, var(--garden-ivory) 90px); }
 .gallerySection > * { position: relative; }
 .sectionHeading { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 32px; }
 .page .sectionHeading h2 { font-size: clamp(36px, 3.4vw, 48px); line-height: 1.15; letter-spacing: -.045em; margin-top: 8px; }
@@ -73,7 +73,7 @@
 .textLink > svg { transition: transform 240ms var(--garden-ease); }
 .galleryActions { display: flex; align-items: center; gap: 24px; flex-shrink: 0; }
 .galleryControls { display: flex; gap: 8px; }
-.page .galleryControls button { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid #b5c7ac; border-radius: 50%; background: transparent; color: var(--garden-forest); transition: background 200ms, color 200ms; }
+.page .galleryControls button { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--control-border); border-radius: 50%; background: transparent; color: var(--garden-forest); transition: background 200ms, color 200ms; }
 .page .galleryControls button:disabled { opacity: .35; }
 .galleryControls button:not(:disabled):hover { background: var(--garden-sage); }
 .previousPlants > svg { rotate: 180deg; }
@@ -83,18 +83,18 @@
 .plantReveal { min-width: 0; scroll-snap-align: start; }
 .page .plant { display: block; border-radius: 120px 120px 4px 4px; transition: transform 350ms var(--garden-ease); }
 .page .plant:focus-visible { outline-offset: 2px; }
-.plantPhoto { position: relative; aspect-ratio: 4 / 5; overflow: hidden; border-radius: 46% 46% 6px 6px; background: linear-gradient(145deg, #e4e9d9, #d4dfc8); border: 1px solid #afc09f66; isolation: isolate; }
-.plantReveal:nth-child(2) .plantPhoto { background: linear-gradient(145deg, #eae5d6, #e0d9c7); }
-.plantReveal:nth-child(3) .plantPhoto { background: linear-gradient(145deg, #e1e9df, #cadbca); }
+.plantPhoto { position: relative; aspect-ratio: 4 / 5; overflow: hidden; border-radius: 46% 46% 6px 6px; background: linear-gradient(145deg, var(--selected), var(--selected-strong)); border: 1px solid color-mix(in srgb, var(--lw-green) 40%, transparent); isolation: isolate; }
+.plantReveal:nth-child(2) .plantPhoto { background: linear-gradient(145deg, var(--lw-cream), var(--accent-soft)); }
+.plantReveal:nth-child(3) .plantPhoto { background: linear-gradient(145deg, var(--selected), var(--selected-strong)); }
 .plantPhoto > img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 700ms var(--garden-ease); }
-.photoIndex { position: absolute; left: 16px; bottom: 16px; display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid #fffdf595; border-radius: 50%; background: #f6f1e5e6; color: var(--garden-ink); font-size: 10px; letter-spacing: .06em; }
-.plantArrow { position: absolute; right: 14px; bottom: 14px; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--garden-ivory); color: var(--garden-forest); box-shadow: 0 2px 6px #203b2c0c; transition: background 250ms, color 250ms; }
+.photoIndex { position: absolute; left: 16px; bottom: 16px; display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid color-mix(in srgb, var(--lw-white) 58%, transparent); border-radius: 50%; background: color-mix(in srgb, var(--background) 90%, transparent); color: var(--garden-ink); font-size: 10px; letter-spacing: .06em; }
+.plantArrow { position: absolute; right: 14px; bottom: 14px; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--garden-ivory); color: var(--garden-forest); box-shadow: 0 2px 6px color-mix(in srgb, var(--lw-forest) 5%, transparent); transition: background 250ms, color 250ms; }
 .plantInfo { padding: 19px 0 20px; border-bottom: 1px solid var(--garden-line); min-width: 0; overflow-wrap: anywhere; }
 .page .plantInfo h3 { font-size: 23px; line-height: 1.25; letter-spacing: -.03em; }
 .page .plantInfo p { margin-top: 6px; color: var(--garden-muted); font-size: 14px; line-height: 1.5; }
 .plantInfo > span { display: block; color: var(--garden-muted); font-size: 12px; font-style: italic; line-height: 1.5; margin-top: 3px; }
-.plantIllustration { display: block; width: 80%; height: 100%; margin: auto; filter: drop-shadow(0 15px 10px #203b2c12); }
-.emptyGarden { display: flex; align-items: center; gap: 40px; padding: 36px 48px; background: #e3ede466; border-block: 1px solid var(--garden-line); border-radius: 4px 100px 4px 4px; }
+.plantIllustration { display: block; width: 80%; height: 100%; margin: auto; filter: drop-shadow(0 15px 10px color-mix(in srgb, var(--lw-forest) 7%, transparent)); }
+.emptyGarden { display: flex; align-items: center; gap: 40px; padding: 36px 48px; background: color-mix(in srgb, var(--selected) 40%, transparent); border-block: 1px solid var(--garden-line); border-radius: 4px 100px 4px 4px; }
 .emptyArt { flex: 0 0 150px; height: 180px; }
 .page .emptyGarden h3 { font-size: 27px; letter-spacing: -.03em; margin-top: 8px; line-height: 1.3; }
 .page .emptyGarden p:not(.eyebrow) { color: var(--garden-muted); font-size: 15px; line-height: 1.6; margin: 10px 0; }
@@ -102,7 +102,7 @@
 .overview { display: grid; grid-template-columns: 1.05fr 1fr 1fr; align-items: center; border-block: 1px solid var(--garden-line); padding-block: 25px; gap: 24px; }
 .page .overview h2 { font-size: 23px; letter-spacing: -.035em; margin-top: 5px; line-height: 1.3; }
 .page .stat { display: flex; align-items: center; gap: 14px; min-width: 0; min-height: 72px; padding: 8px 16px; border-left: 1px solid var(--garden-line); border-radius: 0 8px 8px 0; transition: background 200ms; }
-.statIcon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: #e3ede4; flex-shrink: 0; color: var(--garden-forest); }
+.statIcon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: var(--selected); flex-shrink: 0; color: var(--garden-forest); }
 .stat > div { display: flex; flex-direction: column; min-width: 0; }
 .stat strong { font-family: var(--font-brand), serif; font-size: 32px; font-weight: 600; line-height: 1.1; letter-spacing: -.05em; }
 .stat div > span { color: var(--garden-muted); font-size: 13px; margin-top: 3px; }
@@ -111,15 +111,13 @@
 .supportHeading { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-bottom: 18px; }
 .page .supportHeading h2 { font-size: 25px; line-height: 1.25; letter-spacing: -.035em; margin-top: 8px; }
 .page .conversation { width: 100%; display: flex; align-items: center; gap: 14px; min-height: 82px; border: 0; border-bottom: 1px solid var(--garden-line); background: transparent; padding: 15px 8px; color: var(--garden-ink); text-align: left; transition: background 240ms, padding 240ms var(--garden-ease); }
-.conversationIcon { flex-shrink: 0; color: #638266; }
+.conversationIcon { flex-shrink: 0; color: var(--primary); }
 .conversationText { flex: 1; min-width: 0; }
 .conversationText strong { display: block; font-size: 15px; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
 .conversationText small { display: block; margin-top: 4px; color: var(--garden-muted); font-size: 12px; }
 .conversation > svg { width: 16px; flex-shrink: 0; color: var(--garden-muted); transition: transform 250ms var(--garden-ease); }
 .page .emptyConversation { color: var(--garden-muted); border-block: 1px solid var(--garden-line); padding-block: 22px; font-size: 15px; line-height: 1.6; }
 .tip {
-  --lw-white: #ffffff;
-  --lw-earth-yellow: #ffc370;
   --type-headline: clamp(1.75rem, 2.5vw, 2rem);
   --tracking: 0.015em;
   font: 400 16px/1.6 var(--font-manrope), sans-serif;
@@ -160,16 +158,17 @@
   --garden-ink: var(--text-primary);
   --garden-muted: var(--text-muted);
   --garden-line: var(--border);
-  background: radial-gradient(ellipse at 92% 5%, rgb(53 91 68 / 30%), transparent 42%), var(--garden-ivory);
+  background: radial-gradient(ellipse at 92% 5%, var(--accent-glow), transparent 42%), var(--garden-ivory);
 }
 :global(html[data-theme="dark"]) .page .primary { color: var(--background); }
 :global(html[data-theme="dark"]) .page .primary:hover { background: var(--primary-hover); }
-:global(html[data-theme="dark"]) .habitat { background: radial-gradient(ellipse at 44% 25%, var(--selected-strong), var(--surface) 80%); box-shadow: inset 0 0 90px var(--shadow-soft); }
+:global(html[data-theme="dark"]) .habitat { background: radial-gradient(ellipse at center, var(--accent-glow), transparent 70%), radial-gradient(ellipse at 44% 25%, var(--selected-strong), var(--surface) 80%); box-shadow: inset 0 0 90px var(--shadow-soft); }
+:global(html[data-theme="dark"]) .scene { background: radial-gradient(ellipse at center, var(--accent-glow), transparent 70%); }
 :global(html[data-theme="dark"]) .gallerySection::before { background: linear-gradient(transparent, var(--garden-ivory) 90px); }
 :global(html[data-theme="dark"]) :is(.emptyGarden, .statIcon) { background: var(--surface); }
 :global(html[data-theme="dark"]) .page :is(.stat, .conversation):hover { background: var(--selected); }
 :global(html[data-theme="dark"]) .photoIndex { background: var(--surface); }
-:global(html[data-theme="dark"]) .page .galleryControls button { border-color: var(--border); }
+:global(html[data-theme="dark"]) .page .galleryControls button { border-color: var(--control-border); }
 :global(html[data-theme="dark"]) .plant:hover .plantArrow { color: var(--background); }
 
 /* Motion targets wrappers; all text remains visible before enhancement. */
@@ -179,14 +178,14 @@
 @keyframes garden-shadow { 0%, 100% { opacity: 1; scale: 1 1; } 50% { opacity: .7; scale: .94 .9; } }
 
 @media (hover: hover) and (pointer: fine) {
-  .primary:hover { background: #034b36; box-shadow: 0 8px 22px #075c421b; transform: translateY(-2px); }
+  .primary:hover { background: var(--primary-hover); box-shadow: 0 8px 22px color-mix(in srgb, var(--lw-forest) 11%, transparent); transform: translateY(-2px); }
   .primary:hover > svg:last-child { transform: translate(2px, -2px); }
   .textLink:hover > svg { transform: translateX(4px); }
   .plant:hover { transform: translateY(-5px); }
   .plant:hover .plantPhoto > img { transform: scale(1.045); }
-  .plant:hover .plantArrow { background: var(--garden-forest); color: #fffdf5; }
-  .stat:hover { background: #e3ede480; }
-  .conversation:hover { background: #e3ede480; padding-inline: 12px; }
+  .plant:hover .plantArrow { background: var(--garden-forest); color: var(--on-primary); }
+  .stat:hover { background: color-mix(in srgb, var(--selected) 50%, transparent); }
+  .conversation:hover { background: color-mix(in srgb, var(--selected) 50%, transparent); padding-inline: 12px; }
   .conversation:hover > svg { transform: translate(2px, -2px); }
 }
 
@@ -251,7 +250,7 @@
   .page .sectionHeading h2 { font-size: clamp(32px, 9vw, 38px); }
   .galleryTitle { gap: 12px; }
   .galleryTitle .textLink { gap: 8px; }
-  .sectionHeading .textLink { min-height: 38px; border-bottom: 1px solid #9cb393; }
+  .sectionHeading .textLink { min-height: 38px; border-bottom: 1px solid var(--control-border); }
   .page .sectionDescription { font-size: 14px; }
   .galleryActions { width: 100%; justify-content: flex-end; gap: 16px; }
   .gallery { --gallery-gap: 16px; grid-auto-columns: 100%; }

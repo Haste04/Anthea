@@ -24,25 +24,25 @@ function Foliage({ branch = false }: { branch?: boolean }) {
     <svg viewBox="0 0 220 320" fill="none" aria-hidden="true" focusable="false">
       <path d="M92 320C110 256 102 155 145 16" stroke="currentColor" strokeWidth="2" />
       <path d="M104 254C49 258 13 220 18 175c52 4 86 34 86 79Zm5-50c49-3 90-41 87-86-52 9-84 42-87 86Zm11-51c-45-4-76-36-69-77 46 10 69 36 69 77Zm14-54c38-8 69-39 62-74-44 12-65 40-62 74Zm11-51c-23-5-33-26-22-48 22 11 30 27 22 48Z" fill="currentColor" />
-      <path d="m101 245-64-52m76 3 65-61m-59 9-54-52m69 1 48-51" stroke="#f6f1e5" strokeOpacity=".35" strokeWidth="1.2" />
+      <path d="m101 245-64-52m76 3 65-61m-59 9-54-52m69 1 48-51" stroke="var(--lw-cream)" strokeOpacity=".35" strokeWidth="1.2" />
     </svg>
   ) : (
     <svg viewBox="0 0 240 280" fill="none" aria-hidden="true" focusable="false">
       <path d="M122 238C51 226 13 173 24 106 34 41 93 22 121 65c35-48 87-24 99 28 18 75-25 130-98 145Z" fill="currentColor" />
-      <path d="M119 279c8-51 7-122 6-189m-1 140-72-58m73 20 69-66m-70 31-74-57m74 22 56-54" stroke="#f6f1e5" strokeOpacity=".45" strokeWidth="2" strokeLinecap="round" />
-      <path d="m37 97 54 40m-58 4 58 34m112-75-42 35m47 10-45 37" stroke="#f6f1e5" strokeWidth="12" strokeLinecap="round" />
+      <path d="M119 279c8-51 7-122 6-189m-1 140-72-58m73 20 69-66m-70 31-74-57m74 22 56-54" stroke="var(--lw-cream)" strokeOpacity=".45" strokeWidth="2" strokeLinecap="round" />
+      <path d="m37 97 54 40m-58 4 58 34m112-75-42 35m47 10-45 37" stroke="var(--lw-cream)" strokeWidth="12" strokeLinecap="round" />
     </svg>
   );
 }
 
 function PlantIllustration() {
   return <svg className={styles.plantIllustration} viewBox="0 0 200 200" aria-hidden="true">
-    <path d="M100 146V52m0 61L61 76m39 13 35-42" fill="none" stroke="#426849" strokeWidth="3" />
-    <path d="M100 103C52 98 39 55 54 36c39 3 51 31 46 67Z" fill="#47774e" />
-    <path d="M102 79c-9-47 19-61 47-61 9 41-13 64-47 61Z" fill="#719450" />
-    <path d="M98 117c-41 23-63-2-64-25 30-14 51-4 64 25Z" fill="#88a95f" />
-    <path d="M103 119c36-36 66-17 65 11-29 16-51 9-65-11Z" fill="#315e41" />
-    <path d="m75 142 9 37h34l9-37Z" fill="#d0ae8d" /><path d="M72 140h58v8H72Z" fill="#dfc3a3" />
+    <path d="M100 146V52m0 61L61 76m39 13 35-42" fill="none" stroke="var(--lw-forest)" strokeWidth="3" />
+    <path d="M100 103C52 98 39 55 54 36c39 3 51 31 46 67Z" fill="var(--lw-green)" />
+    <path d="M102 79c-9-47 19-61 47-61 9 41-13 64-47 61Z" fill="var(--lw-green)" />
+    <path d="M98 117c-41 23-63-2-64-25 30-14 51-4 64 25Z" fill="var(--lw-green)" />
+    <path d="M103 119c36-36 66-17 65 11-29 16-51 9-65-11Z" fill="var(--lw-forest)" />
+    <path d="m75 142 9 37h34l9-37Z" fill="var(--lw-earth-yellow)" /><path d="M72 140h58v8H72Z" fill="var(--lw-amber)" />
   </svg>;
 }
 

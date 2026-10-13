@@ -53,7 +53,7 @@
   width: 42%;
   height: 4%;
   border-radius: 50%;
-  background: rgb(27 67 50 / 12%);
+  background: color-mix(in srgb, var(--lw-forest) 12%, transparent);
   pointer-events: none;
   z-index: 0;
 }
@@ -190,10 +190,10 @@
 .mascot[data-state="lifewood"] .mouth > img { opacity: 0; }
 .mascot[data-state="lifewood"] .smilingMouth { opacity: 1; }
 .lifewoodSprout { position: absolute; top: -2%; left: 35%; width: 30%; height: 18%; z-index: 4; overflow: visible; pointer-events: none; }
-.sproutStem { stroke: #367747; stroke-width: 5; stroke-linecap: round; }
+.sproutStem { stroke: var(--lw-green); stroke-width: 5; stroke-linecap: round; }
 .sproutLeft, .sproutRight { transform-box: view-box; transform-origin: 50% 95%; animation: lifewood-grow 2000ms var(--ease-out) both; }
-.sproutLeft { fill: #73b965; stroke: #367747; stroke-width: 2; }
-.sproutRight { fill: #a1ce77; stroke: #367747; stroke-width: 2; }
+.sproutLeft { fill: var(--lw-green); stroke: var(--lw-green); stroke-width: 2; }
+.sproutRight { fill: var(--lw-earth-yellow); stroke: var(--lw-green); stroke-width: 2; }
 @keyframes lifewood-grow {
   0% { transform: scale(0); opacity: 0; }
   25%, 80% { transform: scale(1); opacity: 1; }

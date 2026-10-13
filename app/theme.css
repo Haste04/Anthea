@@ -1,44 +1,82 @@
 :root { color-scheme: light; }
 
-/* The same semantic palette covers pages with their own local light tokens. */
-:root[data-theme="dark"],
-:root[data-theme="dark"] .ws-app--chat,
-:root[data-theme="dark"] .ws-app :is(.ws-sidebar, .ws-drawer, .ws-mobile-bar) {
+/* Dark mode uses the same seven brand colors with warm, contrasting controls. */
+:root[data-theme="dark"] {
   color-scheme: dark;
-  --background: #0e1c16;
-  --surface: #1b3025;
-  --surface-soft: #16271e;
-  --surface-glass: rgb(27 48 37 / 94%);
-  --text-primary: #f5eedb;
-  --text-secondary: #ccd9cc;
-  --text-muted: #a9bdaa;
-  --border: #496451;
-  --border-soft: #314b3b;
-  --primary: #8fd5ae;
-  --primary-hover: #b1e6c6;
-  --primary-active: #79c599;
-  --selected: #284735;
-  --selected-strong: #355b44;
-  --accent-soft: #3d301e;
-  --accent-text: #ffcf8f;
-  --danger: #ffb4a4;
-  --shadow-soft: rgb(0 0 0 / 24%);
+  --background: var(--lw-forest);
+  --surface: color-mix(in srgb, var(--lw-green) 20%, var(--lw-forest));
+  --card: var(--surface);
+  --surface-soft: var(--lw-forest);
+  --surface-raised: color-mix(in srgb, var(--lw-green) 35%, var(--lw-forest));
+  --surface-glass: var(--surface);
+  --text-primary: var(--lw-cream);
+  --text-secondary: color-mix(in srgb, var(--lw-cream) 90%, var(--surface));
+  --text-muted: color-mix(in srgb, var(--lw-cream) 78%, var(--surface));
+  --border: color-mix(in srgb, var(--lw-cream) 30%, var(--surface));
+  --border-soft: color-mix(in srgb, var(--lw-cream) 18%, var(--surface));
+  --border-subtle: var(--border-soft);
+  --control-border: color-mix(in srgb, var(--lw-cream) 60%, var(--surface));
+  --tag-border: var(--border);
+  --primary: var(--lw-earth-yellow);
+  --primary-hover: var(--lw-amber);
+  --primary-active: var(--lw-cream);
+  --on-primary: var(--lw-forest);
+  --selected: color-mix(in srgb, var(--lw-earth-yellow) 12%, var(--surface));
+  --selected-strong: color-mix(in srgb, var(--lw-earth-yellow) 20%, var(--surface));
+  --accent-tint: color-mix(in srgb, var(--lw-earth-yellow) 12%, transparent);
+  --accent-glow: color-mix(in srgb, var(--lw-earth-yellow) 8%, transparent);
+  --focus-ring: 0 0 0 2px color-mix(in srgb, var(--primary) 45%, transparent);
+  --focus-outline: var(--primary);
+  --warm-tint: color-mix(in srgb, var(--lw-amber) 14%, transparent);
+  --success: var(--lw-cream);
+  --warning: var(--lw-amber);
+  --info: var(--lw-earth-yellow);
+  --accent-soft: color-mix(in srgb, var(--lw-amber) 14%, var(--surface));
+  --accent-text: var(--lw-earth-yellow);
+  --danger: var(--lw-amber);
+  --danger-text: var(--lw-earth-yellow);
+  --shadow-soft: color-mix(in srgb, var(--lw-forest) 24%, transparent);
+  --shadow-card: 0 8px 24px color-mix(in srgb, var(--lw-forest) 35%, transparent);
+  --workspace-overlay: linear-gradient(90deg, color-mix(in srgb, var(--background) 98%, transparent), color-mix(in srgb, var(--background) 90%, transparent));
+  --welcome-overlay: linear-gradient(color-mix(in srgb, var(--background) 82%, transparent), color-mix(in srgb, var(--background) 92%, transparent));
+  --nav-hover: color-mix(in srgb, var(--surface-raised) 60%, transparent);
 }
 
 :root[data-theme="dark"] .ws-app {
-  background: linear-gradient(90deg, rgb(14 28 22 / 98%), rgb(14 28 22 / 90%)), url('/images/workspace-garden.webp') center right / cover fixed;
+  background: var(--workspace-overlay), url('/images/workspace-garden.webp') center right / cover fixed;
 }
 :root[data-theme="dark"] .ws-app .ws-greeting {
   background: var(--surface);
   border-color: var(--border);
-  box-shadow: 0 8px 24px var(--shadow-soft);
+  box-shadow: var(--shadow-card);
 }
 :root[data-theme="dark"] .ws-app .ws-greeting :is(h1, p, svg) { color: var(--text-primary); }
 :root[data-theme="dark"] .ws-app--chat .ws-chat-toolbar select { background: var(--surface); border-color: var(--border); }
-:root[data-theme="dark"] .ws-app :is(.ws-primary, .ws-new) { color: var(--surface); }
+:root[data-theme="dark"] .ws-app :is(.ws-primary, .ws-new) { background: var(--primary); color: var(--background); }
+:root[data-theme="dark"] .ws-app :is(.ws-primary, .ws-new):hover { background: var(--primary-hover); }
 :root[data-theme="dark"] :is(.dashboard-starter, .conversation-controls button, .new-response) { background: var(--surface); }
-:root[data-theme="dark"] .conversation-controls .control-primary { background: var(--primary); color: var(--surface); }
-:root[data-theme="dark"] :is(a, button, input, select, textarea, summary):focus-visible { outline-color: var(--primary); }
+:root[data-theme="dark"] .conversation-controls .control-primary { background: var(--primary); color: var(--background); }
+:root[data-theme="dark"] :is(a, button, input, select, textarea, summary):focus-visible { outline-color: var(--focus-outline); box-shadow: var(--focus-ring); }
+
+/* Card borders are decorative; controls receive the stronger AA boundary. */
+:root[data-theme="dark"] .ws-settings .ws-panel,
+:root[data-theme="dark"] .ws-plant-card { background: var(--card); border-color: var(--border-subtle); box-shadow: var(--shadow-card); }
+:root[data-theme="dark"] .ws-plant-card:hover { background: var(--surface-raised); border-color: var(--control-border); }
+:root[data-theme="dark"] .ws-plant-card p { color: var(--text-muted); }
+:root[data-theme="dark"] .ws-chip { background: var(--accent-tint); color: var(--primary); border-color: var(--tag-border); }
+:root[data-theme="dark"] .ws-chip--attention { background: var(--warm-tint); color: var(--warning); border-color: var(--warning); }
+:root[data-theme="dark"] .ws-app :is(input, select, textarea),
+:root[data-theme="dark"] .ws-theme-options button { background: var(--surface-raised); border-color: var(--control-border); }
+:root[data-theme="dark"] .ws-app :is(input[type="checkbox"], input[type="radio"]) { accent-color: var(--primary); }
+:root[data-theme="dark"] .ws-theme-options button[aria-pressed="true"] { background: var(--selected); border-color: var(--primary); }
+:root[data-theme="dark"] .ws-app :is(.ws-sidebar, .ws-drawer) .ws-nav-item.is-active { background: var(--selected); color: var(--primary); box-shadow: inset 3px 0 0 var(--primary); }
+:root[data-theme="dark"] .ws-app :is(.ws-sidebar, .ws-drawer) .ws-nav-item:not(.is-active):hover { background: var(--nav-hover); color: var(--primary-hover); }
+:root[data-theme="dark"] .ws-app .ws-chat-search { background: var(--surface-raised); border-color: var(--control-border); }
+:root[data-theme="dark"] .ws-search { background: var(--surface-raised); border-color: var(--control-border); }
+:root[data-theme="dark"] :is(.ws-danger, .ws-chat-delete, .reviewLimit) { color: var(--danger-text); }
+:root[data-theme="dark"] .ws-recents .ws-chat-delete { color: var(--danger-text); }
+:root[data-theme="dark"] .ws-recents .ws-chat-delete svg { color: var(--danger); }
+:root[data-theme="dark"] .ws-app .ws-skip { background: var(--surface-raised); color: var(--text-primary); }
 
 .ws-appearance > p { color: var(--text-secondary); margin: 8px 0 18px; }
 .ws-theme-options { display: flex; flex-wrap: wrap; gap: 12px; }

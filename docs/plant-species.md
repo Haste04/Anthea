@@ -6,8 +6,8 @@ plant offer two choices rather than assigning one species. Nicknames and partial
 words do not automatically identify plants. Existing saved species and manual
 edits are preserved; an automatic value is replaced or cleared as the name changes.
 
-The local list contains 50 entries covering houseplants, herbs, vegetables, and
-flowers. Common Sunflower now fills locally. Mint, pothos, fern, and money plant
+The local list contains 100 entries covering houseplants, herbs, vegetables, and
+flowers. Mint, pothos, fern, money plant, marigold, and daisy
 offer choices among the matching entries. Scientific names and the aliases in
 `lib/plant-species.ts` also work.
 Names are lookup suggestions, not identification from a photo or plant examination.
@@ -73,6 +73,56 @@ Sources for the common/scientific-name mappings:
 | Chili pepper | *Capsicum annuum* | [Source](https://plants.ces.ncsu.edu/plants/capsicum-annuum/) |
 | Cucumber | *Cucumis sativus* | [Source](https://plants.ces.ncsu.edu/plants/cucumis-sativus/) |
 | Common zinnia | *Zinnia elegans* | [Source](https://plants.ces.ncsu.edu/plants/zinnia-elegans/) |
+| Chinese hibiscus | *Hibiscus rosa-sinensis* | [Source](https://plants.ces.ncsu.edu/plants/hibiscus-rosa-sinensis/) |
+| Gardenia | *Gardenia jasminoides* | [Source](https://plants.ces.ncsu.edu/plants/gardenia-jasminoides/) |
+| Bigleaf hydrangea | *Hydrangea macrophylla* | [Source](https://plants.ces.ncsu.edu/plants/hydrangea-macrophylla/) |
+| China rose | *Rosa chinensis* | [Source](https://plants.ces.ncsu.edu/plants/rosa-chinensis/) |
+| African marigold | *Tagetes erecta* | [Source](https://plants.ces.ncsu.edu/plants/tagetes-erecta/) |
+| Pot marigold | *Calendula officinalis* | [Source](https://plants.ces.ncsu.edu/plants/calendula-officinalis/) |
+| English daisy | *Bellis perennis* | [Source](https://plants.ces.ncsu.edu/plants/bellis-perennis/) |
+| Shasta daisy | *Leucanthemum x superbum* | [Source](https://plants.ces.ncsu.edu/plants/leucanthemum-x-superbum/) |
+| Garden cosmos | *Cosmos bipinnatus* | [Source](https://plants.ces.ncsu.edu/plants/cosmos-bipinnatus/) |
+| Madagascar periwinkle | *Catharanthus roseus* | [Source](https://plants.ces.ncsu.edu/plants/catharanthus-roseus/) |
+| Busy Lizzie | *Impatiens walleriana* | [Source](https://plants.ces.ncsu.edu/plants/impatiens-walleriana/) |
+| Zonal geranium | *Pelargonium x hybridum* | [Source](https://plants.ces.ncsu.edu/plants/pelargonium-x-hybridum/) |
+| Wax begonia | *Begonia cucullata* | [Source](https://plants.ces.ncsu.edu/plants/begonia-wax-types/) |
+| Bird of paradise | *Strelitzia reginae* | [Source](https://plants.ces.ncsu.edu/plants/strelitzia-reginae/) |
+| Corn plant | *Dracaena fragrans* | [Source](https://plants.ces.ncsu.edu/plants/dracaena-fragrans/) |
+| Lucky bamboo | *Dracaena sanderiana* | [Source](https://plants.ces.ncsu.edu/plants/dracaena-sanderiana/) |
+| Majesty palm | *Ravenea rivularis* | [Source](https://plants.ces.ncsu.edu/plants/ravenea-rivularis/) |
+| Japanese aralia | *Fatsia japonica* | [Source](https://plants.ces.ncsu.edu/plants/fatsia-japonica/) |
+| Aluminum plant | *Pilea cadierei* | [Source](https://plants.ces.ncsu.edu/plants/pilea-cadierei/) |
+| Nerve plant | *Fittonia albivenis* | [Source](https://plants.ces.ncsu.edu/plants/fittonia-albivenis/) |
+| Inch plant | *Tradescantia zebrina* | [Source](https://plants.ces.ncsu.edu/plants/tradescantia-zebrina/) |
+| Purple heart | *Tradescantia pallida* | [Source](https://plants.ces.ncsu.edu/plants/tradescantia-pallida/) |
+| Purple shamrock | *Oxalis triangularis* | [Source](https://plants.ces.ncsu.edu/plants/oxalis-triangularis/) |
+| Silver dollar jade | *Crassula arborescens* | [Source](https://plants.ces.ncsu.edu/plants/crassula-arborescens/) |
+| Elephant bush | *Portulacaria afra* | [Source](https://hort.extension.wisc.edu/articles/elephant-bush-portulacaria-afra/) |
+| Lettuce | *Lactuca sativa* | [Source](https://plants.ces.ncsu.edu/plants/lactuca-sativa/) |
+| Carrot | *Daucus carota* | [Source](https://plants.ces.ncsu.edu/plants/daucus-carota/) |
+| Radish | *Raphanus raphanistrum subsp. sativus* | [Source](https://plants.ces.ncsu.edu/plants/raphanus-raphanistrum-subsp-sativus/) |
+| Ginger | *Zingiber officinale* | [Source](https://plants.ces.ncsu.edu/plants/zingiber-officinale/) |
+| Spinach | *Spinacia oleracea* | [Source](https://plants.ces.ncsu.edu/plants/spinacia-oleracea/) |
+| Cabbage | *Brassica oleracea* | [Source](https://plants.ces.ncsu.edu/plants/brassica-oleracea/) |
+| Onion | *Allium cepa* | [Source](https://plants.ces.ncsu.edu/plants/allium-cepa/) |
+| Garlic | *Allium sativum* | [Source](https://plants.ces.ncsu.edu/plants/allium-sativum/) |
+| Chives | *Allium schoenoprasum* | [Source](https://plants.ces.ncsu.edu/plants/allium-schoenoprasum/) |
+| Leek | *Allium ampeloprasum* | [Source](https://plants.ces.ncsu.edu/plants/allium-ampeloprasum/) |
+| Garden pea | *Lathyrus oleraceus* | [Source](https://plants.ces.ncsu.edu/plants/lathyrus-oleraceus/) |
+| Common bean | *Phaseolus vulgaris* | [Source](https://plants.ces.ncsu.edu/plants/phaseolus-vulgaris/) |
+| Eggplant | *Solanum melongena* | [Source](https://plants.ces.ncsu.edu/plants/solanum-melongena/) |
+| Potato | *Solanum tuberosum* | [Source](https://plants.ces.ncsu.edu/plants/solanum-tuberosum/) |
+| Sweet potato | *Ipomoea batatas* | [Source](https://plants.ces.ncsu.edu/plants/ipomoea-batatas/) |
+| Okra | *Abelmoschus esculentus* | [Source](https://plants.ces.ncsu.edu/plants/abelmoschus-esculentus/) |
+| Watermelon | *Citrullus lanatus* | [Source](https://plants.ces.ncsu.edu/plants/citrullus-lanatus/) |
+| Cantaloupe | *Cucumis melo* | [Source](https://plants.ces.ncsu.edu/plants/cucumis-melo/) |
+| Zucchini | *Cucurbita pepo* | [Source](https://plants.ces.ncsu.edu/plants/cucurbita-pepo/) |
+| Sweet corn | *Zea mays* | [Source](https://plants.ces.ncsu.edu/plants/zea-mays/) |
+| Common sage | *Salvia officinalis* | [Source](https://plants.ces.ncsu.edu/plants/salvia-officinalis/) |
+| Oregano | *Origanum vulgare* | [Source](https://plants.ces.ncsu.edu/plants/origanum-vulgare/) |
+| Lemon balm | *Melissa officinalis* | [Source](https://plants.ces.ncsu.edu/plants/melissa-officinalis/) |
+| Dill | *Anethum graveolens* | [Source](https://plants.ces.ncsu.edu/plants/anethum-graveolens/) |
+| Lemongrass | *Cymbopogon citratus* | [Source](https://plants.ces.ncsu.edu/plants/cymbopogon-citratus/) |
 
 For names outside the list, **Look up species** makes an explicit request to
 `GET /api/species?q=...`. The server uses the existing `PERENUAL_API_KEY` and
