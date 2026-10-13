@@ -2,6 +2,7 @@
 
 import { useState, useSyncExternalStore } from 'react';
 import { readTheme, saveTheme, subscribeTheme, type Theme } from '@/lib/theme';
+import { runThemeTransition } from '@/lib/theme-transition';
 
 const serverTheme = () => 'light' as const;
 function useTheme() {
@@ -17,19 +18,26 @@ export function ThemeSync() {
 export default function ThemeSettings() {
   const theme = useTheme();
   const [notice, setNotice] = useState('');
-  function choose(next: Theme) {
-    const saved = saveTheme(next);
-    setNotice(saved ? `${next === 'dark' ? 'Dark' : 'Light'} mode saved.` : 'Theme applies for this visit; browser storage is unavailable.');
+  function choose(next: Theme, button: HTMLButtonElement) {
+    const apply = () => {
+      const saved = saveTheme(next);
+      setNotice(saved ? `${next === 'dark' ? 'Dark' : 'Light'} mode saved.` : 'Theme applies for this visit; browser storage is unavailable.');
+    };
+    if (next === readTheme() && !document.documentElement.dataset.themeTransition) {
+      apply();
+      return;
+    }
+    void runThemeTransition(apply, button);
   }
   return (
     <section className="ws-panel ws-appearance" aria-labelledby="appearance-title">
       <h2 id="appearance-title">Appearance</h2>
       <p>Choose a look that feels comfortable for you.</p>
       <div className="ws-theme-options" role="group" aria-label="Color theme">
-        <button type="button" aria-pressed={theme === 'light'} onClick={() => choose('light')}>
+        <button type="button" aria-pressed={theme === 'light'} onClick={event => choose('light', event.currentTarget)}>
           <span aria-hidden="true">☀</span> Light
         </button>
-        <button type="button" aria-pressed={theme === 'dark'} onClick={() => choose('dark')}>
+        <button type="button" aria-pressed={theme === 'dark'} onClick={event => choose('dark', event.currentTarget)}>
           <span aria-hidden="true">☾</span> Dark
         </button>
       </div>

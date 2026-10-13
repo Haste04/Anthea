@@ -1,5 +1,18 @@
 :root { color-scheme: light; }
 
+/* Keep the incoming theme above the old snapshot for a circular reveal. */
+:root[data-theme-transition]::view-transition { pointer-events: none; }
+:root[data-theme-transition]::view-transition-group(root) { animation: none; }
+:root[data-theme-transition]::view-transition-image-pair(root) { isolation: isolate; }
+:root[data-theme-transition]::view-transition-old(root),
+:root[data-theme-transition]::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+  opacity: 1;
+}
+:root[data-theme-transition]::view-transition-old(root) { z-index: 1; }
+:root[data-theme-transition]::view-transition-new(root) { z-index: 2; }
+
 /* Dark mode uses the same seven brand colors with warm, contrasting controls. */
 :root[data-theme="dark"] {
   color-scheme: dark;
